@@ -1,0 +1,20 @@
+<%- include('partials/cabecera') %>
+<section class="tarjeta angosta">
+  <h1>Cargar documento</h1>
+  <form method="post" action="/documentos" enctype="multipart/form-data" class="formulario">
+    <label>Título <input name="titulo" required maxlength="200"></label>
+    <label>Expediente <input name="expediente" required maxlength="80"></label>
+    <label>Serie documental (CCD provisional)
+      <select name="serie" required>
+        <option value="">Seleccione…</option>
+        <% series.forEach((s) => { %>
+          <option value="<%= s.id %>"><%= s.codigo %> · <%= s.padre %> / <%= s.nombre %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Fecha del documento <input name="fecha" type="date" required></label>
+    <label>Archivo PDF (máx. 20 MB) <input name="archivo" type="file" accept="application/pdf" required></label>
+    <button>Cargar</button>
+  </form>
+</section>
+<%- include('partials/pie') %>

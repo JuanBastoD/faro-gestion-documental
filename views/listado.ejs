@@ -1,0 +1,34 @@
+<%- include('partials/cabecera') %>
+<h1>Repositorio documental</h1>
+<form method="get" action="/" class="busqueda">
+  <input name="q" value="<%= texto %>" placeholder="Buscar por título, expediente o serie" aria-label="Buscar">
+  <select name="serie" aria-label="Serie documental">
+    <option value="">Todas las series</option>
+    <% series.forEach((s) => { %>
+      <option value="<%= s.id %>" <%= s.id === serieId ? 'selected' : '' %>><%= s.codigo %> · <%= s.nombre %></option>
+    <% }) %>
+  </select>
+  <button>Buscar</button>
+</form>
+
+<% if (documentos.length === 0) { %>
+  <p class="tarjeta">No se encontraron documentos con esos criterios.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr><th>Título</th><th>Expediente</th><th>Serie</th><th>Fecha</th><th>Versión</th></tr>
+    </thead>
+    <tbody>
+      <% documentos.forEach((d) => { %>
+        <tr>
+          <td><a href="/documentos/<%= d.id %>"><%= d.titulo %></a></td>
+          <td><%= d.expediente %></td>
+          <td><%= d.serie_codigo %> · <%= d.serie_nombre %></td>
+          <td><%= d.fecha_documento %></td>
+          <td>v<%= d.version_actual %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+<%- include('partials/pie') %>

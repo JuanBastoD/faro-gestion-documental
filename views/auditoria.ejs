@@ -1,0 +1,19 @@
+<%- include('partials/cabecera') %>
+<h1>Registro de auditoría</h1>
+<table>
+  <thead>
+    <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Documento</th><th>Detalle</th></tr>
+  </thead>
+  <tbody>
+    <% eventos.forEach((e) => { %>
+      <tr>
+        <td><%= fecha(e.creado_en) %></td>
+        <td><%= e.usuario || '—' %></td>
+        <td><%= e.accion.replaceAll('_', ' ') %></td>
+        <td><% if (e.documento_id) { %><a href="/documentos/<%= e.documento_id %>"><%= e.titulo %></a><% } else { %>—<% } %></td>
+        <td><%= e.detalle || '—' %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+<%- include('partials/pie') %>

@@ -1,0 +1,14 @@
+<%- include('partials/cabecera') %>
+<section class="tarjeta angosta aviso">
+  <h1>Este documento ya está digitalizado</h1>
+  <p>No hace falta volver a escanearlo ni cargarlo. El sistema encontró un archivo idéntico:</p>
+  <dl class="metadatos">
+    <div><dt>Documento</dt><dd><a href="/documentos/<%= duplicado.documento_id %>"><%= duplicado.titulo %></a></dd></div>
+    <div><dt>Expediente</dt><dd><%= duplicado.expediente %></dd></div>
+    <div><dt>Versión</dt><dd>v<%= duplicado.numero %></dd></div>
+    <div><dt>Cargado por</dt><dd><%= duplicado.autor %></dd></div>
+    <div><dt>Fecha de carga</dt><dd><%= fecha(duplicado.creado_en) %></dd></div>
+  </dl>
+  <p><a href="/documentos/<%= duplicado.documento_id %>">Abrir el documento existente</a></p>
+</section>
+<%- include('partials/pie') %>

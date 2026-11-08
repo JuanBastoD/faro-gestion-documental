@@ -1,0 +1,109 @@
+:root {
+  --fondo: #f4f6f8;
+  --superficie: #ffffff;
+  --texto: #1d2733;
+  --suave: #5b6876;
+  --borde: #d9e0e7;
+  --primario: #123f6d;
+  --acento: #b3261e;
+  --aviso: #fff7e0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+
+a { color: var(--primario); }
+h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+h2 { font-size: 1.2rem; margin: 1.5rem 0 .75rem; }
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: .75rem 1.5rem;
+  background: var(--primario);
+  color: #fff;
+}
+.barra a { color: #fff; text-decoration: none; }
+.barra nav { display: flex; gap: 1.25rem; flex: 1; }
+.marca { font-weight: 700; font-size: 1.1rem; }
+.marca small { font-weight: 400; opacity: .8; margin-left: .4rem; }
+.sesion { display: flex; align-items: center; gap: 1rem; }
+
+.rol {
+  font-style: normal;
+  font-size: .75rem;
+  padding: .1rem .5rem;
+  border-radius: 999px;
+  background: #dce8f5;
+  color: var(--primario);
+}
+
+main { max-width: 1080px; margin: 1.5rem auto; padding: 0 1rem; }
+footer { text-align: center; color: var(--suave); font-size: .85rem; padding: 1.5rem; }
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 0 0 1rem;
+}
+.angosta { max-width: 560px; }
+.aviso { background: var(--aviso); }
+.alerta { color: var(--acento); font-weight: 600; }
+
+.formulario { display: grid; gap: .9rem; }
+.formulario label { display: grid; gap: .25rem; font-weight: 600; }
+
+input, select {
+  width: 100%;
+  padding: .55rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+}
+
+button {
+  padding: .55rem 1.1rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--primario);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+button.enlace { background: transparent; text-decoration: underline; padding: 0; }
+
+.busqueda {
+  display: grid;
+  grid-template-columns: 1fr 260px auto;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  margin-bottom: 1rem;
+}
+th, td { padding: .6rem .75rem; text-align: left; border-bottom: 1px solid var(--borde); }
+th { font-size: .85rem; color: var(--suave); }
+
+.metadatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+.metadatos dt { font-size: .8rem; color: var(--suave); }
+.metadatos dd { margin: 0; font-weight: 600; }
+
+@media (max-width: 640px) {
+  .busqueda { grid-template-columns: 1fr; }
+  table { display: block; overflow-x: auto; }
+}

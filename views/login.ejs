@@ -1,0 +1,11 @@
+<%- include('partials/cabecera') %>
+<section class="tarjeta angosta">
+  <h1>Ingresar</h1>
+  <% if (error) { %><p class="alerta"><%= error %></p><% } %>
+  <form method="post" action="/login" class="formulario">
+    <label>Usuario <input name="usuario" autocomplete="username" required autofocus></label>
+    <label>Contraseña <input name="clave" type="password" autocomplete="current-password" required></label>
+    <button>Ingresar</button>
+  </form>
+</section>
+<%- include('partials/pie') %>

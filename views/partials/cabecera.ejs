@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= titulo %> · SGD Faro (prototipo)</title>
+  <link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+  <header class="barra">
+    <a class="marca" href="/">SGD Faro <small>Prototipo académico</small></a>
+    <% if (usuario) { %>
+      <nav>
+        <a href="/">Repositorio</a>
+        <% if (puede('cargar')) { %><a href="/documentos/nuevo">Cargar documento</a><% } %>
+        <% if (puede('auditar')) { %><a href="/auditoria">Auditoría</a><% } %>
+      </nav>
+      <div class="sesion">
+        <span><%= usuario.nombre %> <em class="rol"><%= usuario.rol %></em></span>
+        <form method="post" action="/logout"><button class="enlace">Salir</button></form>
+      </div>
+    <% } %>
+  </header>
+  <main>

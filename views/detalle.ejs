@@ -1,0 +1,39 @@
+<%- include('partials/cabecera') %>
+<h1><%= documento.titulo %></h1>
+<dl class="tarjeta metadatos">
+  <div><dt>Expediente</dt><dd><%= documento.expediente %></dd></div>
+  <div><dt>Serie</dt><dd><%= documento.serie_codigo %> · <%= documento.serie_nombre %></dd></div>
+  <div><dt>Fecha del documento</dt><dd><%= documento.fecha_documento %></dd></div>
+  <div><dt>Versión vigente</dt><dd>v<%= documento.version_actual %></dd></div>
+</dl>
+
+<h2>Historial de versiones</h2>
+<table>
+  <thead>
+    <tr><th>Versión</th><th>Motivo</th><th>Autor</th><th>Fecha</th><th>Huella</th><th>Archivo</th></tr>
+  </thead>
+  <tbody>
+    <% versiones.forEach((v) => { %>
+      <tr>
+        <td>v<%= v.numero %><% if (v.numero === documento.version_actual) { %> <em class="rol">vigente</em><% } %></td>
+        <td><%= v.motivo %></td>
+        <td><%= v.autor %></td>
+        <td><%= fecha(v.creado_en) %></td>
+        <td><code title="<%= v.sha256 %>"><%= v.sha256.slice(0, 12) %>…</code></td>
+        <td><a href="/versiones/<%= v.id %>/archivo"><%= v.nombre_original %></a></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<% if (puede('versionar')) { %>
+  <section class="tarjeta angosta">
+    <h2>Registrar nueva versión</h2>
+    <form method="post" action="/documentos/<%= documento.id %>/versiones" enctype="multipart/form-data" class="formulario">
+      <label>Motivo del cambio <input name="motivo" required maxlength="200"></label>
+      <label>Archivo PDF (máx. 20 MB) <input name="archivo" type="file" accept="application/pdf" required></label>
+      <button>Registrar versión</button>
+    </form>
+  </section>
+<% } %>
+<%- include('partials/pie') %>
