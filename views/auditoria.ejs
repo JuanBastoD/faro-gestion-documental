@@ -1,4 +1,15 @@
 <%- include('partials/cabecera') %>
+<%
+  const etiquetas = {
+    ingreso: 'ingreso',
+    ingreso_fallido: 'ingreso fallido',
+    carga: 'carga',
+    nueva_version: 'nueva versión',
+    descarga: 'descarga',
+    duplicado_detectado: 'duplicado detectado',
+    acceso_denegado: 'acceso denegado',
+  };
+%>
 <h1>Registro de auditoría</h1>
 <table>
   <thead>
@@ -9,7 +20,7 @@
       <tr>
         <td><%= fecha(e.creado_en) %></td>
         <td><%= e.usuario || '—' %></td>
-        <td><%= e.accion.replaceAll('_', ' ') %></td>
+        <td><%= etiquetas[e.accion] || e.accion.replaceAll('_', ' ') %></td>
         <td><% if (e.documento_id) { %><a href="/documentos/<%= e.documento_id %>"><%= e.titulo %></a><% } else { %>—<% } %></td>
         <td><%= e.detalle || '—' %></td>
       </tr>

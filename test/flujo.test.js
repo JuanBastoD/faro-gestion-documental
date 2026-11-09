@@ -160,7 +160,7 @@ test('solo el administrador ve la auditoría, con las acciones registradas', asy
   const html = await res.text();
   assert.match(html, /acceso denegado/);
   assert.match(html, /duplicado detectado/);
-  assert.match(html, /nueva version/);
+  assert.match(html, /nueva versión/);
 });
 
 test('los datos persisten al reiniciar la aplicación', async () => {
