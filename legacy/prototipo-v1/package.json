@@ -1,0 +1,22 @@
+{
+  "name": "prototipo-sgd-faro",
+  "version": "0.1.0",
+  "description": "Prototipo académico de sistema de gestión documental (primer incremento).",
+  "private": true,
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "reiniciar": "node seed/reiniciar.js",
+    "test": "node --test test/flujo.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.2"
+  }
+}

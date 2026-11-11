@@ -1,22 +1,13 @@
 {
-  "name": "prototipo-sgd-faro",
-  "version": "0.1.0",
-  "description": "Prototipo académico de sistema de gestión documental (primer incremento).",
+  "name": "faro-gestion-documental",
+  "version": "0.0.0",
   "private": true,
-  "main": "src/server.js",
+  "description": "Monorepo del sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. (proyecto de clase).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=22.13"
-  },
-  "scripts": {
-    "start": "node src/server.js",
-    "reiniciar": "node seed/reiniciar.js",
-    "test": "node --test test/flujo.test.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "express-session": "^1.18.1",
-    "multer": "^2.0.2"
   }
 }
