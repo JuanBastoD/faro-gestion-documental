@@ -125,7 +125,7 @@ legacy/prototipo-v1/   prototipo actual, movido con git mv (conserva historial) 
 - Ramas cortas: `feat/<n>-descripcion`, `fix/<n>-...`, `chore/<n>-...`, donde `<n>` es el número del issue.
 - Commits convencionales (`feat(api): ...`, `fix(web): ...`, `docs: ...`). Fecha real, sin retrodatar.
 - Cada PR cierra un issue (`Closes #n`), usa la plantilla (qué, por qué, cómo probar, capturas) y se fusiona con squash.
-- [POR VERIFICAR] Revisión: César no programa, así que revisa criterios de aceptación y documentación; el código lo valida el CI. No se simula una revisión de código que no ocurre.
+- Revisión: el código lo escribe y fusiona una sola persona (Juan); lo valida el CI. No se simula una revisión de código que no ocurre.
 
 ### 6.3 Issues
 Tipos, con plantilla en `.github/ISSUE_TEMPLATE/`: Historia de usuario, Tarea técnica, Bug, Decisión (ADR/spike).
@@ -176,8 +176,8 @@ Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 | 1 | tarea | Estructurar el monorepo y mover el prototipo a `legacy/` con tag v0.1.0 | M | 2 | Juan |
 | 2 | tarea | Docker Compose con Postgres y MinIO | M | 1 | Juan |
 | 3 | tarea | CI en GitHub Actions: lint, pruebas y build | M | 1 | Juan |
-| 4 | docs | Plantillas de issue y PR, CONTRIBUTING con flujo y commits | M | 2 | César |
-| 5 | decisión | ADR-001 stack y ADR-002 arquitectura modular | M | 2 | César y Juan |
+| 4 | docs | Plantillas de issue y PR, CONTRIBUTING con flujo y commits | M | 2 | Juan |
+| 5 | decisión | ADR-001 stack y ADR-002 arquitectura modular | M | 2 | Juan |
 | 6 | historia | Esqueleto de la API: `/health`, configuración por entorno, migración inicial | M | 3 | Juan |
 | 7 | tarea | Protección de `main` y etiquetas del repositorio | M | 0,5 | Juan |
 
@@ -193,7 +193,7 @@ Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 | 13 | historia | Búsqueda por texto completo con paginación | S | 3 | Juan |
 | 14 | historia | Auditoría de eventos, incluida la decisión ante un duplicado probable | M | 2 | Juan |
 | 15 | tarea | Migrar las 7 pruebas actuales a la API y agregar pruebas de duplicados con un reescaneo simulado | M | 3 | Juan |
-| 16 | tarea | Modelo de datos: diagrama ER y diccionario (1.3.1) | S | 2 | César |
+| 16 | tarea | Modelo de datos: diagrama ER y diccionario (1.3.1) | S | 2 | Juan |
 
 **V2-M3 Nube y usuarios (2 dic)**
 
@@ -204,7 +204,7 @@ Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 | 19 | historia | Carga del cuadro validado desde CSV (HU-07, 1.4.2) | S | 2 | Juan |
 | 20 | tarea | Despliegue en Cloud Run + Neon + Cloud Storage, con alerta de presupuesto | M | 4 | Juan |
 | 21 | tarea | Copia de seguridad con `pg_dump` y guía de restauración | S | 2 | Juan |
-| 22 | docs | Matriz de roles y permisos (1.3.2) y diagrama de arquitectura (1.3.3) | S | 2 | César |
+| 22 | docs | Matriz de roles y permisos (1.3.2) y diagrama de arquitectura (1.3.3) | S | 2 | Juan |
 
 **V2-M4 Interfaz y cierre (7 dic)**
 
@@ -214,7 +214,7 @@ Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 | 24 | historia | Interfaz: carga, nueva versión y pantalla de comparación de duplicado probable | S | 5 | Juan |
 | 25 | historia | Interfaz: administración de usuarios y auditoría | C | 3 | Juan |
 | 26 | tarea | Prueba e2e del flujo completo (Playwright) | C | 3 | Juan |
-| 27 | tarea | CHANGELOG, release `v2.0.0` y actualización del manual (1.6.1) | S | 2 | Juan y César |
+| 27 | tarea | CHANGELOG, release `v2.0.0` y actualización del manual (1.6.1) | S | 2 | Juan |
 
 **Sin hito (backlog):** HU-08 (ver soportes de un expediente en un solo lugar para SECOP II y SIA Observa), validación PDF/A-1a, calibración del umbral con PDF reales.
 
@@ -227,8 +227,8 @@ Estado: los 27 issues se crearon el 11 de nov. con los mismos números que esta 
 3. [CONFIRMADO] El prototipo se mueve a `legacy/prototipo-v1/` con tag `v0.1.0` sobre el commit `a96ec15` (issue #1).
 4. [CONFIRMADO] Hay tarjeta disponible para GCP. [POR VERIFICAR] cuotas gratuitas vigentes el día del despliegue.
 5. [CONFIRMADO] `iniciar-demo.bat` no entra al repositorio; está en `.gitignore`.
-6. [PENDIENTE] Rol de César en el nuevo flujo (propuesta: documentación, criterios de aceptación, pruebas con usuarios). Los issues ya lo usan como responsable de #4, #16 y #22.
-7. [PENDIENTE] Qué hacer con los hitos H1 a H6 y los borradores anteriores (dejarlos, archivarlos o borrarlos). No se tocan sin que lo indiques.
+6. [CONFIRMADO] Rol de César: solo académico (documentos y exposiciones de la materia). Todo lo relacionado con el código, la documentación técnica y el tablero de desarrollo lo hace Juan. Los issues #4, #5, #16 y #22 pasaron a Juan.
+7. [CONFIRMADO] Los hitos H1 a H6 y los 22 borradores anteriores se eliminaron el 11 de nov. por decisión del usuario.
 
 ## 10. Fuentes
 
