@@ -180,7 +180,7 @@ describe('VersionesService.agregar', () => {
           firma: TEXTO.firma,
         }),
       );
-      const [{ archivo, sha256 }] = repositorio.insertarVersion.mock.calls[0].slice(1) as [{ archivo: string; sha256: string }];
+      const [{ archivo, sha256 }] = repositorio.insertarVersion.mock.calls[0].slice(1) as unknown as [{ archivo: string; sha256: string }];
       expect(archivo).toBe(`documentos/${sha256}.pdf`);
     });
 
