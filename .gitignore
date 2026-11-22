@@ -8,3 +8,4 @@ coverage/
 .env.*
 !.env.example
 iniciar-demo.bat
+*.tsbuildinfo

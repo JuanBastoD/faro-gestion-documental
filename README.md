@@ -40,6 +40,30 @@ Los puertos solo escuchan en `127.0.0.1`. Si cambias un puerto en `.env`, actual
 
 **Por qué RustFS y no MinIO:** las imágenes oficiales de MinIO ya no se publican (Docker Hub devuelve `object not found` y Quay no tiene manifiestos públicos; verificado el 22 de noviembre de 2026). RustFS expone la misma API S3, así que el código de la API no cambia.
 
+## API (`apps/api`)
+
+NestJS 12 con PostgreSQL (Drizzle ORM). Con la infraestructura arriba (`npm run infra:up`) y el `.env` copiado:
+
+```
+npm install
+npm run db:migrate -w apps/api     # aplica las migraciones
+npm run start:dev -w apps/api      # API en http://127.0.0.1:3000
+```
+
+`GET /health` devuelve el estado de la API y de la base. Responde 200 si todo está bien y 503 si la base no contesta.
+
+La configuración sale de variables de entorno que se validan al arrancar (`apps/api/src/config/entorno.ts`). Si falta o es inválida alguna, la API no arranca y dice cuál corregir, sin mostrar sus valores. En local se leen del `.env` de la raíz.
+
+| Comando (desde la raíz) | Qué hace |
+|---|---|
+| `npm run lint` | Oxlint con tipos |
+| `npm test` | Pruebas unitarias (no necesitan base de datos) |
+| `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`) |
+| `npm run build` | Compila a `apps/api/dist` |
+| `npm run db:generate -w apps/api -- --name <nombre>` | Genera una migración SQL nueva a partir de `esquema.ts` |
+
+Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se editan una vez fusionadas: un cambio de esquema es una migración nueva.
+
 ## Prototipo v1
 
 Sigue funcionando por separado. Instrucciones en [`legacy/prototipo-v1/README.md`](legacy/prototipo-v1/README.md).
