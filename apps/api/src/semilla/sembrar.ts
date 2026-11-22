@@ -4,6 +4,7 @@ import { cargarEnvLocal } from '../config/cargar-env.js';
 import { EntornoInvalidoError, validarEntorno } from '../config/entorno.js';
 import * as esquema from '../base-datos/esquema.js';
 import { migrar } from '../base-datos/migrar.js';
+import { sembrarCcdDemo } from './ccd-demo.js';
 import { USUARIOS_DEMO, sembrarUsuariosDemo } from './usuarios-demo.js';
 
 /**
@@ -44,6 +45,8 @@ async function sembrar(): Promise<void> {
       `Usuarios de demostración: ${creados} creados, ${USUARIOS_DEMO.length - creados} ya existían.`,
     );
     console.log(`Usuarios: ${USUARIOS_DEMO.map((u) => `${u.usuario} (${u.rol})`).join(', ')}`);
+    const filas = await sembrarCcdDemo(db);
+    console.log(`Cuadro de clasificación de demostración: ${filas} series y subseries al día.`);
   } finally {
     await pool.end();
   }
