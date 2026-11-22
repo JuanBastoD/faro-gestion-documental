@@ -1,6 +1,6 @@
 # Plan de mejora y escalamiento del prototipo SGD Faro (v2)
 
-Fecha: 11 de noviembre de 2026. Estado: [PROPUESTA], pendiente de aprobación del equipo.
+Fecha: 11 de noviembre de 2026. Actualizado el 22 de noviembre de 2026 (fechas de V2-M1 y V2-M2, decisiones 8 a 12). Estado: [PROPUESTA], pendiente de aprobación del equipo.
 Reemplaza el orden de `PROXIMOS_PASOS.md` (usuarios, cuadro, pruebas), que sigue válido como lista de funciones pero no como arquitectura.
 
 ## 1. Diagnóstico del prototipo actual [CONFIRMADO, leído en el código]
@@ -155,8 +155,8 @@ Tipos, con plantilla en `.github/ISSUE_TEMPLATE/`: Historia de usuario, Tarea t�
 
 | Hito | Fecha | Entrega demostrable |
 |---|---|---|
-| V2-M1 Cimientos | 18 nov | Monorepo, Docker Compose, CI, ADR, API con `/health` y migración inicial |
-| V2-M2 Núcleo | 25 nov | Auth, CCD, carga, versiones con restauración, verificación doble, búsqueda y auditoría, todo por API y probado |
+| V2-M1 Cimientos | 23 nov (antes 18 nov) | Monorepo, Docker Compose, CI, ADR, API con `/health` y migración inicial |
+| V2-M2 Núcleo | 29 nov (antes 25 nov) | Auth, CCD, carga, versiones con restauración, verificación doble, búsqueda y auditoría, todo por API y probado |
 | V2-M3 Nube y usuarios | 2 dic | Despliegue en Cloud Run + Neon + Cloud Storage, administración de usuarios, seguridad, copias de seguridad |
 | V2-M4 Interfaz y cierre | 7 dic | Interfaz web, prueba e2e, `v2.0.0` |
 
@@ -169,7 +169,7 @@ Las pruebas con usuarios (H4, 23 nov) se hacen sobre lo que esté desplegable es
 
 Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 
-**V2-M1 Cimientos (18 nov)**
+**V2-M1 Cimientos (23 nov; antes 18 nov)**
 
 | # | Tipo | Título | Prio | Horas | Responsable |
 |---|---|---|---|---|---|
@@ -181,7 +181,7 @@ Prioridad: M = must, S = should, C = could. Horas: estimación inicial.
 | 6 | historia | Esqueleto de la API: `/health`, configuración por entorno, migración inicial | M | 3 | Juan |
 | 7 | tarea | Protección de `main` y etiquetas del repositorio | M | 0,5 | Juan |
 
-**V2-M2 Núcleo (25 nov)**
+**V2-M2 Núcleo (29 nov; antes 25 nov)**
 
 | # | Tipo | Título | Prio | Horas | Responsable |
 |---|---|---|---|---|---|
@@ -229,6 +229,11 @@ Estado: los 27 issues se crearon el 11 de nov. con los mismos números que esta 
 5. [CONFIRMADO] `iniciar-demo.bat` no entra al repositorio; está en `.gitignore`.
 6. [CONFIRMADO] Rol de César: solo académico (documentos y exposiciones de la materia). Todo lo relacionado con el código, la documentación técnica y el tablero de desarrollo lo hace Juan. Los issues #4, #5, #16 y #22 pasaron a Juan.
 7. [CONFIRMADO] Los hitos H1 a H6 y los 22 borradores anteriores se eliminaron el 11 de nov. por decisión del usuario.
+8. [CONFIRMADO] **Fechas reajustadas el 22 de nov.:** V2-M1 pasa del 18 al 23 de nov. y V2-M2 del 25 al 29 de nov.; V2-M3 (2 dic.) y V2-M4 (7 dic.) no cambian. Motivo: V2-M1 venció con 1 de 7 tareas hechas (no hubo actividad entre el 11 y el 22 de nov.) y el 7 de dic. es el cierre del curso. Quedan unas 70 h estimadas en 15 días, cerca de 4,7 h por día. Alternativa descartada: mover también V2-M3 y V2-M4 (rebasaría el cierre). [PROPUESTA] Si la estimación no se sostiene, lo primero que se recorta son #25 y #26 (prioridad *could*), no la verificación doble ni la nube.
+9. [CONFIRMADO] **Almacén S3 local: RustFS 1.0.6 en lugar de MinIO** (#2). Motivo: las imágenes oficiales de MinIO ya no se publican (`minio/minio` en Docker Hub devuelve `object not found` y Quay no tiene manifiestos públicos; verificado el 22 de nov.). La API habla S3 estándar, así que el adaptador `AlmacenArchivos` no cambia. Alternativas descartadas: compilar MinIO desde el código fuente (costo de mantenimiento) y Garage o SeaweedFS (disponibles, pero requieren más pasos de configuración y no se probaron).
+10. [CONFIRMADO] **PostgreSQL del Compose en el puerto 5433** del equipo, para no chocar con un PostgreSQL local en el 5432 (ocurrió en la prueba del 22 de nov.).
+11. [CONFIRMADO] **Herramientas de la API (#6):** NestJS 12 (ESM), TypeScript 6.0.3, Vitest 4 y Oxlint, que es la combinación de la plantilla oficial de Nest 12, en lugar de Jest y ESLint que mencionaba la sección 2. Drizzle ORM para el acceso a datos (la decisión formal queda para el ADR-001, #5). Motivo del TypeScript 6: `ts-jest` exige `<7` y `typescript-eslint` exige `<6.1`. No se incluye la telemetría externa (`@nestjs/observe`, `@nestjs/mau`) que trae la plantilla.
+12. [CONFIRMADO] **`main` protegida el 22 de nov.** (#7): PR obligatorio también para el dueño, sin force push ni borrado, y verificaciones requeridas `api`, `legacy` e `infra`. Sin aprobaciones requeridas, porque hay un solo desarrollador y no se simula una revisión que no ocurre.
 
 ## 10. Fuentes
 
