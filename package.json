@@ -8,6 +8,10 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspaces --if-present",
     "infra:up": "docker compose --env-file .env -f infra/docker-compose.yml up -d --wait postgres almacen && docker compose --env-file .env -f infra/docker-compose.yml run --rm almacen-init",
     "infra:down": "docker compose --env-file .env -f infra/docker-compose.yml down",
     "infra:logs": "docker compose --env-file .env -f infra/docker-compose.yml logs -f",
