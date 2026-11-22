@@ -65,6 +65,7 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 | `POST /auth/login` | Cualquiera | Recibe `{ usuario, clave }` y pone la cookie `faro_sesion` |
 | `GET /auth/yo` | Con sesión | Devuelve quién tiene la sesión |
 | `POST /auth/logout` | Con sesión | Cierra la sesión |
+| `GET /auditoria` | Administrador | Eventos de auditoría, los más recientes primero. Filtros: `usuarioId`, `accion`, `documentoId`, `desde`, `hasta`; paginación: `pagina` y `tamano` (máx. 100). Solo lectura: los eventos no se editan ni se borran, ni por la API ni por SQL |
 
 La configuración sale de variables de entorno que se validan al arrancar (`apps/api/src/config/entorno.ts`). Si falta o es inválida alguna, la API no arranca y dice cuál corregir, sin mostrar sus valores. En local se leen del `.env` de la raíz.
 
