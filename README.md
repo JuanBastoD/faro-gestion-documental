@@ -1,47 +1,27 @@
-# Prototipo SGD Faro
+# Faro · Gestión documental
 
-Primer incremento de un prototipo académico de gestión documental (Proyecto Integrador AR, Universidad de Pamplona, 2026-2P). Funciona en un solo equipo y usa únicamente **datos ficticios**. No es un SGDEA en producción.
+Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyecto de clase (Proyecto Integrador AR, Universidad de Pamplona, 2026-2P). Usa únicamente **datos ficticios**. No es un SGDEA en producción.
 
-## 1. Requisitos y ejecución
+## Estructura del monorepo
 
-Se necesita Node.js 22.13 o superior.
-
-```
-npm install
-npm start
-```
-
-La aplicación queda en <http://localhost:3000>. Después de instalar no necesita internet.
-
-| Usuario | Rol | Puede |
+| Carpeta | Contenido | Estado |
 |---|---|---|
-| `admin.demo` | administrador | Consultar, cargar, versionar y ver auditoría |
-| `editor.demo` | editor | Consultar, cargar y versionar |
-| `consulta.demo` | consulta | Consultar y descargar |
+| `apps/api` | API REST (NestJS, PostgreSQL) | En construcción (hito V2-M1) |
+| `apps/web` | Interfaz web (React + Vite) | Pendiente (hito V2-M4) |
+| `infra/` | Docker, CI y despliegue | En construcción |
+| `docs/` | Plan, decisiones de arquitectura (`docs/adr/`), diagramas y manual | Activo |
+| `legacy/prototipo-v1/` | Primer incremento (Express + SQLite), etiquetado `v0.1.0` | Congelado |
 
-La contraseña de los tres usuarios de demostración es `Demo2026!`.
+## Dónde está el trabajo
 
-## 2. Comandos
+- Plan de mejora y arquitectura: [`docs/PLAN_MEJORA.md`](docs/PLAN_MEJORA.md)
+- Issues e hitos `V2-M1` a `V2-M4`: pestaña Issues del repositorio
+- Tablero: <https://github.com/users/JuanBastoD/projects/2>
 
-- `npm test` ejecuta la prueba automatizada del flujo.
-- `npm run reiniciar` borra la carpeta `data/` y restaura los datos iniciales. Conviene usarlo antes de cada ensayo.
+## Prototipo v1
 
-## 3. Guion de la demo
+Sigue funcionando por separado. Instrucciones en [`legacy/prototipo-v1/README.md`](legacy/prototipo-v1/README.md).
 
-Los PDF están en `demo-pdfs/` y se crean en el primer arranque.
+## Flujo de trabajo
 
-1. Ingresar como `editor.demo` y buscar `interventoria`. La búsqueda ignora las tildes.
-2. Cargar `2-documento-nuevo.pdf` en la serie 300.1.
-3. Cargar `1-ya-digitalizado.pdf`. El sistema avisa que ya existe e indica dónde está.
-4. Abrir "Acta de inicio" y registrar `3-nueva-version-acta.pdf` con su motivo. El historial conserva v1 y v2.
-5. Ingresar como `consulta.demo`. Puede descargar, pero no cargar ni versionar.
-6. Ingresar como `admin.demo` y abrir Auditoría para ver la trazabilidad.
-
-## 4. Límites conocidos
-
-- El aviso de duplicado solo detecta archivos idénticos byte a byte. Un nuevo escaneo del mismo papel genera otro archivo y no se detecta.
-- Un archivo ya cargado no se puede registrar de nuevo, ni siquiera para restaurar una versión anterior.
-- La búsqueda usa metadatos, no el contenido del PDF.
-- Las sesiones se guardan en memoria y se cierran al reiniciar. Los datos sí persisten.
-- [SUPUESTO] El cuadro de clasificación es un ejemplo. No es un instrumento aprobado por la entidad.
-- No incluye administración de usuarios desde la interfaz.
+Una rama por issue (`feat/<n>-...`, `fix/<n>-...`, `chore/<n>-...`), commits convencionales y PR con `Closes #<n>`. Detalle en `docs/PLAN_MEJORA.md`, sección 6.

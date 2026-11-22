@@ -1,0 +1,6 @@
+{
+  "name": "@faro/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Interfaz web (React + Vite). Pendiente: hito V2-M4."
+}

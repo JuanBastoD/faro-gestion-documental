@@ -1,5 +1,10 @@
 node_modules/
 data/
 demo-pdfs/
+dist/
+coverage/
 *.log
 .env
+.env.*
+!.env.example
+iniciar-demo.bat

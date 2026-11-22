@@ -1,0 +1,6 @@
+{
+  "name": "@faro/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "API REST (NestJS). Pendiente: issue #6."
+}
