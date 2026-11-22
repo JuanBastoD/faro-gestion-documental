@@ -1,0 +1,60 @@
+name: Historia de usuario
+description: Una funcionalidad vista desde quien la usa.
+title: "[Historia] "
+labels: ["tipo:historia"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        El repositorio es **público**. No pegues datos reales de la entidad, datos personales ni credenciales.
+
+        Un issue está **listo** cuando tiene criterios de aceptación, estimación en horas, responsable e hito (ver `CONTRIBUTING.md`).
+  - type: textarea
+    id: historia
+    attributes:
+      label: Historia
+      description: Quién necesita qué y para qué.
+      placeholder: "Como <rol>, quiero <acción>, para <beneficio>."
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Por qué importa, qué la motiva y qué parte del plan o de los requisitos cubre (por ejemplo HU-06 o la sección 8 de `docs/PLAN_MEJORA.md`).
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Condiciones verificables, una por línea. Si no se puede comprobar, no es un criterio.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: input
+    id: estimacion
+    attributes:
+      label: Estimación (horas)
+      placeholder: "3"
+    validations:
+      required: true
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      description: "*must* si sin esto no hay entrega, *should* si es importante pero hay alternativa, *could* si es deseable. Al clasificar se aplica la etiqueta `prioridad:*`."
+      options:
+        - must
+        - should
+        - could
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas
+      description: Dependencias con otros issues, riesgos, enlaces. Opcional.

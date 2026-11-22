@@ -1,0 +1,52 @@
+name: Tarea técnica
+description: Trabajo de ingeniería que no es una funcionalidad para un usuario (infraestructura, CI, refactorización, documentación).
+title: "[Tarea] "
+labels: ["tipo:tarea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        El repositorio es **público**. No pegues datos reales de la entidad, datos personales ni credenciales.
+
+        Un issue está **listo** cuando tiene criterios de aceptación, estimación en horas, responsable e hito (ver `CONTRIBUTING.md`).
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Qué hay que hacer y por qué hace falta ahora.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Condiciones verificables, una por línea.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: input
+    id: estimacion
+    attributes:
+      label: Estimación (horas)
+      placeholder: "2"
+    validations:
+      required: true
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      description: "Al clasificar se aplica la etiqueta `prioridad:*`."
+      options:
+        - must
+        - should
+        - could
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas
+      description: Dependencias con otros issues, riesgos, enlaces. Opcional.
