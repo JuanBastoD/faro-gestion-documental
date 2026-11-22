@@ -64,6 +64,18 @@ La configuración sale de variables de entorno que se validan al arrancar (`apps
 
 Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se editan una vez fusionadas: un cambio de esquema es una migración nueva.
 
+## Integración continua
+
+`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con tres trabajos:
+
+| Trabajo | Qué comprueba |
+|---|---|
+| `api` | `npm ci`, lint, pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
+| `legacy` | Las 7 pruebas del prototipo v1 |
+| `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
+
+Si un paso falla, el PR queda en rojo. `main` exige que los tres pasen antes de fusionar. Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+
 ## Prototipo v1
 
 Sigue funcionando por separado. Instrucciones en [`legacy/prototipo-v1/README.md`](legacy/prototipo-v1/README.md).
