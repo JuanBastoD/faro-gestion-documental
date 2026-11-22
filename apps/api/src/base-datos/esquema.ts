@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   foreignKey,
   index,
@@ -67,6 +68,9 @@ export const documentos = pgTable(
   ],
 );
 
+/** Columna `bytea`, que Drizzle no trae: se lee y se escribe como Buffer. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
+
 export const versiones = pgTable(
   'versiones',
   {
@@ -81,6 +85,16 @@ export const versiones = pgTable(
     sha256: text('sha256').notNull(),
     tamano: bigint('tamano', { mode: 'number' }).notNull(),
     motivo: text('motivo').notNull(),
+    /**
+     * `ok`: se extrajo la capa de texto del PDF y hay firma de similitud. `sin_texto`: no tiene texto
+     * suficiente (escaneado sin OCR, PDF dañado, casi vacío) y solo se verifica por huella exacta.
+     * Las filas anteriores a la migración 0005 quedan en `sin_texto`.
+     */
+    textoEstado: text('texto_estado').notNull().default('sin_texto'),
+    /** Texto normalizado (minúsculas, sin tildes ni signos). Alimenta la búsqueda por contenido (#13). */
+    textoNormalizado: text('texto_normalizado'),
+    /** Firma de similitud (MinHash, 1 KB). Ver ADR-006. */
+    firma: bytea('firma'),
     /** Si esta versión restaura una anterior, el número de la versión de la que viene (mismo documento). */
     restauradaDe: integer('restaurada_de'),
     autorId: integer('autor_id')
@@ -101,6 +115,12 @@ export const versiones = pgTable(
       columns: [tabla.documentoId, tabla.restauradaDe],
       foreignColumns: [tabla.documentoId, tabla.numero],
     }),
+    check('versiones_texto_estado_ck', sql`${tabla.textoEstado} in ('ok', 'sin_texto')`),
+    // Con texto hay texto y firma; sin texto no hay ninguno de los dos.
+    check(
+      'versiones_texto_coherente_ck',
+      sql`(${tabla.textoEstado} = 'ok') = (${tabla.textoNormalizado} is not null and ${tabla.firma} is not null)`,
+    ),
     check('versiones_restaurada_anterior_ck', sql`${tabla.restauradaDe} is null or ${tabla.restauradaDe} < ${tabla.numero}`),
     // Para avisar si otro documento ya tiene el mismo archivo.
     index('versiones_sha256_idx').on(tabla.sha256),

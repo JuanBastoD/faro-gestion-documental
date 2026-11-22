@@ -34,6 +34,8 @@ describe('Carga y consulta de documentos (contra PostgreSQL real)', () => {
 
   beforeEach(async () => {
     await limpiarTablas(ctx.pool);
+    // El almacén también empieza vacío en cada prueba: algunas cuentan los objetos que quedan.
+    for (const objeto of await ctx.almacen.listar('documentos/')) await ctx.almacen.borrar(objeto.clave);
     await crearUsuario(ctx.db, { usuario: 'admin', rol: 'administrador' });
     idEditor = await crearUsuario(ctx.db, { usuario: 'editor', rol: 'editor' });
     await crearUsuario(ctx.db, { usuario: 'lector', rol: 'consulta' });
@@ -148,12 +150,13 @@ describe('Carga y consulta de documentos (contra PostgreSQL real)', () => {
       await cargar(cookieEditor, { datos: pdfDeTamano(19) }).expect(201);
     }, 60000);
 
-    it('guarda el mismo contenido dos veces bajo la misma clave sin romper nada', async () => {
+    it('cargar otra vez el mismo archivo es un duplicado exacto: 409, no crea nada y no toca el objeto', async () => {
       const pdf = generarPdf(['Contenido repetido']);
       await cargar(cookieEditor, { datos: pdf }, { titulo: 'Primero', expediente: 'EXP-A' }).expect(201);
-      await cargar(cookieEditor, { datos: pdf }, { titulo: 'Segundo', expediente: 'EXP-B' }).expect(201);
-      expect(await contar('documentos')).toBe(2);
-      expect(await ctx.almacen.existe(claveDeObjeto(sha256(pdf)))).toBe(true);
+      const { body } = await cargar(cookieEditor, { datos: pdf }, { titulo: 'Segundo', expediente: 'EXP-B' }).expect(409);
+      expect(body).toMatchObject({ codigo: 'duplicado_exacto', existente: { titulo: 'Primero', version: 1 } });
+      expect(await contar('documentos')).toBe(1);
+      expect((await ctx.almacen.listar('documentos/')).map((o) => o.clave)).toEqual([claveDeObjeto(sha256(pdf))]);
     });
   });
 
@@ -272,22 +275,30 @@ describe('Carga y consulta de documentos (contra PostgreSQL real)', () => {
     });
 
     it('si falla pero otro documento ya usa ese archivo, el archivo no se borra', async () => {
-      const pdf = generarPdf(['Archivo compartido']);
-      await cargar(cookieEditor, { datos: pdf }, { titulo: 'Original', expediente: 'EXP-1' }).expect(201);
+      // Desde #12 no se puede cargar dos veces el mismo PDF como documentos, pero sí agregarlo como versión
+      // de otro documento: ahí el objeto queda compartido y la compensación no debe borrarlo.
+      const compartido = generarPdf(['Archivo compartido']);
+      await cargar(cookieEditor, { datos: compartido }, { titulo: 'Original', expediente: 'EXP-1' }).expect(201);
+      const { body } = await cargar(cookieEditor, { datos: generarPdf(['Otro documento']) }, { titulo: 'Otro', expediente: 'EXP-2' }).expect(201);
 
       const auditoria = ctx.app.get(AuditoriaService);
       const original = auditoria.registrar.bind(auditoria);
       const espia = vi.spyOn(auditoria, 'registrar').mockImplementation(async (evento, ejecutor) => {
-        if (evento.accion === 'carga') throw new Error('falla simulada de auditoría');
+        if (evento.accion === 'version') throw new Error('falla simulada de auditoría');
         return original(evento, ejecutor);
       });
       try {
-        await cargar(cookieEditor, { datos: pdf }, { titulo: 'Copia', expediente: 'EXP-2' }).expect(500);
+        await http()
+          .post(`/documentos/${body.documento.id}/versiones`)
+          .set('Cookie', cookieEditor)
+          .field('motivo', 'Intento que falla')
+          .attach('archivo', compartido, { filename: 'compartido.pdf', contentType: 'application/pdf' })
+          .expect(500);
       } finally {
         espia.mockRestore();
       }
-      expect(await contar('documentos')).toBe(1);
-      expect(await ctx.almacen.existe(claveDeObjeto(sha256(pdf)))).toBe(true);
+      expect(await contar('versiones')).toBe(2);
+      expect(await ctx.almacen.existe(claveDeObjeto(sha256(compartido)))).toBe(true);
     });
   });
 

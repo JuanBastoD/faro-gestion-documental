@@ -36,6 +36,8 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
   const v1 = generarPdf(['Versión uno del contrato', 'Contenido original']);
   const v2 = generarPdf(['Versión dos del contrato', 'Se corrigió el valor']);
   const v3 = generarPdf(['Versión tres del contrato', 'Se agregó una cláusula']);
+  // Primera versión de un segundo documento: desde #12 el mismo PDF no se puede cargar dos veces.
+  const otroV1 = generarPdf(['Otro contrato distinto', 'Contenido de otro expediente']);
 
   beforeAll(async () => {
     ctx = await crearApp();
@@ -63,7 +65,7 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
   const http = () => request(ctx.app.getHttpServer());
 
   /** Carga un documento con v1 y devuelve su id. */
-  async function crearDocumento(): Promise<number> {
+  async function crearDocumento(contenido: Buffer = v1, nombre = 'contrato-v1.pdf'): Promise<number> {
     const { body } = await http()
       .post('/documentos')
       .set('Cookie', cookieEditor)
@@ -71,7 +73,7 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
       .field('expediente', 'EXP-100')
       .field('serieId', String(subserie))
       .field('fechaDocumento', '2026-03-02')
-      .attach('archivo', v1, { filename: 'contrato-v1.pdf', contentType: 'application/pdf' })
+      .attach('archivo', contenido, { filename: nombre, contentType: 'application/pdf' })
       .expect(201);
     return body.documento.id as number;
   }
@@ -211,9 +213,9 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
       expect(body.versionExistente).toBe(1);
     });
 
-    it('el mismo archivo en OTRO documento sí se permite (el aviso entre documentos llega en #12)', async () => {
+    it('una versión nueva no se compara con otros documentos: esa verificación es la de la carga (ADR-006)', async () => {
       const a = await crearDocumento();
-      const b = await crearDocumento();
+      const b = await crearDocumento(otroV1, 'otro.pdf');
       await subirVersion(a, cookieEditor, v2, 'Dos en A').expect(201);
       await subirVersion(b, cookieEditor, v2, 'Dos en B').expect(201);
       expect((await historial(a))[0].sha256).toBe((await historial(b))[0].sha256);
@@ -366,7 +368,7 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
         subirVersion(id, cookieEditor, v2, 'Doble A'),
         subirVersion(id, cookieAdmin, v2, 'Doble B'),
       ]);
-      expect([a.status, b.status].sort((x, y) => x - y)).toEqual([201, 409]);
+      expect([a.status, b.status].sort((x, y) => x - y), JSON.stringify([a.body, b.body])).toEqual([201, 409]);
       expect(await historial(id)).toHaveLength(2);
       expect(await ctx.almacen.existe(claveDeObjeto(sha256(v2)))).toBe(true);
     });
@@ -408,7 +410,7 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
     it('una restauración debe apuntar a una versión que exista en el mismo documento', async () => {
       const id = await crearDocumento();
       await expect(insertar(id, 9, sha256(v1), 7)).rejects.toThrow(/versiones_restaurada_de_fk/);
-      const otro = await crearDocumento();
+      const otro = await crearDocumento(otroV1, 'otro.pdf');
       await subirVersion(otro, cookieEditor, v2, 'Dos en otro').expect(201);
       // La versión 2 existe en el otro documento, no en este.
       await expect(insertar(id, 3, sha256(v1), 2)).rejects.toThrow(/versiones_restaurada_de_fk/);
@@ -420,10 +422,10 @@ describe('Versiones, historial y restauración (contra PostgreSQL real)', () => 
       await expect(insertar(id, 2, sha256(v1), 3)).rejects.toThrow(/versiones_restaurada_anterior_ck/);
     });
 
-    it('la misma huella en documentos distintos no choca', async () => {
-      const a = await crearDocumento();
-      const b = await crearDocumento();
-      expect((await historial(a))[0].sha256).toBe((await historial(b))[0].sha256);
+    it('la base permite la misma huella en documentos distintos: la unicidad es por documento', async () => {
+      await crearDocumento();
+      const b = await crearDocumento(otroV1, 'otro.pdf');
+      await expect(insertar(b, 2, sha256(v1), null)).resolves.toBeDefined();
     });
   });
 });

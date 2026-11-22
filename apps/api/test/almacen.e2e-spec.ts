@@ -129,6 +129,15 @@ describe.each(casos)('Contrato de AlmacenArchivos: $nombre', ({ omitir, crear })
     expect((await almacen.leer(clave('reemplazo.pdf'))).toString()).toBe('dos');
   });
 
+  it.skipIf(omitir)('guardar el mismo contenido en la misma clave desde muchas llamadas a la vez no falla', async () => {
+    // Dos cargas del mismo archivo a la vez: en Windows el renombrado sobre el mismo destino falla si no se reintenta.
+    const datos = Buffer.from('mismo contenido '.repeat(2000));
+    await Promise.all(Array.from({ length: 25 }, () => guardar('simultaneo.pdf', datos)));
+    expect((await almacen.leer(clave('simultaneo.pdf'))).equals(datos)).toBe(true);
+    const restos = (await almacen.listar(clave(''))).filter((o) => o.clave.endsWith('.tmp'));
+    expect(restos).toEqual([]);
+  });
+
   it.skipIf(omitir)('borrar quita el objeto y es idempotente', async () => {
     await guardar('borrable.pdf', Buffer.from('x'));
     await almacen.borrar(clave('borrable.pdf'));

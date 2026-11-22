@@ -1,4 +1,9 @@
-import { DatosInvalidosError, MOTIVO_CARGA_INICIAL, leerDatosCarga } from './datos-carga.js';
+import {
+  DatosInvalidosError,
+  MOTIVO_CARGA_INICIAL,
+  leerDatosCarga,
+  motivoDe,
+} from './datos-carga.js';
 
 const VALIDOS = {
   titulo: 'Acta de inicio',
@@ -8,14 +13,15 @@ const VALIDOS = {
 };
 
 describe('leerDatosCarga', () => {
-  it('acepta los datos mínimos y completa el motivo', () => {
-    expect(leerDatosCarga(VALIDOS)).toEqual({
+  it('acepta los datos mínimos; sin motivo se usa el de carga inicial', () => {
+    const datos = leerDatosCarga(VALIDOS);
+    expect(datos).toEqual({
       titulo: 'Acta de inicio',
       expediente: 'EXP-001',
       serieId: 3,
       fechaDocumento: '2026-03-02',
-      motivo: MOTIVO_CARGA_INICIAL,
     });
+    expect(motivoDe(datos)).toBe(MOTIVO_CARGA_INICIAL);
   });
 
   it('recorta espacios y respeta el motivo dado', () => {
@@ -25,7 +31,9 @@ describe('leerDatosCarga', () => {
   });
 
   it('un motivo vacío o de espacios se reemplaza por el de carga inicial', () => {
-    expect(leerDatosCarga({ ...VALIDOS, motivo: '   ' }).motivo).toBe(MOTIVO_CARGA_INICIAL);
+    const datos = leerDatosCarga({ ...VALIDOS, motivo: '   ' });
+    expect(datos.motivo).toBeUndefined();
+    expect(motivoDe(datos)).toBe(MOTIVO_CARGA_INICIAL);
   });
 
   it.each([
@@ -61,5 +69,43 @@ describe('leerDatosCarga', () => {
         expect(problemas).toContain(campo);
       }
     }
+  });
+
+  describe('decisión ante un duplicado probable', () => {
+    it('nueva_version exige documentoId y motivo', () => {
+      const datos = leerDatosCarga({ ...VALIDOS, decision: 'nueva_version', documentoId: '12', motivo: 'Mejor escaneo' });
+      expect(datos).toMatchObject({ decision: 'nueva_version', documentoId: 12, motivo: 'Mejor escaneo' });
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'nueva_version', motivo: 'x' })).toThrow(/documentoId/);
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'nueva_version', documentoId: '12' })).toThrow(/motivo/);
+    });
+
+    it('documento_distinto exige justificación', () => {
+      const datos = leerDatosCarga({ ...VALIDOS, decision: 'documento_distinto', justificacion: ' Otro contrato, misma plantilla ' });
+      expect(datos).toMatchObject({ decision: 'documento_distinto', justificacion: 'Otro contrato, misma plantilla' });
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'documento_distinto' })).toThrow(/justificacion/);
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'documento_distinto', justificacion: '   ' })).toThrow(/justificacion/);
+    });
+
+    it('rechaza campos que no corresponden a la decisión', () => {
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'documento_distinto', justificacion: 'x', documentoId: '3' })).toThrow(/documentoId/);
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'nueva_version', documentoId: '3', motivo: 'x', justificacion: 'y' })).toThrow(/justificacion/);
+      expect(() => leerDatosCarga({ ...VALIDOS, documentoId: '3' })).toThrow(/documentoId/);
+      expect(() => leerDatosCarga({ ...VALIDOS, justificacion: 'y' })).toThrow(/justificacion/);
+    });
+
+    it('rechaza una decisión desconocida y una justificación demasiado larga', () => {
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'ignorar' })).toThrow(/decision/);
+      expect(() => leerDatosCarga({ ...VALIDOS, decision: 'documento_distinto', justificacion: 'x'.repeat(501) })).toThrow(/justificacion/);
+    });
+
+    it('todos los problemas se informan juntos', () => {
+      try {
+        leerDatosCarga({ ...VALIDOS, decision: 'nueva_version' });
+        throw new Error('debió fallar');
+      } catch (error) {
+        expect(error).toBeInstanceOf(DatosInvalidosError);
+        expect((error as DatosInvalidosError).problemas).toHaveLength(2);
+      }
+    });
   });
 });

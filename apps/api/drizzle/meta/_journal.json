@@ -36,6 +36,13 @@
       "when": 1795378136284,
       "tag": "0004_versiones_restauracion",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795379797694,
+      "tag": "0005_versiones_texto_y_firma",
+      "breakpoints": true
     }
   ]
 }

@@ -64,7 +64,7 @@ Si el proceso muere entre los pasos 2 y 3 queda un objeto sin fila. `npm run alm
 - **Un huérfano por muerte del proceso** se acumula hasta que alguien ejecute el script. No hay una limpieza programada [PENDIENTE; #21 puede incluirla].
 - **Los 20 MB se leen completos en memoria** (multer sin disco). Con pocas cargas concurrentes es aceptable; si crecieran, habría que pasar a streaming.
 - **Dos documentos distintos con el mismo archivo comparten el objeto.** Borrar un objeto exige comprobar las referencias (lo hace la compensación); no hay hoy una operación de borrado de documentos.
-- **El aviso de duplicado llega en #12.** Hasta entonces cargar el mismo PDF dos veces como documentos distintos se permite.
+- **El aviso de duplicado llegó en #12 (ADR-006).** Desde entonces un archivo idéntico a uno existente se rechaza con 409 y uno muy parecido pide una decisión.
 - El nombre original del archivo se limpia (sin carpetas ni caracteres de control, 150 caracteres como máximo) pero se conserva con sus tildes.
 
 ## 5. Referencias

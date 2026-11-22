@@ -9,6 +9,28 @@ import {
   type ObjetoAlmacenado,
 } from './almacen-archivos.js';
 
+/** Pausas, en ms, entre los reintentos de un renombrado que Windows rechaza por una carrera. */
+const PAUSAS_DE_REINTENTO = [10, 25, 50, 100, 200];
+
+/**
+ * Renombra reemplazando el destino. En Windows, si otro proceso o petición está renombrando o
+ * leyendo el mismo destino en ese instante (dos cargas del mismo archivo a la vez), `rename` falla
+ * con EPERM, EACCES o EBUSY aunque nada esté mal: basta reintentar unos milisegundos después.
+ */
+async function renombrarReemplazando(origen: string, destino: string): Promise<void> {
+  for (let intento = 0; ; intento++) {
+    try {
+      await rename(origen, destino);
+      return;
+    } catch (error) {
+      const codigo = (error as NodeJS.ErrnoException).code;
+      const transitorio = codigo === 'EPERM' || codigo === 'EACCES' || codigo === 'EBUSY';
+      if (!transitorio || intento >= PAUSAS_DE_REINTENTO.length) throw error;
+      await new Promise((r) => setTimeout(r, PAUSAS_DE_REINTENTO[intento]));
+    }
+  }
+}
+
 /** Guarda cada objeto como un archivo bajo una carpeta. Para desarrollo y pruebas sin Docker. */
 export class AlmacenDisco implements AlmacenArchivos {
   private readonly raiz: string;
@@ -34,7 +56,7 @@ export class AlmacenDisco implements AlmacenArchivos {
     const temporal = `${destino}.${randomUUID()}.tmp`;
     try {
       await writeFile(temporal, datos);
-      await rename(temporal, destino);
+      await renombrarReemplazando(temporal, destino);
     } catch (error) {
       await rm(temporal, { force: true });
       throw error;

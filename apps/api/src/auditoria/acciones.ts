@@ -12,6 +12,7 @@ export const ACCION = {
   DESCARGA: 'descarga',
   VERSION: 'version',
   RESTAURACION: 'restauracion',
+  DECISION_DUPLICADO: 'decision_duplicado',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];
