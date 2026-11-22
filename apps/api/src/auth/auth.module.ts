@@ -4,6 +4,8 @@ import { AuditoriaModule } from '../auditoria/auditoria.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
+import { IntentosIngresoRepository } from './intentos-ingreso.repository.js';
+import { LimiteIngreso } from './limite-ingreso.js';
 import { RolesGuard } from './roles.guard.js';
 import { SesionesRepository } from './sesiones.repository.js';
 import { UsuariosRepository } from './usuarios.repository.js';
@@ -14,6 +16,8 @@ import { UsuariosRepository } from './usuarios.repository.js';
   providers: [
     UsuariosRepository,
     SesionesRepository,
+    IntentosIngresoRepository,
+    LimiteIngreso,
     AuthService,
     // El orden importa: primero se identifica a la persona y después se revisa su rol.
     { provide: APP_GUARD, useClass: AuthGuard },

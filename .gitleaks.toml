@@ -1,0 +1,9 @@
+# Configuración de gitleaks para el CI (trabajo `secretos`, ADR-009).
+# Se parte de las reglas por defecto y solo se permite lo que se justifica aquí.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "docker-compose.yml: el contenedor que crea el bucket llama a `curl --user` con las variables de entorno S3_ACCESS_KEY y S3_SECRET_KEY (escritas con doble signo de dólar), no con un secreto literal."
+targetRules = ["curl-auth-user"]
+paths = ['''infra/docker-compose\.yml''']

@@ -57,6 +57,8 @@ npm run start:dev -w apps/api      # API en http://127.0.0.1:3000
 
 **Ingreso y roles** ([ADR-003](docs/adr/0003-autenticacion-y-sesiones.md)): todo exige sesión salvo `/health` y `POST /auth/login`. Las sesiones viven en PostgreSQL y las claves usan argon2id.
 
+**Seguridad mínima** ([ADR-009](docs/adr/0009-seguridad-minima-para-exponer-la-api.md)): tras **5 intentos de ingreso** por usuario (existiera o no) o **30 por IP** en 15 minutos, la API responde **429** con `Retry-After`; las peticiones que modifican datos desde otro sitio (según `Origin` y `Sec-Fetch-Site`) reciben **403** `origen_no_permitido`; las cabeceras son las de `helmet`. Configuración: `CONFIAR_EN_PROXY` (cuántos proxies hay delante; Cloud Run: 1) y `ORIGENES_PERMITIDOS`, ver `.env.example`.
+
 ```
 npm run db:seed -w apps/api      # migra y crea admin.demo, editor.demo, consulta.demo y el cuadro de clasificación (ficticios)
 ```
@@ -65,7 +67,7 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 
 | Ruta | Quién | Qué hace |
 |---|---|---|
-| `POST /auth/login` | Cualquiera | Recibe `{ usuario, clave }` y pone la cookie `faro_sesion` |
+| `POST /auth/login` | Cualquiera | Recibe `{ usuario, clave }` y pone la cookie `faro_sesion`. Con demasiados intentos responde 429 y `Retry-After` |
 | `GET /auth/yo` | Con sesión | Devuelve quién tiene la sesión |
 | `POST /auth/logout` | Con sesión | Cierra la sesión |
 | `GET /series` | Con sesión | Cuadro de clasificación como árbol de dos niveles (series y subseries). Solo las subseries admiten documentos; lo impone el servicio y la base de datos |
@@ -105,7 +107,7 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 
 ## Integración continua
 
-`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con cuatro trabajos:
+`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con cinco trabajos:
 
 | Trabajo | Qué comprueba |
 |---|---|
@@ -113,8 +115,9 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 | `legacy` | Las 7 pruebas del prototipo v1 |
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
 | `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
+| `secretos` | gitleaks sobre **todo el historial** (el repositorio es público); lo permitido está en `.gitleaks.toml`, cada excepción con su justificación |
 
-Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` también corre en cada PR, pero la protección de la rama aún no lo exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` y `secretos` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
 
 ## Despliegue en la nube y contenedor
 

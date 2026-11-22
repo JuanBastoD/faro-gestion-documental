@@ -50,6 +50,13 @@
       "when": 1795381159531,
       "tag": "0006_busqueda_texto_completo",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795384788438,
+      "tag": "0007_intentos_ingreso",
+      "breakpoints": true
     }
   ]
 }

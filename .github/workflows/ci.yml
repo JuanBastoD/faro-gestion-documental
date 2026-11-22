@@ -112,3 +112,21 @@ jobs:
           echo "uid del proceso: $usuario"
           test "$usuario" != "0"
           docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -d /app/apps/api/drizzle'
+
+  # Busca secretos (claves, tokens, contraseñas) en TODO el historial del repositorio, no solo en el último
+  # commit: el repositorio es público y un secreto subido por error ya está expuesto aunque se borre después.
+  # Usa la imagen oficial fijada por huella (digest) en lugar de la acción, que pide licencia a las organizaciones.
+  # Lo permitido está en .gitleaks.toml y cada excepción lleva su justificación.
+  secretos:
+    name: secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Buscar secretos en el historial completo (gitleaks v8.30.1)
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git /repo --config /repo/.gitleaks.toml --redact --no-banner

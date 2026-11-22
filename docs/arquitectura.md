@@ -13,7 +13,7 @@ flowchart TB
 
   subgraph api["API NestJS: un solo proceso, un solo despliegue"]
     direction TB
-    guardas["Guardas globales<br/>AuthGuard + RolesGuard"]
+    guardas["Guardas globales<br/>OrigenGuard + AuthGuard + RolesGuard"]
 
     subgraph negocio["Módulos de negocio"]
       direction LR
@@ -25,6 +25,7 @@ flowchart TB
     end
 
     salud["salud<br/>GET /health"]
+    seguridad["seguridad<br/>guarda de origen (CSRF)<br/>y helmet (ADR-009)"]
     similitud["similitud<br/>funciones puras: normalizar,<br/>extraer texto, firma MinHash"]
 
     subgraph infra["Módulos globales (infraestructura)"]
@@ -46,6 +47,7 @@ flowchart TB
   guardas --> documentos
   guardas --> auditoria
   guardas --> salud
+  seguridad -.->|"registra OrigenGuard"| guardas
 
   guardas -.->|"acceso_denegado"| auditoria
   auth -->|"AuditoriaService"| auditoria
@@ -68,14 +70,15 @@ flowchart TB
 
 | Componente | Responsabilidad | Pieza principal |
 |---|---|---|
-| Guardas globales | Sin sesión → 401; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
-| `auth` | Ingreso, cierre de sesión, sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id` | `auth.service.ts`, `sesiones.repository.ts` |
+| Guardas globales | Otro origen en una petición que modifica → 403 (`OrigenGuard`, módulo `seguridad`); sin sesión → 401; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
+| `auth` | Ingreso, cierre de sesión, sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id`, y el límite de intentos de ingreso por usuario e IP (ADR-009) | `auth.service.ts`, `sesiones.repository.ts` |
 | `usuarios` | Crear, listar, cambiar rol y desactivar; protege al último administrador (ADR-008) | `usuarios.service.ts` |
 | `ccd` | Cuadro de clasificación provisional: árbol de series y subseries | `series.service.ts` |
 | `documentos` | Cargar, versionar, restaurar, descargar, verificar duplicados (ADR-006) y buscar (ADR-007) | `documentos.service.ts`, `versiones.service.ts`, `duplicados.service.ts` |
 | `auditoria` | Eventos inmutables (disparador en la base) y su consulta, solo para el administrador | `auditoria.service.ts` |
 | `similitud` | Normalización de texto, extracción de texto de PDF y firmas MinHash. Sin dependencias de Nest ni de la base | `similitud/*.ts` |
 | `almacen` | Puerto `AlmacenArchivos` (guardar, leer, borrar) y sus dos adaptadores (ADR-004) | `almacen-disco.ts`, `almacen-s3.ts` |
+| `seguridad` | Guarda global de origen contra CSRF y `configurarSeguridad` (helmet y proxies de confianza), que usan `main.ts` y las pruebas (ADR-009) | `origen.guard.ts`, `configurar.ts` |
 | `config`, `base-datos` | Variables de entorno validadas al arrancar; conexión, esquema y migraciones | `entorno.ts`, `esquema.ts` |
 
 Fuera de la API, con la misma imagen (ver [`docs/despliegue.md`](despliegue.md)): `migrar-cli` (migrar), `crear-administrador` (primer administrador), `sembrar` (datos de demostración, solo desarrollo) y `limpiar-huerfanos` (archivos sin versión). Los dos primeros no dependen de la API; todos usan el esquema directamente porque corren fuera de Nest.

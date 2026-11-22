@@ -8,6 +8,9 @@ import { hashear } from '../src/auth/hash-clave.js';
 import type { Rol } from '../src/auth/roles.js';
 import { DB, POOL, type BaseDatos } from '../src/base-datos/base-datos.module.js';
 import { migrar } from '../src/base-datos/migrar.js';
+import { ENTORNO } from '../src/config/config.module.js';
+import type { Entorno } from '../src/config/entorno.js';
+import { configurarSeguridad } from '../src/seguridad/configurar.js';
 import { usuarios } from '../src/base-datos/esquema.js';
 
 export const CLAVE_DE_PRUEBA = 'clave-de-prueba-123';
@@ -26,6 +29,8 @@ export async function crearApp(controladores: Type[] = []): Promise<AppDePrueba>
     controllers: controladores,
   }).compile();
   const app = modulo.createNestApplication();
+  // Igual que main.ts: se prueba la misma configuración de seguridad que corre en producción.
+  configurarSeguridad(app, app.get<Entorno>(ENTORNO));
   await app.init();
   const pool = app.get<pg.Pool>(POOL);
   const db = app.get<BaseDatos>(DB);
@@ -37,7 +42,7 @@ export async function crearApp(controladores: Type[] = []): Promise<AppDePrueba>
 /** Deja todas las tablas vacías y reinicia los contadores. Solo para la base de pruebas. */
 export async function limpiarTablas(pool: pg.Pool): Promise<void> {
   await pool.query(
-    'truncate auditoria, sesiones, versiones, documentos, series_ccd, usuarios restart identity cascade',
+    'truncate auditoria, sesiones, intentos_ingreso, versiones, documentos, series_ccd, usuarios restart identity cascade',
   );
 }
 

@@ -86,6 +86,12 @@ erDiagram
         timestamptz ultimo_uso
         timestamptz vence_en
     }
+    intentos_ingreso {
+        integer id PK
+        text usuario
+        text ip
+        timestamptz creado_en
+    }
 ```
 
 Cómo leerlo:
@@ -191,6 +197,17 @@ Sesiones de ingreso (ADR-003). Viven en la base, no en la memoria del proceso: s
 | `ultimo_uso` | timestamptz | No | — | Último uso. Por defecto `now()`. |
 | `vence_en` | timestamptz | No | — | Vence por inactividad; se renueva al usarla. |
 
+### `intentos_ingreso`
+
+Intentos de ingreso recientes, para limitarlos por usuario y por IP (ADR-009). **No tiene claves foráneas a propósito:** se guarda lo que se escribió en el campo usuario, exista o no, para que un usuario inexistente se limite igual que uno real y la respuesta no delate cuáles existen. Es una tabla de trabajo, no un registro histórico (para eso está `auditoria`): un ingreso correcto borra los intentos del usuario y lo que tiene más de un día se borra en el siguiente ingreso correcto.
+
+| Campo | Tipo | Nulo | Clave | Descripción |
+|---|---|---|---|---|
+| `id` | integer | No | PK | Identidad generada. |
+| `usuario` | text | No | — | Lo escrito en el campo usuario, en minúsculas, sin espacios de los lados y truncado a 64 caracteres. |
+| `ip` | text | No | — | La IP que ve la API, según `CONFIAR_EN_PROXY` (ADR-009), o `desconocida`. |
+| `creado_en` | timestamptz | No | — | Cuándo se hizo el intento. Por defecto `now()`. La ventana de 15 minutos se mide con el reloj de PostgreSQL. |
+
 ## 5. Restricciones de varias columnas y `CHECK`
 
 Las claves primarias y las foráneas y únicas de una sola columna están en el diccionario. Estas son las demás.
@@ -216,6 +233,8 @@ Sin contar los de las claves primarias ni los de las restricciones únicas.
 | `versiones_sha256_idx` | `versiones` | `sha256` | Avisar si otro documento ya tiene el mismo archivo. |
 | `auditoria_creado_en_idx` | `auditoria` | `creado_en` | Listar la auditoría por fecha. |
 | `sesiones_usuario_idx` | `sesiones` | `usuario_id` | Borrar o buscar las sesiones de un usuario. |
+| `intentos_ingreso_usuario_idx` | `intentos_ingreso` | `(usuario, creado_en)` | Contar los intentos recientes de un usuario. |
+| `intentos_ingreso_ip_idx` | `intentos_ingreso` | `(ip, creado_en)` | Contar los intentos recientes de una IP. |
 
 ## 7. Disparadores
 
@@ -235,6 +254,7 @@ El catálogo está en `apps/api/src/auditoria/acciones.ts`. La columna es `text`
 |---|---|
 | `ingreso` | Un usuario ingresa. |
 | `ingreso_fallido` | Intento de ingreso con usuario inexistente, usuario inactivo o clave incorrecta. El detalle dice cuál (`usuario inexistente`, `usuario inactivo` o `clave incorrecta`), sin lo que se escribió. |
+| `ingreso_bloqueado` | Un intento de ingreso fallido agota el límite de intentos del usuario o de la IP (ADR-009): el siguiente intento ya recibirá 429. Se registra **una sola vez**, en ese intento; los rechazados después no se auditan para que insistir no llene la tabla. El detalle dice qué límite se alcanzó (`usuario`, `ip` o `usuario e ip`). |
 | `cierre_sesion` | Un usuario cierra sesión. |
 | `acceso_denegado` | Alguien con sesión intenta algo que su rol no permite. |
 | `carga` | Se carga un documento nuevo (versión 1). |
@@ -260,10 +280,10 @@ Están en `apps/api/drizzle/`, se versionan en git y no se editan una vez fusion
 | `0004_versiones_restauracion` | `versiones.restaurada_de`, su clave foránea compuesta y `CHECK`, y la huella única por documento solo para versiones con contenido nuevo. |
 | `0005_versiones_texto_y_firma` | `versiones.texto_estado`, `texto_normalizado` y `firma`, con sus `CHECK`. |
 | `0006_busqueda_texto_completo` | `documentos.busqueda`, su índice GIN y el relleno de los documentos que ya existían. |
+| `0007_intentos_ingreso` | `intentos_ingreso` y sus dos índices. |
 
 ## 10. Lo que el modelo todavía no tiene
 
-- **Límite de intentos de ingreso** [PROPUESTA]: #18 prevé guardar en la base un bloqueo temporal por usuario y por IP. Sería una tabla nueva, con su migración.
 - **Edición del título, el expediente y la fecha de un documento** [POR VERIFICAR]: hoy no hay forma de hacerlo. Quien la agregue debe recalcular `documentos.busqueda` en la misma transacción (ADR-007).
 - **Expedientes como entidad propia** [POR VERIFICAR]: `documentos.expediente` es texto libre. Si la entidad necesita metadatos del expediente (contratista, valor, fechas), el cambio natural es una tabla `expedientes`; depende de lo que defina el Comité de Archivo y no se anticipa aquí.
 - **Retención y disposición final (TRD/TVD)**: fuera del alcance del proyecto; el cuadro provisional está pensado para recibirlas después sin cambiar `documentos`.
