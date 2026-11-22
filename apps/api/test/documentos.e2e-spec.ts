@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import request from 'supertest';
 import { AuditoriaService } from '../src/auditoria/auditoria.service.js';
-import { claveDeObjeto } from '../src/documentos/documentos.service.js';
+import { claveDeObjeto } from '../src/documentos/archivo-preparado.js';
 import { sembrarCcdDemo } from '../src/semilla/ccd-demo.js';
 import {
   crearApp,
@@ -110,6 +110,19 @@ describe('Carga y consulta de documentos (contra PostgreSQL real)', () => {
       const cargas = await eventos(ctx.pool, 'carga');
       expect(cargas).toHaveLength(1);
       expect(cargas[0].usuario_id).toBe(idEditor);
+    });
+
+    it('los campos de texto con tildes y eñes se guardan tal cual (título, expediente y motivo)', async () => {
+      const { body } = await cargar(
+        cookieEditor,
+        { datos: generarPdf(['Tildes en campos']) },
+        { titulo: 'Interventoría: cláusula de garantía año 2', expediente: 'EXP-Ñandú', motivo: 'Corrección de cláusula' },
+      ).expect(201);
+      expect(body.documento).toMatchObject({
+        titulo: 'Interventoría: cláusula de garantía año 2',
+        expediente: 'EXP-Ñandú',
+      });
+      expect(body.version.motivo).toBe('Corrección de cláusula');
     });
 
     it('el administrador también puede cargar', async () => {

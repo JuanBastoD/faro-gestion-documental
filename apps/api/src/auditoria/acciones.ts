@@ -10,6 +10,8 @@ export const ACCION = {
   ACCESO_DENEGADO: 'acceso_denegado',
   CARGA: 'carga',
   DESCARGA: 'descarga',
+  VERSION: 'version',
+  RESTAURACION: 'restauracion',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];

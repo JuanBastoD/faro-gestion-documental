@@ -1,10 +1,8 @@
-import { createHash } from 'node:crypto';
 import {
   Inject,
   Injectable,
   Logger,
   NotFoundException,
-  UnsupportedMediaTypeException,
   BadRequestException,
 } from '@nestjs/common';
 import { ACCION } from '../auditoria/acciones.js';
@@ -12,7 +10,8 @@ import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { ALMACEN, ObjetoNoEncontradoError, type AlmacenArchivos } from '../almacen/almacen-archivos.js';
 import type { UsuarioSesion } from '../auth/roles.js';
 import { SeriesService } from '../ccd/series.service.js';
-import { esPdf, limpiarNombre } from './archivo-pdf.js';
+import { prepararArchivo, type ArchivoRecibido } from './archivo-preparado.js';
+import { compensarObjeto } from './compensar-objeto.js';
 import { leerDatosCarga } from './datos-carga.js';
 import {
   DocumentosRepository,
@@ -20,12 +19,6 @@ import {
   type ResumenDocumento,
   type VersionDetalle,
 } from './documentos.repository.js';
-
-export interface ArchivoRecibido {
-  /** Nombre ya decodificado. */
-  nombre: string;
-  datos: Buffer;
-}
 
 export interface DocumentoCreado {
   documento: DocumentoBasico;
@@ -42,9 +35,6 @@ export interface PaginaDeDocumentos {
   pagina: number;
   tamano: number;
 }
-
-/** Clave del objeto: depende solo del contenido, así guardar el mismo archivo dos veces es inocuo. */
-export const claveDeObjeto = (sha256: string) => `documentos/${sha256}.pdf`;
 
 @Injectable()
 export class DocumentosService {
@@ -74,14 +64,8 @@ export class DocumentosService {
     if (!archivo) {
       throw new BadRequestException('Falta el archivo PDF (campo "archivo")');
     }
-    if (!esPdf(archivo.datos)) {
-      throw new UnsupportedMediaTypeException('El archivo no es un PDF');
-    }
+    const { sha256, clave, nombreOriginal } = prepararArchivo(archivo);
     await this.series.exigirSubserie(datos.serieId);
-
-    const sha256 = createHash('sha256').update(archivo.datos).digest('hex');
-    const clave = claveDeObjeto(sha256);
-    const nombreOriginal = limpiarNombre(archivo.nombre);
 
     await this.almacen.guardar(clave, archivo.datos, 'application/pdf');
     try {
@@ -116,7 +100,7 @@ export class DocumentosService {
       });
       return await this.detalleDeCarga(documentoId);
     } catch (error) {
-      await this.compensar(clave);
+      await compensarObjeto(clave, this.repositorio, this.almacen, this.logger);
       throw error;
     }
   }
@@ -167,20 +151,5 @@ export class DocumentosService {
   private async detalleDeCarga(documentoId: number): Promise<DocumentoCreado> {
     const { versiones, ...documento } = await this.obtener(documentoId);
     return { documento, version: versiones[0] };
-  }
-
-  /** Borra el objeto de una carga fallida, salvo que otro registro lo use. Un fallo aquí no tapa el error original. */
-  private async compensar(clave: string): Promise<void> {
-    try {
-      if (!(await this.repositorio.objetoReferenciado(clave))) {
-        await this.almacen.borrar(clave);
-      }
-    } catch (error) {
-      this.logger.error(
-        `No se pudo limpiar el objeto ${clave} tras una carga fallida; quedará como huérfano: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
   }
 }

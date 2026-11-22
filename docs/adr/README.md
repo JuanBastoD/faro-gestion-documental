@@ -8,6 +8,7 @@ Cada decisión importante de diseño queda registrada aquí con su fecha, su mot
 | [0002](0002-arquitectura-modular.md) | Monolito modular con puertos y adaptadores | Aceptada | 22 de noviembre de 2026 |
 | [0003](0003-autenticacion-y-sesiones.md) | Autenticación con sesiones en el servidor y base de datos de pruebas aparte | Aceptada | 22 de noviembre de 2026 |
 | [0004](0004-almacen-de-archivos-y-carga.md) | Almacén de archivos y carga sin estados a medias | Aceptada | 22 de noviembre de 2026 |
+| [0005](0005-versionado-y-restauracion.md) | Versionado de documentos y restauración que solo agrega | Aceptada | 22 de noviembre de 2026 |
 
 ## Formato
 

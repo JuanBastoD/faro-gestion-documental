@@ -47,13 +47,19 @@ describe('API contra PostgreSQL real', () => {
     );
   });
 
-  it('la huella SHA-256 es única por documento, no global', async () => {
-    const { rows } = await pool.query<{ conname: string }>(
+  it('la huella SHA-256 es única por documento (no global) y las restauraciones quedan fuera', async () => {
+    const { rows: indices } = await pool.query<{ indexdef: string }>(
+      `select indexdef from pg_indexes where tablename = 'versiones' and indexname = 'versiones_documento_sha256_uq'`,
+    );
+    expect(indices).toHaveLength(1);
+    expect(indices[0].indexdef).toMatch(
+      /UNIQUE INDEX .* \(documento_id, sha256\) WHERE \(restaurada_de IS NULL\)/,
+    );
+    // Y no hay una restricción única global sobre la huella.
+    const { rows: restricciones } = await pool.query<{ conname: string }>(
       `select conname from pg_constraint where conrelid = 'versiones'::regclass and contype = 'u'`,
     );
-    const restricciones = rows.map((fila) => fila.conname);
-    expect(restricciones).toContain('versiones_documento_sha256_uq');
-    expect(restricciones).not.toContain('versiones_sha256_unique');
+    expect(restricciones.map((fila) => fila.conname)).not.toContain('versiones_sha256_unique');
   });
 
   it('aplicar las migraciones otra vez no falla ni duplica nada', async () => {
