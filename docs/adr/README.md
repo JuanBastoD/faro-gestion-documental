@@ -6,6 +6,7 @@ Cada decisión importante de diseño queda registrada aquí con su fecha, su mot
 |---|---|---|---|
 | [0001](0001-stack.md) | Stack tecnológico de la versión 2 | Aceptada | 22 de noviembre de 2026 |
 | [0002](0002-arquitectura-modular.md) | Monolito modular con puertos y adaptadores | Aceptada | 22 de noviembre de 2026 |
+| [0003](0003-autenticacion-y-sesiones.md) | Autenticación con sesiones en el servidor y base de datos de pruebas aparte | Aceptada | 22 de noviembre de 2026 |
 
 ## Formato
 

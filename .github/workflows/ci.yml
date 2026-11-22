@@ -54,6 +54,10 @@ jobs:
         run: npm run build
       - name: Migraciones (por CLI, sobre una base vacía)
         run: npm run db:migrate -w apps/api
+      - name: Siembra de usuarios ficticios (comprueba también que argon2 carga en Linux)
+        run: npm run db:seed -w apps/api
+        env:
+          SEMILLA_CLAVE: clave-ci-sin-valor-real
       - name: Pruebas de integración (contra PostgreSQL)
         run: npm run test:e2e
 
