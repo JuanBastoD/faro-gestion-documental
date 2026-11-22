@@ -1,0 +1,85 @@
+# Integración continua: se ejecuta en cada PR y en cada cambio de main.
+# Si cualquier paso falla, el trabajo falla y el PR queda en rojo.
+# Las acciones están fijadas por commit (SHA) y no por etiqueta; el comentario indica la versión.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Un push nuevo a la misma rama cancela la ejecución anterior que sigue en curso.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: faro
+          POSTGRES_PASSWORD: faro-ci-no-es-secreto
+          POSTGRES_DB: faro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U faro -d faro"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      # Base efímera del propio trabajo: no contiene datos ni credenciales reales.
+      DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@localhost:5432/faro
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Pruebas unitarias
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Migraciones (por CLI, sobre una base vacía)
+        run: npm run db:migrate -w apps/api
+      - name: Pruebas de integración (contra PostgreSQL)
+        run: npm run test:e2e
+
+  legacy:
+    name: legacy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: legacy/prototipo-v1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: legacy/prototipo-v1/package-lock.json
+      - run: npm ci
+      - name: Pruebas del prototipo v1
+        run: npm test
+
+  infra:
+    name: infra
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validar docker-compose con las variables de ejemplo
+        run: docker compose --env-file .env.example -f infra/docker-compose.yml config --quiet
