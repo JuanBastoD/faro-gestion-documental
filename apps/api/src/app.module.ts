@@ -1,12 +1,23 @@
 import { Module } from '@nestjs/common';
+import { AlmacenModule } from './almacen/almacen.module.js';
 import { AuditoriaModule } from './auditoria/auditoria.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { BaseDatosModule } from './base-datos/base-datos.module.js';
 import { CcdModule } from './ccd/ccd.module.js';
 import { ConfigModule } from './config/config.module.js';
+import { DocumentosModule } from './documentos/documentos.module.js';
 import { SaludModule } from './salud/salud.module.js';
 
 @Module({
-  imports: [ConfigModule, BaseDatosModule, AuditoriaModule, AuthModule, CcdModule, SaludModule],
+  imports: [
+    ConfigModule,
+    BaseDatosModule,
+    AlmacenModule,
+    AuditoriaModule,
+    AuthModule,
+    CcdModule,
+    DocumentosModule,
+    SaludModule,
+  ],
 })
 export class AppModule {}

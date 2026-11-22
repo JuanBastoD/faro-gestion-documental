@@ -9,3 +9,4 @@ coverage/
 !.env.example
 iniciar-demo.bat
 *.tsbuildinfo
+almacen-local/

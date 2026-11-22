@@ -10,6 +10,50 @@ describe('validarEntorno', () => {
       HOST: '127.0.0.1',
       PORT: 3000,
       DATABASE_URL: URL_VALIDA,
+      ALMACEN_TIPO: 'disco',
+      ALMACEN_RUTA: 'almacen-local',
+      S3_REGION: 'us-east-1',
+    });
+  });
+
+  describe('almacén de archivos', () => {
+    const S3 = {
+      ALMACEN_TIPO: 's3',
+      S3_ENDPOINT: 'http://localhost:9000',
+      S3_BUCKET: 'faro-documentos',
+      S3_ACCESS_KEY: 'acceso',
+      S3_SECRET_KEY: 'secreto-que-no-debe-aparecer',
+    };
+
+    it('con s3 y todas las variables, las acepta', () => {
+      const entorno = validarEntorno({ DATABASE_URL: URL_VALIDA, ...S3 });
+      expect(entorno.ALMACEN_TIPO).toBe('s3');
+      expect(entorno.S3_BUCKET).toBe('faro-documentos');
+    });
+
+    it('con s3 y una variable ausente, nombra la que falta', () => {
+      const { S3_BUCKET: _quitada, ...incompleta } = S3;
+      expect(() => validarEntorno({ DATABASE_URL: URL_VALIDA, ...incompleta })).toThrow(/S3_BUCKET/);
+    });
+
+    it('con disco no exige las variables de S3', () => {
+      expect(() => validarEntorno({ DATABASE_URL: URL_VALIDA, ALMACEN_TIPO: 'disco' })).not.toThrow();
+    });
+
+    it('rechaza un tipo desconocido sin mostrar secretos', () => {
+      const intento = () => validarEntorno({ DATABASE_URL: URL_VALIDA, ...S3, ALMACEN_TIPO: 'nube' });
+      expect(intento).toThrow(/ALMACEN_TIPO/);
+      try {
+        intento();
+      } catch (error) {
+        expect((error as Error).message).not.toContain('secreto-que-no-debe-aparecer');
+      }
+    });
+
+    it('rechaza un endpoint que no es una URL', () => {
+      expect(() =>
+        validarEntorno({ DATABASE_URL: URL_VALIDA, ...S3, S3_ENDPOINT: 'localhost:9000-no-url' }),
+      ).toThrow(/S3_ENDPOINT/);
     });
   });
 
