@@ -102,8 +102,8 @@ Si el issue toca el esquema: probar la migración sobre una base vacía **y** so
 
 ### 4.5 Fusiones
 
-- **Por defecto no se fusiona.** Los PR quedan abiertos con el CI en verde, a la espera del usuario. Cuando un issue depende de otro sin fusionar, su rama parte de la rama del anterior y su PR apunta a esa rama (`gh pr create --base <rama anterior>`). Al fusionar el primero en orden, GitHub reenfoca el siguiente a `main`.
-- El usuario puede **autorizar fusionar de forma continua** con una frase. Con esa autorización, cada PR se fusiona (squash, borrando la rama) solo si: el diff está revisado, el CI está en verde, no hay observaciones pendientes en 4.8 y los criterios de aceptación están verificados.
+- **Por defecto no se fusiona.** Los PR quedan abiertos con el CI en verde, a la espera del usuario. Cuando un issue depende de otro sin fusionar, su rama parte de la rama del anterior y su PR apunta a esa rama (`gh pr create --base <rama anterior>`). Al fusionar el primero en orden, GitHub reenfoca el siguiente a `main`. **Corrección del 22 de noviembre (16:50): una cadena de PR apilados se fusiona con «Create a merge commit», no con squash.** Simulé fusionar la cadena real (#35 a #47) sin tocar ninguna rama (`git merge-tree`): con squash, **7 de las 13 fusiones dan conflicto** con lo ya fusionado (sobre todo `README.md`, `apps/api/drizzle/meta/_journal.json`, `apps/api/src/auditoria/acciones.ts`, `docs/adr/README.md` y `apps/api/src/app.module.ts`), porque el squash reescribe el historial y el PR siguiente todavía trae los commits originales; con commit de fusión, **las 13 son limpias**. El repositorio permite los tres métodos. Una alternativa con squash es rebasar cada rama sobre `main` después de cada fusión (`git rebase --onto main <rama anterior> <rama>` y empujar), pero son diez rebases a mano.
+- El usuario puede **autorizar fusionar de forma continua** con una frase. Con esa autorización, cada PR se fusiona (con commit de fusión si tiene PR apilados detrás, como se explicó arriba; con squash solo si es independiente; y borrando la rama) solo si: el diff está revisado, el CI está en verde, no hay observaciones pendientes en 4.8 y los criterios de aceptación están verificados.
 - La autorización es **por alcance**: lo que no nombre, no cubre.
 
 ### 4.6 Manejo de fallos
@@ -293,3 +293,34 @@ Este issue añade la 7, un recorrido completo que las encadena y las pruebas uni
 17. [PROPUESTA] **La API sirve la interfaz compilada** (un solo origen). *Descartado:* servir la interfaz aparte (CORS y cookies entre sitios).
 18. [PROPUESTA] **Copias de seguridad a un bucket privado**, nunca como artefacto de Actions en un repositorio público.
 19. [PROPUESTA] **Regla de recorte** de la sección 7, para decidir sin consultar cuando el tiempo no alcance.
+20. [CONFIRMADO] **Los PR apilados se fusionan con commit de fusión, no con squash.** *Evidencia:* simulación del 22 nov con `git merge-tree` sobre la cadena real: squash da 7 conflictos en 13 fusiones, commit de fusión da 0 (sección 4.5). *Descartado:* squash con rebase manual de cada rama (diez rebases a mano, propenso a errores).
+
+## 9. Estado de ejecución (22 de noviembre de 2026, 16:47)
+
+Lo que quedó hecho en esta sesión sin supervisión. **Todo está en PR abiertos con el CI en verde, sin fusionar** (no hay autorización para fusionar). Este registro es lo que realmente pasó; si algo difiere de la sección 5, vale este.
+
+| Issue | PR | Rama | ADR | Migración | Diferencia con la sección 5 |
+|---|---|---|---|---|---|
+| #8 ingreso, sesiones y roles | #37 | `feat/8-auth-roles` | 003 | 0001 | — |
+| #14 auditoría inmutable | #38 | `feat/14-auditoria` | — | 0002 | — |
+| #9 cuadro de clasificación | #39 | `feat/9-ccd` | — | 0003 | — |
+| #10 almacén y carga | #40 | `feat/10-carga` | 004 | — | — |
+| #11 versiones y restauración | #41 | `feat/11-versiones` | 005 | 0004 | — |
+| #12 duplicados | #42 | `feat/12-duplicados` | 006 | 0005 | **MinHash propio en lugar de `pg_trgm`**: se midió (p95 de 15 s y sin discriminar documentos largos) y se descartó |
+| #13 búsqueda | #43 | `feat/13-busqueda` | 007 | 0006 | **Normaliza en la aplicación y usa `spanish`, sin `unaccent` ni `es_sin_tildes`** (el texto ya llega normalizado; `unaccent` es una extensión) |
+| #15 aceptación | #44 | `test/15-aceptacion` | — | — | Las 7 pruebas de v1, más 41 unitarias de versiones y duplicados |
+| #16 modelo de datos | #45 | `docs/16-modelo-de-datos` | — | — | Una prueba lo compara con la base: el CI falla si queda desactualizado |
+| #17 usuarios | #46 | `feat/17-usuarios` | 008 | — | Sin cambio de clave ni restablecimiento (hueco anotado en el ADR-008) |
+| #20 despliegue, parte autónoma | #47 | `feat/20-despliegue` | — | — | `Refs #20`: tres criterios son del usuario; el despliegue es manual, no automático desde `main` |
+
+Fuera de la cadena: **#35** (este plan) y **#36** (el CI no cancela en `main`), ambos contra `main`.
+
+**Lo que no se hizo:** #18 (CSRF, límite de intentos de ingreso, helmet y gitleaks), #19 (CSV del cuadro), #21 (copia de seguridad), #22 (matriz de roles y diagrama) y todo V2-M4 (#23 a #27). Se adelantó la parte autónoma de #20 a #18 porque el guion de despliegue desbloquea al usuario para sus cuentas de GCP y Neon (sección 6, punto 3). Mientras #18 no exista, **no conviene publicar la dirección del despliegue**: no hay límite de intentos de ingreso ni protección CSRF.
+
+**Para fusionar:** en orden `#35, #36, #37, #38, … #47`, cada uno con **«Create a merge commit»** (sección 4.5, decisión 20). Tras cada fusión, GitHub reenfoca el siguiente a `main`; conviene esperar a que el CI de `main` termine antes de la siguiente. Las migraciones se aplican a mano en cada base existente (`npm run db:migrate -w apps/api`; la API no migra al arrancar).
+
+**Hallazgos que cambian cosas más adelante:**
+- Nadie puede cambiar su clave ni restablecer la de otro (ADR-008, sección 4): conviene un issue aparte antes de usar el sistema con más personas.
+- `versiones` no tiene un disparador que impida editar o borrar filas, como sí lo tiene `auditoria`; hoy lo cumple solo la aplicación (`docs/modelo-de-datos.md`, sección 2).
+- Un PDF idéntico a otro ya cargado se rechaza siempre, aunque sea de otro expediente. [POR VERIFICAR con la entidad] si un mismo archivo puede pertenecer legítimamente a dos expedientes.
+- El umbral de similitud de 0,80 es provisional hasta calibrarlo con PDF reales (necesita autorización escrita de la entidad, sección 6, punto 6).
