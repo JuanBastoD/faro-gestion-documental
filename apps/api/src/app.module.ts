@@ -7,6 +7,7 @@ import { CcdModule } from './ccd/ccd.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { DocumentosModule } from './documentos/documentos.module.js';
 import { SaludModule } from './salud/salud.module.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SaludModule } from './salud/salud.module.js';
     AuthModule,
     CcdModule,
     DocumentosModule,
+    UsuariosModule,
     SaludModule,
   ],
 })

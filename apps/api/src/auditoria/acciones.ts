@@ -13,6 +13,10 @@ export const ACCION = {
   VERSION: 'version',
   RESTAURACION: 'restauracion',
   DECISION_DUPLICADO: 'decision_duplicado',
+  USUARIO_CREADO: 'usuario_creado',
+  USUARIO_ROL_CAMBIADO: 'usuario_rol_cambiado',
+  USUARIO_DESACTIVADO: 'usuario_desactivado',
+  USUARIO_REACTIVADO: 'usuario_reactivado',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];
