@@ -1,0 +1,63 @@
+name: Decisión (ADR o spike)
+description: Una decisión de diseño que hay que tomar y registrar, o una investigación corta para tomarla.
+title: "[Decisión] "
+labels: ["tipo:decisión"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Toda decisión importante queda registrada con **fecha, motivo y alternativas descartadas**. Al resolverla se escribe un ADR en `docs/adr/` (ver `CONTRIBUTING.md`).
+
+        El repositorio es **público**. No pegues datos reales de la entidad, datos personales ni credenciales.
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: Qué hay que decidir
+      description: La pregunta, en una o dos frases.
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto y restricciones
+      description: Qué obliga o limita la decisión (alcance, tiempo, costo, normas, lo ya decidido).
+    validations:
+      required: true
+  - type: textarea
+    id: opciones
+    attributes:
+      label: Opciones consideradas
+      description: Al menos dos, con lo bueno y lo malo de cada una.
+      value: |
+        - **Opción A:**
+        - **Opción B:**
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Cómo sabremos que la decisión quedó resuelta.
+      value: |
+        - [ ] ADR escrito en `docs/adr/`, con alternativas descartadas y consecuencias
+        - [ ]
+    validations:
+      required: true
+  - type: input
+    id: estimacion
+    attributes:
+      label: Estimación (horas)
+      placeholder: "1"
+    validations:
+      required: true
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      description: "Al clasificar se aplica la etiqueta `prioridad:*`."
+      options:
+        - must
+        - should
+        - could
+    validations:
+      required: true

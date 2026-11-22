@@ -1,0 +1,2 @@
+# Obliga a usar una de las plantillas (historia, tarea, bug o decisión).
+blank_issues_enabled: false

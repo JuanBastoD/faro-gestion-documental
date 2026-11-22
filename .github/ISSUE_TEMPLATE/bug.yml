@@ -1,0 +1,65 @@
+name: Bug
+description: Algo no funciona como debería.
+title: "[Bug] "
+labels: ["tipo:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        El repositorio es **público**. Antes de pegar registros, capturas o datos, quita contraseñas, claves, cadenas de conexión y cualquier dato real o personal.
+  - type: textarea
+    id: observado
+    attributes:
+      label: Qué pasó
+      description: Lo que se observó, con el mensaje de error textual si lo hay.
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Qué debería pasar
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: entorno
+    attributes:
+      label: Dónde ocurre
+      options:
+        - Local
+        - CI (GitHub Actions)
+        - Entorno de pruebas en la nube
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión o commit
+      description: Salida de `git rev-parse --short HEAD`, o la etiqueta (por ejemplo `v0.1.0`).
+    validations:
+      required: true
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidencia
+      description: Registros o capturas, sin datos sensibles. Opcional.
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      description: "*must* si bloquea una entrega o pierde datos, *should* si molesta pero hay alternativa, *could* si es cosmético."
+      options:
+        - must
+        - should
+        - could
+    validations:
+      required: true
