@@ -103,15 +103,28 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 
 ## Integración continua
 
-`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con tres trabajos:
+`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con cuatro trabajos:
 
 | Trabajo | Qué comprueba |
 |---|---|
 | `api` | `npm ci`, lint, pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
 | `legacy` | Las 7 pruebas del prototipo v1 |
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
+| `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
 
-Si un paso falla, el PR queda en rojo. `main` exige que los tres pasen antes de fusionar. Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` también corre en cada PR, pero la protección de la rama aún no lo exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+
+## Despliegue en la nube y contenedor
+
+La API se empaqueta en una imagen (`apps/api/Dockerfile`, contexto: la raíz del repositorio) y hay un flujo manual de despliegue a Google Cloud Run (`.github/workflows/deploy.yml`, inactivo hasta que existan sus variables). El guion completo, con lo que necesita cuentas de Google Cloud y Neon, está en [`docs/despliegue.md`](docs/despliegue.md).
+
+```
+docker build -f apps/api/Dockerfile -t faro-api .
+docker run --rm -e DATABASE_URL=... faro-api node apps/api/dist/base-datos/migrar-cli.js         # migrar (la API no migra al arrancar)
+docker run --rm -e DATABASE_URL=... -e ADMIN_USUARIO=... -e ADMIN_CLAVE=... faro-api node apps/api/dist/semilla/crear-administrador.js   # primer administrador (sirve en producción)
+```
+
+Fuera de un contenedor, los mismos comandos son `node dist/base-datos/migrar-cli.js` y `node dist/semilla/crear-administrador.js` (tras `npm run build`). `db:seed` crea usuarios de demostración con una clave conocida y **se niega a correr con `NODE_ENV=production`**.
 
 ## Prototipo v1
 
