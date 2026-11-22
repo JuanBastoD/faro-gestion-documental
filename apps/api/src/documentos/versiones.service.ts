@@ -134,6 +134,7 @@ export class VersionesService {
           },
           tx,
         );
+        await this.repositorio.actualizarBusqueda(tx, documentoId);
         await opciones.alRegistrar?.(tx, nuevo);
         return nuevo;
       });
@@ -215,6 +216,8 @@ export class VersionesService {
         },
         tx,
       );
+      // La versión vigente cambió de texto: el índice de búsqueda también.
+      await this.repositorio.actualizarBusqueda(tx, documentoId);
       return numero;
     });
     return this.detalle(documentoId, nuevo);

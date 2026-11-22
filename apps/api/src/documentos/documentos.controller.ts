@@ -23,7 +23,7 @@ import {
   type DocumentoCreado,
   type PaginaDeDocumentos,
 } from './documentos.service.js';
-import { IdentificadorPipe, leerPaginacion } from './paginacion.js';
+import { IdentificadorPipe, leerConsultaDeDocumentos } from './paginacion.js';
 
 /** Lo único que se usa del archivo que entrega multer (en memoria). */
 interface ArchivoSubido {
@@ -76,8 +76,8 @@ export class DocumentosController {
 
   @Get()
   listar(@Query() consulta: unknown): Promise<PaginaDeDocumentos> {
-    const { pagina, tamano } = leerPaginacion(consulta);
-    return this.documentos.listar(pagina, tamano);
+    const { pagina, tamano, ...filtro } = leerConsultaDeDocumentos(consulta);
+    return this.documentos.listar(pagina, tamano, filtro);
   }
 
   @Get(':id')

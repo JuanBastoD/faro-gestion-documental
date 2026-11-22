@@ -24,6 +24,7 @@ import { DuplicadosService, type Candidato } from './duplicados.service.js';
 import {
   DocumentosRepository,
   type DocumentoBasico,
+  type FiltroDeDocumentos,
   type ResumenDocumento,
   type Transaccion,
   type UbicacionDeVersion,
@@ -145,6 +146,7 @@ export class DocumentosService {
         if (datos.decision) {
           await this.registrarDecision(tx, usuario, id, datos, probables);
         }
+        await this.repositorio.actualizarBusqueda(tx, id);
         return id;
       });
       return await this.detalleDeCarga(documentoId);
@@ -228,8 +230,12 @@ export class DocumentosService {
     return { ...documento, versiones: await this.repositorio.listarVersiones(id) };
   }
 
-  async listar(pagina: number, tamano: number): Promise<PaginaDeDocumentos> {
-    const { items, total } = await this.repositorio.listarDocumentos(pagina, tamano);
+  async listar(
+    pagina: number,
+    tamano: number,
+    filtro: FiltroDeDocumentos = {},
+  ): Promise<PaginaDeDocumentos> {
+    const { items, total } = await this.repositorio.listarDocumentos(pagina, tamano, filtro);
     return { items, total, pagina, tamano };
   }
 

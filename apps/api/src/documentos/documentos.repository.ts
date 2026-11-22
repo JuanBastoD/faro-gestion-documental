@@ -1,5 +1,6 @@
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { Inject, Injectable } from '@nestjs/common';
+import { normalizarTexto } from '../similitud/normalizar.js';
 import { DB, type BaseDatos } from '../base-datos/base-datos.module.js';
 import { documentos, seriesCcd, usuarios, versiones } from '../base-datos/esquema.js';
 
@@ -71,6 +72,21 @@ export interface VersionCompleta {
 export interface ResumenDocumento extends DocumentoBasico {
   /** Número de la versión más reciente. */
   versionActual: number;
+}
+
+/**
+ * Cuántos caracteres del texto de una versión entran al índice de búsqueda. Un `tsvector` no puede
+ * pasar de 1 MB; con 300 000 caracteres (unas 100 páginas) hay margen aun en el peor caso (texto
+ * con ruido de OCR donde casi toda palabra es distinta). El texto completo sigue guardado.
+ */
+export const CARACTERES_INDEXADOS = 300_000;
+
+/** Filtros del listado y la búsqueda de documentos. */
+export interface FiltroDeDocumentos {
+  /** Texto buscado, tal como lo escribió la persona. */
+  q?: string;
+  /** Una serie o subserie: incluye los documentos de sus subseries. */
+  serieId?: number;
 }
 
 /** Dónde está una versión: lo que se muestra al avisar de un duplicado. */
@@ -191,6 +207,30 @@ export class DocumentosRepository {
       .innerJoin(seriesCcd, eq(seriesCcd.id, documentos.serieId))
       .where(and(eq(versiones.textoEstado, 'ok'), isNull(versiones.restauradaDe)));
     return filas.flatMap((fila) => (fila.firma ? [{ ...fila, firma: fila.firma }] : []));
+  }
+
+  /**
+   * Recalcula el índice de búsqueda del documento: título (peso A), expediente (B) y texto de su versión
+   * vigente (C). Todo se normaliza igual que la consulta (sin tildes, minúsculas) para que «interventoria»
+   * encuentre «Interventoría». Se llama dentro de la transacción que cambia el documento o su versión vigente.
+   */
+  async actualizarBusqueda(tx: Transaccion, documentoId: number): Promise<void> {
+    const [documento] = await tx
+      .select({ titulo: documentos.titulo, expediente: documentos.expediente })
+      .from(documentos)
+      .where(eq(documentos.id, documentoId))
+      .limit(1);
+    if (!documento) return;
+    await tx.execute(sql`
+      update documentos set busqueda =
+        setweight(to_tsvector('spanish', ${normalizarTexto(documento.titulo)}), 'A') ||
+        setweight(to_tsvector('spanish', ${normalizarTexto(documento.expediente)}), 'B') ||
+        setweight(to_tsvector('spanish', coalesce((
+          select left(texto_normalizado, ${CARACTERES_INDEXADOS}) from versiones
+           where documento_id = ${documentoId} order by numero desc limit 1
+        ), '')), 'C')
+       where id = ${documentoId}
+    `);
   }
 
   /** ¿Existe el documento? Barato: sirve para fallar con 404 antes de guardar un archivo. */
@@ -319,11 +359,26 @@ export class DocumentosRepository {
     return fila;
   }
 
-  /** Listado simple, el más reciente primero. La búsqueda por texto llega en #13. */
+  /**
+   * Listado de documentos. Sin `q`, el más reciente primero. Con `q`, solo los que contienen todas las
+   * palabras (en título, expediente o texto de la versión vigente), por relevancia y, a igualdad, el más
+   * reciente: el desempate por id hace el orden total y la paginación no repite ni pierde elementos.
+   */
   async listarDocumentos(
     pagina: number,
     tamano: number,
+    filtro: FiltroDeDocumentos = {},
   ): Promise<{ items: ResumenDocumento[]; total: number }> {
+    const condiciones: SQL[] = [];
+    const consulta = filtro.q === undefined ? '' : normalizarTexto(filtro.q);
+    const tsquery = sql`plainto_tsquery('spanish', ${consulta})`;
+    if (consulta !== '') condiciones.push(sql`${documentos.busqueda} @@ ${tsquery}`);
+    if (filtro.serieId !== undefined) {
+      const condicion = or(eq(documentos.serieId, filtro.serieId), eq(seriesCcd.padreId, filtro.serieId));
+      if (condicion) condiciones.push(condicion);
+    }
+    const donde = condiciones.length > 0 ? and(...condiciones) : undefined;
+
     const items = await this.db
       .select({
         id: documentos.id,
@@ -340,10 +395,19 @@ export class DocumentosRepository {
       })
       .from(documentos)
       .innerJoin(seriesCcd, eq(seriesCcd.id, documentos.serieId))
-      .orderBy(desc(documentos.creadoEn), desc(documentos.id))
+      .where(donde)
+      .orderBy(
+        ...(consulta === '' ? [] : [desc(sql`ts_rank(${documentos.busqueda}, ${tsquery})`)]),
+        desc(documentos.creadoEn),
+        desc(documentos.id),
+      )
       .limit(tamano)
       .offset((pagina - 1) * tamano);
-    const [{ total }] = await this.db.select({ total: count() }).from(documentos);
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(documentos)
+      .innerJoin(seriesCcd, eq(seriesCcd.id, documentos.serieId))
+      .where(donde);
     return { items, total };
   }
 }
