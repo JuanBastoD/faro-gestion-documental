@@ -62,7 +62,7 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com secret
 
 ## 4. Base de datos en Neon [POR VERIFICAR]
 
-1. Crea un proyecto en Neon. Región: la más cercana a `us-central1` que ofrezca (por ejemplo AWS us-east-2) [SUPUESTO: la latencia entre nubes es aceptable para un prototipo; no está medida].
+1. Crea un proyecto en Neon. Región: la más cercana a `us-central1` que ofrezca (por ejemplo AWS us-east-2) [SUPUESTO: la latencia entre nubes es aceptable para un prototipo; no está medida]. **Versión de PostgreSQL: elige la 17**, la misma del Compose y del CI. [POR VERIFICAR] La documentación pública de Neon (leída el 22 de noviembre de 2026, sin cuenta) dice que los proyectos nuevos usan la 18 por omisión y que la versión mayor de un proyecto no se cambia después; la copia de seguridad (`docs/respaldo.md`) necesita que `pg_dump` sea de la misma versión mayor que el servidor o más nuevo.
 2. Copia la **cadena de conexión directa** (la que **no** dice `-pooler`), con `sslmode=require`: `postgresql://usuario:clave@host/base?sslmode=require`. La directa es la correcta para las migraciones.
 3. [POR VERIFICAR] **El plan gratuito de Neon limita el almacenamiento** (consulta el límite vigente en su página de precios). La tabla `versiones` guarda el texto normalizado de cada PDF para la búsqueda y los duplicados (ADR-006 y ADR-007): con muchos documentos largos puede crecer rápido. Para el prototipo con datos ficticios no debería importar.
 4. [POR VERIFICAR] Neon **suspende el cómputo sin uso** y el primer acceso después de un rato tarda más. La API espera hasta 3 segundos por una conexión (`base-datos.module.ts`); si ves errores en la primera petición, ese valor es lo primero que se revisa.
@@ -155,7 +155,7 @@ En GitHub: **Settings → Secrets and variables → Actions → pestaña Variabl
 | `GCP_RUNTIME_SA` | el valor de `$SA_EJECUCION` |
 | `GCS_BUCKET` | el valor de `$BUCKET` |
 
-No hay ningún secreto de GitHub que crear: los secretos de la aplicación viven en Secret Manager.
+No hay ningún secreto de GitHub que crear para el despliegue: los secretos de la aplicación viven en Secret Manager. Solo la **copia de seguridad programada** (opcional, [`docs/respaldo.md`](respaldo.md), sección 8) necesita un secreto de GitHub, `RESPALDO_DATABASE_URL`, y dos variables más (`GCP_RESPALDO_SA` y `GCS_RESPALDO_BUCKET`).
 
 ## 9. Primer despliegue
 
@@ -216,7 +216,7 @@ gcloud artifacts repositories delete faro --location="$REGION"
 gcloud projects delete "$PROYECTO"
 ```
 
-En Neon: borra el proyecto desde su consola. Desvincular la facturación del proyecto también detiene los cargos.
+En Neon: borra el proyecto desde su consola. Desvincular la facturación del proyecto también detiene los cargos. Si activaste la copia de seguridad, el bucket de respaldos (`gs://$BUCKET_RESPALDO`, [`docs/respaldo.md`](respaldo.md)) también se borra con el proyecto; antes de borrarlo, baja la copia que quieras conservar.
 
 ## 13. Decisiones y límites de este despliegue
 
