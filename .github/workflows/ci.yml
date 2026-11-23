@@ -121,7 +121,7 @@ jobs:
           usuario="$(docker run --rm --entrypoint id faro-api:ci -u)"
           echo "uid del proceso: $usuario"
           test "$usuario" != "0"
-          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -d /app/apps/api/drizzle'
+          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -f /app/apps/api/dist/ccd/importar/importar-cli.js && test -d /app/apps/api/drizzle'
 
   # Busca secretos (claves, tokens, contraseñas) en TODO el historial del repositorio, no solo en el último
   # commit: el repositorio es público y un secreto subido por error ya está expuesto aunque se borre después.

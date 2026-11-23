@@ -227,6 +227,7 @@ La imagen se construyó y se probó el 22 de noviembre de 2026 contra el Postgre
 - `docker build -f apps/api/Dockerfile -t faro-api .` (contexto: la raíz del repositorio). Imagen de 403 MB, tres etapas, proceso como usuario `node` (uid 1000), sin pruebas, sin fuentes, sin `.env`, sin `drizzle-kit`.
 - Migrar con el comando de la imagen (`node apps/api/dist/base-datos/migrar-cli.js`); repetirlo es inocuo.
 - Crear el primer administrador (`node apps/api/dist/semilla/crear-administrador.js`); una clave corta se rechaza sin repetirla, y repetir el comando no cambia nada.
+- Importar el cuadro de clasificación (#19) con el comando de la imagen, el CSV montado en solo lectura (`docker run --rm -v <carpeta>:/cuadro:ro -e DATABASE_URL ... faro-api node apps/api/dist/ccd/importar/importar-cli.js /cuadro/cuadro-ejemplo.csv`): sin `--aplicar` no escribe, con `--aplicar` crea lo que falta (6 series y subseries sobre un cuadro sembrado de 9) y repetirlo responde «no hay nada que cambiar». La API compilada muestra el cuadro en `GET /series` y el evento `ccd_importado`, sin usuario, en `GET /auditoria`.
 - Arrancar la API con `ALMACEN_TIPO=s3`: `/health` responde con la base en `ok`, sin sesión `/documentos` es 401.
 - Ingresar, **cargar un PDF, descargarlo byte por byte idéntico, buscarlo por texto**, y **reiniciar el contenedor**: la sesión, el documento y el archivo siguen.
 - El `HEALTHCHECK` de Docker pasa a `healthy`; cero líneas `ERROR` en el registro.
@@ -238,7 +239,7 @@ Lo que **no** se probó: Cloud Run, Neon, Cloud Storage, Secret Manager, Artifac
 
 ```bash
 gcloud run services delete faro-api --region "$REGION"
-gcloud run jobs delete faro-migrar --region "$REGION"; gcloud run jobs delete faro-admin --region "$REGION"
+gcloud run jobs delete faro-migrar --region "$REGION"; gcloud run jobs delete faro-admin --region "$REGION"; gcloud run jobs delete faro-cuadro --region "$REGION"
 gcloud storage rm -r "gs://$BUCKET"
 gcloud artifacts repositories delete faro --location="$REGION"
 # o, lo más simple: borrar el proyecto entero y con él todo lo anterior
