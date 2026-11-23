@@ -48,6 +48,8 @@ Un trabajo de CI (`secretos`) corre **gitleaks sobre todo el historial** (el rep
 
 **Nota del 23 de noviembre de 2026 (alcance del escaneo) [CONFIRMADO]:** «todo el historial» significa todo lo alcanzable desde la confirmación que se prueba (`--log-opts=HEAD`), no el de todas las ramas. Con el valor por defecto de gitleaks (`--all`) y `fetch-depth: 0`, un hallazgo en la rama sin fusionar de un PR hacía fallar el trabajo `secretos` de todos los demás PR, aunque sus propias ramas estuvieran limpias (reproducido en local: una rama limpia daba 0 hallazgos con `HEAD` y 2 con `--all` al existir la otra rama como referencia remota; la rama con el hallazgo seguía marcándolo con `HEAD`). La decisión del apartado no cambia: el historial que se va a fusionar se escanea entero.
 
+**Limitación de la nota anterior [CONFIRMADO]:** con `--log-opts=HEAD` dejan de escanearse las ramas que no tienen PR (en un repositorio público también están expuestas). [PROPUESTA] Un flujo programado aparte, solo informativo y con el valor por defecto `--all`, cubriría ese hueco sin poner en rojo los PR; no se agrega aquí. Detectado en la revisión de seguridad del 23 de noviembre de 2026.
+
 ### 2.5 Auditoría
 
 Se agrega `ingreso_bloqueado` y se registra **una sola vez**, en el intento fallido que agota el límite; los rechazados después no se auditan (insistir no llena `auditoria`). El detalle no incluye el nombre escrito. Los rechazos de la guarda de origen **no** se auditan: son ruido sin valor documental y cada uno sería una escritura que cualquiera puede provocar.
