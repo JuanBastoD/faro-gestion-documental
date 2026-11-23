@@ -47,6 +47,9 @@ export const seriesCcd = pgTable('series_ccd', {
   padreId: integer('padre_id').references((): AnyPgColumn => seriesCcd.id),
 });
 
+/** Columna `tsvector` de la búsqueda por texto completo. Solo se escribe con SQL (ver `actualizarBusqueda`). */
+const tsvector = customType<{ data: string; driverData: string }>({ dataType: () => 'tsvector' });
+
 export const documentos = pgTable(
   'documentos',
   {
@@ -61,10 +64,17 @@ export const documentos = pgTable(
       .notNull()
       .references(() => usuarios.id),
     creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Título (peso A), expediente (B) y texto de la versión vigente (C), todo normalizado (sin tildes)
+     * y con la configuración `spanish`. La mantiene el servicio dentro de cada transacción que cambia
+     * el documento (ADR-007).
+     */
+    busqueda: tsvector('busqueda'),
   },
   (tabla) => [
     index('documentos_serie_idx').on(tabla.serieId),
     index('documentos_expediente_idx').on(tabla.expediente),
+    index('documentos_busqueda_idx').using('gin', tabla.busqueda),
   ],
 );
 

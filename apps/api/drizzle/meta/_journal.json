@@ -43,6 +43,13 @@
       "when": 1795379797694,
       "tag": "0005_versiones_texto_y_firma",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795381159531,
+      "tag": "0006_busqueda_texto_completo",
+      "breakpoints": true
     }
   ]
 }

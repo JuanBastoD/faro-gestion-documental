@@ -10,6 +10,7 @@ Cada decisión importante de diseño queda registrada aquí con su fecha, su mot
 | [0004](0004-almacen-de-archivos-y-carga.md) | Almacén de archivos y carga sin estados a medias | Aceptada | 22 de noviembre de 2026 |
 | [0005](0005-versionado-y-restauracion.md) | Versionado de documentos y restauración que solo agrega | Aceptada | 22 de noviembre de 2026 |
 | [0006](0006-verificacion-doble-de-duplicados.md) | Verificación doble de duplicados con huella de similitud calculada en la aplicación | Aceptada | 22 de noviembre de 2026 |
+| [0007](0007-busqueda-por-texto-completo.md) | Búsqueda por texto completo sobre texto normalizado en la aplicación | Aceptada | 22 de noviembre de 2026 |
 
 ## Formato
 

@@ -19,9 +19,36 @@ const esquemaPaginacion = z.object({
     .default(20),
 });
 
-export function leerPaginacion(consulta: unknown): { pagina: number; tamano: number } {
-  const resultado = esquemaPaginacion.safeParse(consulta ?? {});
-  if (resultado.success) return resultado.data;
+const MAXIMO_TEXTO_BUSCADO = 200;
+
+const esquemaConsultaDeDocumentos = esquemaPaginacion.extend({
+  q: z
+    .string({ error: 'q debe ser un texto' })
+    .trim()
+    .max(MAXIMO_TEXTO_BUSCADO, { error: `q no puede pasar de ${MAXIMO_TEXTO_BUSCADO} caracteres` })
+    .optional(),
+  serieId: z.coerce
+    .number({ error: 'serieId debe ser un número' })
+    .int({ error: 'serieId debe ser entero' })
+    .min(1, { error: 'serieId debe ser un identificador válido' })
+    .max(2_147_483_647, { error: 'serieId está fuera de rango' })
+    .optional(),
+});
+
+export interface ConsultaDeDocumentos {
+  pagina: number;
+  tamano: number;
+  q?: string;
+  serieId?: number;
+}
+
+/** Parámetros de `GET /documentos`: paginación, texto buscado y serie. Un `q` vacío cuenta como sin texto. */
+export function leerConsultaDeDocumentos(consulta: unknown): ConsultaDeDocumentos {
+  const resultado = esquemaConsultaDeDocumentos.safeParse(consulta ?? {});
+  if (resultado.success) {
+    const { q, ...resto } = resultado.data;
+    return q ? { ...resto, q } : resto;
+  }
   const problemas = resultado.error.issues.map((p) => `${p.path.join('.')}: ${p.message}`);
   throw new BadRequestException({
     message: `Parámetros inválidos: ${problemas.join('; ')}`,
