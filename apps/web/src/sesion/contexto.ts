@@ -17,6 +17,12 @@ export interface ValorDeSesion {
   ingresar: (usuario: string, clave: string) => Promise<void>;
   /** Cierra la sesión en el servidor y en la interfaz. Aunque el servidor falle, la interfaz queda sin sesión. */
   salir: () => Promise<void>;
+  /**
+   * Vuelve a preguntar a la API quién tiene la sesión y actualiza el estado. Sirve cuando algo pudo cambiar el rol de la
+   * persona sin que la interfaz se enterara (se lo cambió ella misma, o otro administrador: la API lo aplica al instante). Si
+   * ya no hay sesión, pasa al ingreso con el aviso. Sin red conserva lo que había.
+   */
+  refrescar: () => Promise<void>;
 }
 
 export const ContextoSesion = createContext<ValorDeSesion | null>(null);

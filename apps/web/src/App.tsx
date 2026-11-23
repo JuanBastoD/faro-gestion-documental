@@ -1,20 +1,21 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { Plantilla } from './componentes/Plantilla';
+import { Auditoria } from './paginas/Auditoria';
 import { CargarDocumento } from './paginas/CargarDocumento';
 import { DocumentoDetalle } from './paginas/DocumentoDetalle';
 import { Documentos } from './paginas/Documentos';
 import { Ingreso } from './paginas/Ingreso';
-import { Marcador } from './paginas/Marcador';
 import { NoEncontrada } from './paginas/NoEncontrada';
 import { NuevaVersion } from './paginas/NuevaVersion';
+import { Usuarios } from './paginas/Usuarios';
 import { RutaProtegida } from './sesion/RutaProtegida';
 
 /**
  * Las rutas de la interfaz. Viven bajo `/app/` (el `basename` del enrutador, ADR-012), así que `/documentos/12` aquí
  * es `/app/documentos/12` en el navegador y no choca con `GET /documentos/12` de la API.
  *
- * Rutas con pantalla provisional (`Marcador`): ya existen para que los enlaces y la guarda de roles estén listos,
- * pero su pantalla es de otro issue (#25: usuarios y auditoría). Carga y versión nueva son las del #24.
+ * Carga y versión nueva son solo de administrador y editor (#24); usuarios y auditoría, solo de administrador (#25). Quien
+ * entra a una por la dirección sin tener el rol ve la pantalla de «sin permiso»; la API responde 403 igual.
  */
 export function App() {
   return (
@@ -33,26 +34,8 @@ export function App() {
           </Route>
 
           <Route element={<RutaProtegida roles={['administrador']} />}>
-            <Route
-              path="/usuarios"
-              element={
-                <Marcador
-                  titulo="Usuarios"
-                  issue={25}
-                  descripcion="Aquí el administrador creará usuarios y cambiará su rol o los desactivará."
-                />
-              }
-            />
-            <Route
-              path="/auditoria"
-              element={
-                <Marcador
-                  titulo="Auditoría"
-                  issue={25}
-                  descripcion="Aquí el administrador consultará los eventos registrados, con filtros."
-                />
-              }
-            />
+            <Route path="/usuarios" element={<Usuarios />} />
+            <Route path="/auditoria" element={<Auditoria />} />
           </Route>
         </Route>
       </Route>

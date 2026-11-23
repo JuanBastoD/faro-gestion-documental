@@ -921,3 +921,109 @@ main:focus {
     animation: none !important;
   }
 }
+
+/* --- Usuarios y auditoría (issue #25). Bloque propio al final para no chocar con los de otras pantallas. ----------- */
+
+.lista-usuarios,
+.lista-eventos {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tarjeta--inactiva {
+  background: #f6f8f9;
+  border-style: dashed;
+}
+
+.etiqueta--inactiva {
+  background: var(--error-fondo);
+  color: var(--error-texto);
+}
+
+/* Acción con consecuencias (desactivar): blanco sobre --error-texto, mismo par de color que el error de campo. */
+.boton--peligro {
+  background: var(--error-texto);
+  color: #fff;
+}
+
+.boton--peligro:hover:not(:disabled) {
+  background: #6e1414;
+  color: #fff;
+}
+
+/* Un botón que se lee como enlace («Actualizar la lista»), con el área táctil de 44 px. */
+.enlace-boton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--acento);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  color: var(--acento-oscuro);
+}
+
+.campo-verclave {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  margin: -0.4rem 0 1rem;
+}
+
+.campo-verclave input {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0;
+  accent-color: var(--acento);
+}
+
+.formulario--panel {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.tarjeta__fecha {
+  color: var(--suave);
+  font-size: 0.92rem;
+}
+
+.datos__ancho {
+  grid-column: 1 / -1;
+}
+
+.resultados__linea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.resultados__linea .resultados__total {
+  margin: 0;
+}
+
+/* Filtros de la auditoría: cinco campos en una rejilla que baja a una columna en celular. */
+.filtros--auditoria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0 1rem;
+  align-items: start;
+}
+
+.filtros--auditoria .filtros__acciones {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
