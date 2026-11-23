@@ -597,6 +597,67 @@ describe('Cambio y restablecimiento de clave (contra PostgreSQL real)', () => {
   });
 
   describe('interbloqueos: el restablecimiento convive con los cambios de rol y de actividad', () => {
+    it('un cambio que ya tiene bloqueados a los administradores y luego pide al usuario no se interbloquea con el restablecimiento', async () => {
+      // Reproduce a mano el orden de `cambiar` (administradores activos y después la fila del usuario), con un paso
+      // intermedio en el que el restablecimiento ya está en marcha. Si el restablecimiento tomara sus bloqueos en
+      // otro orden (primero el usuario y luego, al auditar, la fila del administrador), cada uno esperaría al otro
+      // y PostgreSQL abortaría a uno de los dos.
+      const cookieAdmin = await ingresar(ctx.app, 'admin');
+      const cliente = await ctx.pool.connect();
+      try {
+        await cliente.query('begin');
+        await cliente.query(`select id from usuarios where rol = 'administrador' and activo order by id for update`);
+        const restablecimiento = restablecer(idEditor, cookieAdmin, { clave: CLAVE_TEMPORAL }).then((r) => r);
+
+        // Se espera a que el restablecimiento esté de verdad esperando un bloqueo, sin depender de un reloj.
+        const limite = Date.now() + 10_000;
+        for (;;) {
+          const { rows } = await ctx.pool.query(
+            `select count(*)::int as n from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock'`,
+          );
+          if ((rows[0].n as number) > 0) break;
+          if (Date.now() > limite) throw new Error('El restablecimiento no llegó a esperar un bloqueo');
+          await new Promise((resolver) => setTimeout(resolver, 25));
+        }
+
+        // Ahora el «cambio» pide la fila del usuario, como hace `cambiar` después de bloquear a los administradores.
+        await cliente.query('select id from usuarios where id = $1 for update', [idEditor]);
+        await cliente.query('commit');
+        const respuesta = await restablecimiento;
+        expect(respuesta.status).toBe(204);
+      } finally {
+        await cliente.query('rollback').catch(() => undefined);
+        cliente.release();
+      }
+      expect((await filaDe('editor')).debe_cambiar_clave).toBe(true);
+    }, 30_000);
+
+    it('el cambio de clave propio de un administrador espera a un cambio en curso y termina sin interbloqueo', async () => {
+      const cookieAdmin = await ingresar(ctx.app, 'admin');
+      const cliente = await ctx.pool.connect();
+      try {
+        await cliente.query('begin');
+        await cliente.query(`select id from usuarios where rol = 'administrador' and activo order by id for update`);
+        const cambio = cambiarClave(cookieAdmin, { claveActual: CLAVE_DE_PRUEBA, claveNueva: CLAVE_NUEVA }).then((r) => r);
+        const limite = Date.now() + 10_000;
+        for (;;) {
+          const { rows } = await ctx.pool.query(
+            `select count(*)::int as n from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock'`,
+          );
+          if ((rows[0].n as number) > 0) break;
+          if (Date.now() > limite) throw new Error('El cambio de clave no llegó a esperar un bloqueo');
+          await new Promise((resolver) => setTimeout(resolver, 25));
+        }
+        await cliente.query('select id from usuarios where id = $1 for update', [idEditor]);
+        await cliente.query('commit');
+        expect((await cambio).status).toBe(204);
+      } finally {
+        await cliente.query('rollback').catch(() => undefined);
+        cliente.release();
+      }
+      expect(await puedeIngresar('admin', CLAVE_NUEVA)).toBe(true);
+    }, 30_000);
+
     it('restablecimientos y cambios simultáneos sobre los administradores nunca dan error 500', async () => {
       const idOtro = await crearUsuario(ctx.db, { usuario: 'admin.2', rol: 'administrador' });
       const idTercero = await crearUsuario(ctx.db, { usuario: 'admin.3', rol: 'administrador' });
