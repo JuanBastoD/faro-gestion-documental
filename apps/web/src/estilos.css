@@ -859,8 +859,37 @@ main:focus {
   margin: 0.75rem 0 0 1.95rem;
 }
 
+/*
+ * Fila de la lista «Elige con cuál quieres comparar»: un recuadro en bloque por candidato, una por línea a cualquier
+ * ancho. El relleno lo lleva la etiqueta (no el recuadro) para que toda la fila sea área de clic, y el texto baja de
+ * línea en vez de cortarse. El borde mide 2 px siempre para que al elegir una fila no se mueva nada.
+ */
+.opcion--simple,
+.opcion--simple.opcion--activa {
+  padding: 0;
+  border-width: 2px;
+}
+
 .opcion--simple label {
   min-height: 44px;
+  padding: 0.6rem 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.opcion__texto {
+  min-width: 0;
+}
+
+/* El foco del teclado se ve en la fila entera (el radio solo es pequeño); sin :has() queda el contorno del radio. */
+@supports selector(:has(*)) {
+  .opcion--simple:has(input:focus-visible) {
+    outline: 3px solid var(--foco);
+    outline-offset: 2px;
+  }
+
+  .opcion--simple input:focus-visible {
+    outline: none;
+  }
 }
 
 /* --- Pantallas más anchas ------------------------------------------------------------------------------- */
