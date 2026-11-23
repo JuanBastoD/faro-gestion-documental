@@ -22,6 +22,13 @@
       "when": 1795376702000,
       "tag": "0002_auditoria_inmutable",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795376905318,
+      "tag": "0003_ccd_reglas",
+      "breakpoints": true
     }
   ]
 }
