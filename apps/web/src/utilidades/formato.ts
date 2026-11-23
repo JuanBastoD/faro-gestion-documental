@@ -20,7 +20,10 @@ export function formatearFechaHora(iso: string): string {
 export function formatearFecha(aaaammdd: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(aaaammdd)) return aaaammdd;
   const fecha = new Date(`${aaaammdd}T00:00:00Z`);
-  return Number.isNaN(fecha.getTime()) ? aaaammdd : formatoFecha.format(fecha);
+  // «2026-02-31» no es un error de Date (se corre al 3 de marzo): se compara para no mostrar una fecha distinta.
+  return Number.isNaN(fecha.getTime()) || !fecha.toISOString().startsWith(aaaammdd)
+    ? aaaammdd
+    : formatoFecha.format(fecha);
 }
 
 /** Bytes en una unidad legible: `850 B`, `12,3 KB`, `4,0 MB`. */
