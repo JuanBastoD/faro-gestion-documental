@@ -67,3 +67,10 @@ Se agrega `ingreso_bloqueado` y se registra **una sola vez**, en el intento fall
 - **Límites y ventana son constantes en el código** (`limite-ingreso.ts`), no variables de entorno, para que no se puedan aflojar por error en un despliegue.
 - **Sigue sin haber cambio de clave ni restablecimiento** (ADR-008, sección 4). Es un límite del sistema, no de este ADR.
 - **Fuera de alcance:** autenticación de dos factores, detección de contraseñas filtradas, y cualquier cosa de infraestructura (cortafuegos, WAF), que corresponde a un proyecto distinto.
+
+## Nota posterior (22 de noviembre de 2026, issue #23)
+
+Esta nota no cambia ninguna decisión de este ADR; solo registra lo observado cuando existió la interfaz. Detalle en el [ADR-012](0012-interfaz-web-bajo-app-servida-por-la-api.md).
+
+- **Guarda de origen [CONFIRMADO en #23, solo Chromium]:** con la interfaz en Vite (`localhost:5173`) reenviando a la API, el ingreso, el listado, la descarga y el cierre de sesión funcionan sin 403, **siempre que el proxy no reescriba `Host`** (`changeOrigin: false` en `vite.config.ts`); con el `Host` reescrito la guarda rechazaría el ingreso. Servida por la propia API en `/app/` (mismo origen) la guarda no interviene. [POR VERIFICAR] Firefox y Safari.
+- **Política de contenido de `helmet()` con la interfaz real [CONFIRMADO en #23, solo Chromium]:** no bloquea nada de la interfaz; no hizo falta cambiarla. Un control negativo (un `<script>` en línea insertado a propósito) sí quedó bloqueado y visible en la consola. `apps/web/src/indice.test.ts` protege la compatibilidad. [POR VERIFICAR] el efecto de `upgrade-insecure-requests` sobre `http://localhost` fuera de Chromium.

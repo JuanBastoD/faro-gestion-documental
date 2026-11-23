@@ -7,7 +7,7 @@ Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyec
 | Carpeta | Contenido | Estado |
 |---|---|---|
 | `apps/api` | API REST (NestJS, PostgreSQL) | En construcción (hito V2-M1) |
-| `apps/web` | Interfaz web (React + Vite) | Pendiente (hito V2-M4) |
+| `apps/web` | Interfaz web (React + Vite) | En construcción (hito V2-M4): ingreso, listado con búsqueda y detalle; carga y administración, pendientes |
 | `infra/` | Docker, CI y despliegue | En construcción |
 | `docs/` | Plan, decisiones de arquitectura (`docs/adr/`), diagramas y manual | Activo |
 | `legacy/prototipo-v1/` | Primer incremento (Express + SQLite), etiquetado `v0.1.0` | Congelado |
@@ -104,6 +104,38 @@ La configuración sale de variables de entorno que se validan al arrancar (`apps
 **Pruebas de aceptación.** `apps/api/test/aceptacion.e2e-spec.ts` repite contra la API nueva las 7 del prototipo v1 (`legacy/prototipo-v1/test/flujo.test.js`), encadenadas como allá: credenciales y sesión, carga con búsqueda sin tildes y versión, rol de consulta, archivo ya digitalizado, no-PDF y datos incompletos, auditoría solo para el administrador y **persistencia tras reiniciar la aplicación** (cierra la instancia y levanta otra contra la misma base y el mismo almacén). Cambios respecto a v1, a propósito: la API responde con códigos y JSON (sin sesión es 401, no una redirección a `/login`) y un archivo que no es PDF es 415, no 400. Los servicios de versiones y de duplicados tienen además pruebas unitarias con repositorio falso (`*.service.spec.ts`).
 
 Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se editan una vez fusionadas: un cambio de esquema es una migración nueva.
+
+## Interfaz web (`apps/web`)
+
+React 19, Vite y TypeScript, con React Router y CSS propio (sin bibliotecas de componentes ni fuentes externas; [ADR-012](docs/adr/0012-interfaz-web-bajo-app-servida-por-la-api.md)). La interfaz vive bajo **`/app/`**: las rutas de la API (`/auth`, `/series`, `/documentos`, `/usuarios`, `/auditoria`, `/health`) no se movieron.
+
+Pantallas de esta entrega: **ingreso** y cierre de sesión, **listado** de documentos con búsqueda por texto, filtro por serie y paginación (la búsqueda, la serie y la página quedan en la URL, así que se pueden compartir), y **detalle** con el historial de versiones y la descarga de cualquiera de ellas. El menú depende del rol: consulta solo ve «Documentos»; administrador y editor ven además «Cargar documento»; el administrador ve también «Usuarios» y «Auditoría». Las pantallas de carga y de versión nueva (issue #24), y las de usuarios y auditoría (issue #25), son por ahora un marcador que lo dice.
+
+**En desarrollo** (la API en marcha, por ejemplo con `npm run start:dev -w apps/api`):
+
+```
+npm run dev -w apps/web            # http://localhost:5173/app/
+```
+
+Vite reenvía a la API (`http://127.0.0.1:3000`) las rutas de la API. Si la API corre en otro puerto: `FARO_API_URL=http://127.0.0.1:3121 npm run dev -w apps/web` (en PowerShell, `$env:FARO_API_URL='http://127.0.0.1:3121'` antes del comando). El proxy conserva el encabezado `Host` original a propósito: la guarda de origen de la API ([ADR-009](docs/adr/0009-seguridad-minima-para-exponer-la-api.md)) compara `Origin` con `Host` y, si Vite lo reescribiera, rechazaría el ingreso con 403.
+
+**Compilada y servida por la API** (así corre en el contenedor y en la nube):
+
+```
+npm run build                      # compila la API y la interfaz (apps/web/dist)
+node apps/api/dist/main.js         # la interfaz queda en http://127.0.0.1:3000/app/
+```
+
+Si existe `apps/web/dist`, la API la sirve en `/app/` con respaldo a `index.html` para las rutas de la interfaz; `GET /` redirige a `/app/`. Si no existe, la API arranca igual y `GET /` sigue dando 404 como antes. `INTERFAZ_RUTA` (opcional) apunta a otra carpeta compilada. El `Dockerfile` de la API ya compila la interfaz y la copia a la imagen.
+
+**Usuarios de demostración.** Con `npm run db:seed -w apps/api` existen `admin.demo`, `editor.demo` y `consulta.demo` (todos ficticios); la clave es el valor de `SEMILLA_CLAVE` en tu `.env`.
+
+| Comando (desde la raíz) | Qué hace |
+|---|---|
+| `npm run dev -w apps/web` | Servidor de desarrollo con recarga |
+| `npm test -w apps/web` | Pruebas de la interfaz (Vitest, Testing Library y jsdom; la API se simula a nivel de `fetch`) |
+| `npm run typecheck -w apps/web` | Comprobación de tipos |
+| `npm run lint -w apps/web` | Oxlint con tipos y reglas de accesibilidad |
 
 ## Integración continua
 

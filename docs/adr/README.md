@@ -13,6 +13,7 @@ Cada decisión importante de diseño queda registrada aquí con su fecha, su mot
 | [0007](0007-busqueda-por-texto-completo.md) | Búsqueda por texto completo sobre texto normalizado en la aplicación | Aceptada | 22 de noviembre de 2026 |
 | [0008](0008-administracion-de-usuarios.md) | Administración de usuarios: desactivar en vez de borrar y protección del último administrador | Aceptada | 22 de noviembre de 2026 |
 | [0009](0009-seguridad-minima-para-exponer-la-api.md) | Seguridad mínima para exponer la API: CSRF por origen, límite de intentos de ingreso, cabeceras y secretos | Aceptada | 22 de noviembre de 2026 |
+| [0012](0012-interfaz-web-bajo-app-servida-por-la-api.md) | Interfaz web bajo `/app/`, servida por la propia API | Aceptada | 22 de noviembre de 2026 |
 
 ## Formato
 
