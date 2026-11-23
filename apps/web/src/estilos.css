@@ -342,7 +342,10 @@ main:focus {
   color: #596a75;
 }
 
+/* `display: block` a propósito: varios avisos son `<output>`, que es un elemento en línea, y con relleno y borde
+   un aviso en línea se parte por renglones y se sale de su tarjeta (se veía cortado en el ingreso). */
 .aviso {
+  display: block;
   padding: 0.75rem 1rem;
   border-radius: var(--radio);
   border: 1px solid transparent;
