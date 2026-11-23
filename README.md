@@ -117,7 +117,7 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
 | `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
 | `secretos` | gitleaks sobre **todo el historial** (el repositorio es público); lo permitido está en `.gitleaks.toml`, cada excepción con su justificación |
-| `respaldo` | shellcheck de `infra/respaldo/*.sh`, y un respaldo y una restauración de ida y vuelta sobre una base migrada y sembrada (conteos por tabla y negativas del script) |
+| `respaldo` | shellcheck de `infra/respaldo/*.sh`, pruebas del analizador de la cadena de conexión (la clave no viaja como argumento; imagen fijada por huella), y un respaldo y una restauración de ida y vuelta sobre una base migrada y sembrada (conteos por tabla y negativas del script) |
 
 Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen`, `secretos` y `respaldo` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
 
@@ -135,7 +135,7 @@ Fuera de un contenedor, los mismos comandos son `node dist/base-datos/migrar-cli
 
 ## Copia de seguridad
 
-`pg_dump` en formato personalizado con la imagen `postgres:17-alpine` (solo hace falta Docker) y una restauración que **solo crea una base nueva**: se niega con `faro`, `postgres`, cualquier `*_test`, la base de origen y cualquier base que ya exista. Guía completa, qué se respalda y qué no, la prueba de restauración y lo que le toca al usuario para activar la copia programada: [`docs/respaldo.md`](docs/respaldo.md).
+`pg_dump` en formato personalizado con la imagen `postgres:17-alpine` fijada por huella (solo hace falta Docker; la clave va por el entorno, no como argumento) y una restauración que **solo crea una base nueva**: se niega con `faro`, `postgres`, cualquier `*_test`, la base de origen y cualquier base que ya exista. Guía completa, qué se respalda y qué no, la prueba de restauración y lo que le toca al usuario para activar la copia programada: [`docs/respaldo.md`](docs/respaldo.md).
 
 ```
 export RESPALDO_DATABASE_URL='postgresql://usuario:clave@host:puerto/base'   # un secreto: nunca en el repositorio

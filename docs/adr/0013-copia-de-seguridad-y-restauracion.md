@@ -19,11 +19,11 @@ Restricciones:
 
 ## 2. Decisión
 
-### 2.1 `pg_dump -Fc` con la imagen `postgres:17-alpine`, en un script [CONFIRMADO]
+### 2.1 `pg_dump -Fc` con la imagen `postgres:17-alpine` fijada por huella, en un script [CONFIRMADO]
 
-`infra/respaldo/respaldar.sh` ejecuta `pg_dump --format=custom` dentro de la imagen `postgres:17-alpine` (la misma versión mayor que el Compose y el CI; configurable con `RESPALDO_IMAGEN`). Todo se configura por variables de entorno. El script:
+`infra/respaldo/respaldar.sh` ejecuta `pg_dump --format=custom` dentro de la imagen `postgres:17-alpine` (la misma versión mayor que el Compose y el CI), **fijada por huella (digest)** en `infra/respaldo/comun.sh` y no por etiqueta, porque esa imagen recibe la clave de la base (se puede reemplazar con `RESPALDO_IMAGEN`, también por huella). Todo se configura por variables de entorno. El script:
 
-- **No imprime la cadena de conexión ni la clave:** la entrega al contenedor por el entorno (no como argumento), y si `pg_dump` falla, el mensaje de error pasa por un filtro que tapa ambas.
+- **No imprime la cadena de conexión ni la clave, y la clave no es argumento de ningún proceso:** descompone `RESPALDO_DATABASE_URL` (decodifica la clave con codificación porcentual y se niega, con un mensaje fijo que no repite la cadena, ante cualquier forma que no entienda) y entrega al contenedor `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` y `PGDATABASE` por el entorno, que `docker` recibe solo por nombre. Si `pg_dump` falla, el mensaje de error pasa por un filtro que tapa la cadena y la clave. Queda visible en `docker inspect` para quien ya controle Docker en ese equipo (`docs/respaldo.md`).
 - **No deja archivos a medias:** escribe a un archivo aparte y lo renombra solo al verificarlo, con permisos solo para su dueño.
 - **Verifica el respaldo:** no vacío y legible con `pg_restore --list`, con al menos una tabla.
 - **Falla con un mensaje útil** si el servidor es más nuevo que `pg_dump`.
@@ -40,7 +40,7 @@ Formato personalizado (`-Fc`) porque está comprimido, `pg_restore` puede listar
 
 ### 2.4 El CI repite el ciclo en cada PR [CONFIRMADO]
 
-El trabajo `respaldo` de `ci.yml` revisa los scripts (`bash -n` y shellcheck v0.11.0, imagen fijada por huella), migra y siembra una base efímera, la respalda, la restaura en una base nueva, compara los conteos y comprueba las negativas (`faro`, `postgres`, `faro_test` y una base que ya existe). *Motivo:* una guía de restauración probada una sola vez se pudre; una migración futura (por ejemplo, una extensión) puede romper la restauración sin que nadie lo note hasta el día del desastre.
+El trabajo `respaldo` de `ci.yml` revisa los scripts (`bash -n` y shellcheck v0.11.0, imagen fijada por huella), prueba el analizador de la conexión (`probar-conexion.sh`), migra y siembra una base efímera, la respalda, la restaura en una base nueva, compara los conteos y comprueba las negativas (`faro`, `postgres`, `faro_test` y una base que ya existe). *Motivo:* una guía de restauración probada una sola vez se pudre; una migración futura (por ejemplo, una extensión) puede romper la restauración sin que nadie lo note hasta el día del desastre.
 
 ## 3. Alternativas descartadas
 
@@ -54,6 +54,9 @@ El trabajo `respaldo` de `ci.yml` revisa los scripts (`bash -n` y shellcheck v0.
 | **[DESCARTADO] Una cuenta de servicio con permisos de escritura y borrado en el bucket** | Un flujo comprometido podría borrar los respaldos. Con `objectCreator` solo puede agregar |
 | **[DESCARTADO] Restaurar sobre la base existente (`--clean`)** | Un destino equivocado destruye datos vivos. Restaurar siempre en una base nueva y apuntar la aplicación hacia ella es igual de rápido y reversible |
 | **[DESCARTADO] Instalar `pg_dump` en el runner o en el equipo** | La imagen fija la versión, no hay nada que instalar y funciona igual en Windows, Linux y GitHub |
+| **[DESCARTADO] Pasar la cadena de conexión completa a `pg_dump --dbname=...`** (la primera versión, hasta `ebe36e2`) | La clave quedaba como argumento del proceso `pg_dump` dentro del contenedor y cualquier usuario del equipo la veía con `ps` (hallazgo H-04 de la revisión de seguridad; comprobado con un control en `docs/respaldo.md`, sección 7). Se reemplazó por `PGPASSWORD` y las demás `PG*` |
+| **[DESCARTADO] Dejar la imagen por etiqueta (`postgres:17-alpine`)** | Una etiqueta se puede mover; la imagen ve la clave de la base (hallazgo H-05). Se fija por huella y se actualiza con un PR (`docs/respaldo.md`, sección 3) |
+| **[DESCARTADO] Un archivo de contraseñas (`PGPASSFILE`) o un volumen montado con la clave** | Habría que escribir la clave en un archivo del equipo, y el diseño actual no deja ningún archivo con ella; el entorno por nombre de variable basta |
 
 ## 4. Consecuencias
 
@@ -63,6 +66,8 @@ El trabajo `respaldo` de `ci.yml` revisa los scripts (`bash -n` y shellcheck v0.
 - **La copia de la base y los PDF se restauran por separado.** Tras restaurar una copia vieja, los PDF cargados después quedan sin referencia y `almacen:huerfanos -- --borrar` los borraría (`docs/respaldo.md`, sección 6). Por eso **no se agregó una limpieza programada de huérfanos** (el ADR-004 dejaba abierta esa posibilidad para #21): [PENDIENTE] decidirla aparte, con esa advertencia.
 - **Riesgo de versión:** si la base de Neon queda en PostgreSQL 18 (valor por omisión de los proyectos nuevos, [POR VERIFICAR]), la imagen 17 se negará; se resuelve con `RESPALDO_IMAGEN` o eligiendo la 17 al crear el proyecto (`docs/despliegue.md`, sección 4).
 - **Riesgo de una sola persona:** el secreto, el bucket y la cuenta dependen del dueño del repositorio (`docs/respaldo.md`, sección 9).
+- **Una imagen fijada no se actualiza sola:** la huella se revisa con un PR cada cierto tiempo [PROPUESTA] (`docs/respaldo.md`, sección 3).
+- **Pendientes de la revisión de seguridad, sin hacer** (gravedad baja, `docs/respaldo.md`, sección 10): H-06 [PROPUESTA, lo decide el usuario] pasar `RESPALDO_DATABASE_URL` a un *Environment* limitado a `main`; I-08 [PROPUESTA] guardar y comprobar la huella SHA-256 del volcado antes de restaurar.
 
 ## 5. [POR VERIFICAR]
 

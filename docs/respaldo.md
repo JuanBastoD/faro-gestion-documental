@@ -28,17 +28,41 @@ Consecuencia de que la base y los PDF se respalden por separado: **una copia de 
 
 | Archivo | Para qué |
 |---|---|
-| `infra/respaldo/respaldar.sh` | `pg_dump -Fc` con la imagen `postgres:17-alpine`; verifica el archivo con `pg_restore --list`; no imprime la conexión ni la clave |
+| `infra/respaldo/respaldar.sh` | `pg_dump -Fc` con la imagen `postgres:17-alpine` (fijada por huella); la clave va por el entorno y no como argumento; verifica el archivo con `pg_restore --list`; no imprime la conexión ni la clave |
 | `infra/respaldo/restaurar.sh` | Restaura **solo en una base nueva** (la crea; se niega si existe) y muestra los conteos por tabla |
 | `infra/respaldo/contar.sh` | Filas por tabla de una base, para comparar el original con la copia |
+| `infra/respaldo/comun.sh` | Lo que comparten los scripts: la **imagen fijada por huella (digest)** y el analizador de la cadena de conexión (decodifica la clave y la reparte en variables `PG*`) |
+| `infra/respaldo/probar-conexion.sh` | Comprobaciones del analizador de la cadena de conexión y de la huella de la imagen, solo con bash (sin Docker ni base); corre en el CI |
 | `.github/workflows/respaldo.yml` | Respaldo programado (cron) y manual hacia un bucket **privado**; inactivo hasta que existan sus variables |
 | Trabajo `respaldo` de `.github/workflows/ci.yml` | En cada PR: revisa los scripts con shellcheck, respalda y restaura una base efímera, compara y comprueba las negativas. Si una migración futura rompe la restauración, el CI lo dice antes del desastre |
 
-**Por qué la imagen `postgres:17-alpine` y no un `pg_dump` instalado:** es la misma versión mayor que el Compose y el CI, no hay que instalar nada, y funciona igual en Windows, Linux y el flujo de GitHub. **`pg_dump` se niega a respaldar un servidor más nuevo que él**: si el servidor es PostgreSQL 18, hay que usar `RESPALDO_IMAGEN=postgres:18-alpine` (y `RESTAURAR_IMAGEN` igual al restaurar). El script lo dice cuando pasa.
+**Por qué la imagen `postgres:17-alpine` y no un `pg_dump` instalado:** es la misma versión mayor que el Compose y el CI, no hay que instalar nada, y funciona igual en Windows, Linux y el flujo de GitHub. **`pg_dump` se niega a respaldar un servidor más nuevo que él**: si el servidor es PostgreSQL 18, hay que usar `RESPALDO_IMAGEN=postgres:18-alpine@sha256:<huella>` (y `RESTAURAR_IMAGEN` igual al restaurar). El script lo dice cuando pasa.
+
+**La imagen va fijada por huella (digest), no por etiqueta** [CONFIRMADO]. La imagen recibe la clave de la base, y una etiqueta como `postgres:17-alpine` la puede mover quien controle esa imagen. El valor por defecto, en un solo lugar (`infra/respaldo/comun.sh`), es:
+
+```text
+postgres:17-alpine@sha256:f9cf3e1f0066f0eb0c48707d864f0ac5941e9ff454a072077d97a4d278d07d73
+```
+
+Es el **índice multiarquitectura** de la etiqueta tal como estaba el **23 de noviembre de 2026** (`docker buildx imagetools inspect`): la variante `linux/amd64` (manifiesto `sha256:e80acae3f1109e8e4533618b594918936f2858c63afc7204c4773148a673add8`) se construyó el 18 de noviembre de 2026 sobre Alpine 3.24 y trae PostgreSQL 17.12 (`pg_dump 17.12`, `pg_restore 17.12`, `psql 17.12`); en otras arquitecturas (por ejemplo `arm64`) Docker elige solo la suya del mismo índice. `RESPALDO_IMAGEN` (respaldar) y `RESTAURAR_IMAGEN` (restaurar y contar) siguen permitiendo reemplazarla; si lo haces, usa también una huella.
+
+### Actualizar la imagen fijada [PROPUESTA: revisarla con un PR cada cierto tiempo]
+
+Una imagen fijada no recibe correcciones de seguridad sola. [PROPUESTA] Revisarla cada pocos meses, o cuando salga una versión menor con una corrección que importe, **con un PR**, nunca a mano en `main`:
+
+```bash
+docker pull postgres:17-alpine
+docker buildx imagetools inspect postgres:17-alpine          # copia la línea «Digest:» (la del índice)
+docker run --rm postgres:17-alpine@sha256:<huella> pg_dump --version
+```
+
+Se cambia `IMAGEN_POR_DEFECTO` en `infra/respaldo/comun.sh` (el único lugar; `probar-conexion.sh` falla si la huella aparece en otro script o si deja de ser `postgres:17-alpine@sha256:<64 caracteres>`), se actualizan la fecha y la versión de arriba y el CI (`respaldo`) tiene que pasar. Un actualizador automático de imágenes no está configurado.
 
 ## 4. Hacer un respaldo a mano
 
-Requisitos: Docker. La cadena de conexión es un secreto: se pasa por una variable de entorno, **no** se escribe en el repositorio ni en un archivo. El script no la imprime ni la entrega como argumento a Docker.
+Requisitos: Docker. La cadena de conexión es un secreto: se pasa por una variable de entorno, **no** se escribe en el repositorio ni en un archivo.
+
+**Dónde viaja la clave** [CONFIRMADO, sección 7, «La clave no viaja como argumento»]: el script descompone la cadena (la clave puede llevar caracteres especiales si van con codificación porcentual: `%40` es `@`, `%3A` es `:`, `%2F` es `/`, `%23` es `#`, `%25` es `%`, `%3F` es `?`) y la entrega al contenedor **por variables de entorno** (`PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGSSLMODE`…), que `docker` recibe **solo por nombre**. **La clave no es argumento de ningún proceso**: ni de `docker` ni de `pg_dump` (los argumentos los puede leer cualquier usuario del equipo con `ps` o `/proc/<pid>/cmdline`; el entorno de un proceso, solo su dueño). No se imprime, y si `pg_dump` falla, el mensaje de error pasa por un filtro que tapa la cadena y la clave. Si la cadena no se puede leer (esquema que no es `postgresql://`, sin host, sin base, `%` mal formado, parámetro que no sea `sslmode`, `channel_binding`, `connect_timeout`, `application_name` u `options`, varios hosts), el script se niega con un mensaje fijo **que no repite nada de ella**. Lo que sí queda: dentro del contenedor la clave está en su entorno (`docker inspect` la muestra a quien ya controla Docker en ese equipo) y el contenedor se borra al terminar (`--rm`). El mensaje de error de `pg_dump` puede mostrar el host y el usuario (no la clave).
 
 ```bash
 # Base del Compose local (puerto 5433). Si la clave tiene símbolos como @ o /, escríbelos codificados (%40, %2F).
@@ -233,7 +257,41 @@ Lo que dice esa salida, y lo que no:
   Es el mismo caso que se daría si Neon quedara en PostgreSQL 18 y se usara la imagen 17 (no se probó con una 18 real).
 - **Limpieza:** se borraron `faro_r_restaurada` y `faro_r_mut_test` y los archivos de respaldo de la prueba. Quedaron las bases que había antes (`faro`, `faro_test` y las de otros carriles) sin tocar.
 - **Lo que NO se probó:** Neon, Cloud Storage, Workload Identity Federation ni la ejecución de `respaldo.yml` (todo [POR VERIFICAR]); un servidor PostgreSQL 18 real; una base con volumen real.
-- **Lo que sí repite el CI en cada PR** (trabajo `respaldo`): shellcheck, respaldo y restauración de una base migrada y sembrada, conteos, y las negativas con `faro`, `postgres`, `faro_test` y una base que ya existe.
+- **Lo que sí repite el CI en cada PR** (trabajo `respaldo`): shellcheck, las pruebas del analizador de la conexión (`probar-conexion.sh`), respaldo y restauración de una base migrada y sembrada, conteos, y las negativas con `faro`, `postgres`, `faro_test` y una base que ya existe.
+
+### La clave no viaja como argumento (H-04) y la imagen va fijada (H-05): prueba del 23 de noviembre de 2026 [CONFIRMADO]
+
+Segunda prueba, con los scripts nuevos (`comun.sh`), en el mismo equipo y el mismo PostgreSQL 17.12 del Compose. Todo es ficticio y local.
+
+**1. Rol y base descartables con una clave de 15 caracteres que lleva `@ : / # % ?`** (`Pw@Ab:c/d#e%f?g`; en la URL va como `Pw%40Ab%3Ac%2Fd%23e%25f%3Fg`). Se creó el rol `faro_r_dump` con esa clave y la base `faro_r_dumpdb` con una tabla de 3 filas. Para tener tiempo de mirar, otra sesión tomó un candado exclusivo sobre la tabla durante 13 s (y 24 s en la segunda ronda), de modo que `pg_dump` quedó **vivo y esperando**, y mientras tanto se consultó cada ~0,3 a 1 s `docker top` y `docker inspect` del contenedor del volcado.
+
+| | Observaciones del contenedor con `pg_dump` | Con la clave (en claro o codificada) en sus argumentos | Línea del proceso `pg_dump` |
+|---|---|---|---|
+| **Script nuevo** | 2 en la primera ronda, 3 en la segunda | **0** y **0** | `pg_dump --format=custom --no-password` |
+| **Control: el script anterior** (`ebe36e2`, mismas condiciones) | 2 | **2 de 2** | `pg_dump --format=custom --no-password --dbname=postgresql://faro_r_dump:<clave codificada>@host.docker.internal:5433/faro_r_dumpdb` (clave tapada aquí) |
+
+- El control demuestra que el método de observación **sí detecta** una clave puesta como argumento: el script anterior la entregaba al contenedor por nombre de variable, pero su `sh -c 'exec pg_dump --dbname="$RESPALDO_DATABASE_URL"'` la expandía como argumento de `pg_dump`, y eso es lo que cualquier usuario del equipo vería con `ps`.
+- El script nuevo respaldó con éxito esa base con la clave difícil: código 0, **3 filas `valor-prueba` en los datos del volcado** (`pg_restore --data-only`), la tabla con su dueño. La clave no apareció ni una vez en la salida del script.
+- En el anfitrión se miró también la línea de comandos de `docker.exe`, `bash.exe` y `sh.exe` (Windows, PowerShell `Win32_Process`): **0** apariciones de la clave en las dos rondas de la primera observación (script nuevo y control; tampoco con el script anterior, que pasaba la URL por nombre de variable a `docker`).
+- **Lo que sí queda visible** [CONFIRMADO]: con el script nuevo, `PGPASSWORD` está en el entorno del contenedor (la segunda ronda lo comprobó con `docker inspect`, en 3 de 3 observaciones). Eso lo ve quien ya controla Docker en ese equipo; no los demás usuarios.
+- **Lo que NO se miró**: `/proc/<pid>/environ` dentro del contenedor ni el equipo del ejecutor de GitHub Actions (el contenedor es el mismo y `docker run` igual, pero no se ejecutó allí). La observación es por muestreo: es evidencia de que no hay un argumento con la clave en ese lapso, no una garantía de cada instante.
+
+**2. Negativas con el script nuevo** (todas con código 1 y sin repetir nada de la cadena):
+
+```text
+clave equivocada:        ERROR: pg_dump falló. Mensaje (con la conexión y la clave ocultadas):
+                         pg_dump: error: connection to server at "host.docker.internal" (192.168.65.254), port 5433 failed: FATAL:  password authentication failed for user "faro_r_dump"
+% mal formado en la clave: ERROR: RESPALDO_DATABASE_URL no se puede usar: la cadena de conexión tiene una codificación porcentual no válida (el mensaje no repite la cadena). Ver docs/respaldo.md.
+parámetro desconocido:   ERROR: RESPALDO_DATABASE_URL no se puede usar: la cadena de conexión trae un parámetro no admitido (admitidos: sslmode, channel_binding, connect_timeout, application_name, options) (el mensaje no repite la cadena). Ver docs/respaldo.md.
+```
+
+Nótese que el mensaje de `pg_dump` sí muestra el host y el usuario (no la clave).
+
+**3. Las comprobaciones del analizador** (`infra/respaldo/probar-conexion.sh`, 52 en total, solo con bash) cubren la clave con todos los símbolos, que no se decodifica dos veces, `%00` y `%` mal formados, puerto, varios hosts, IPv6, parámetros de Neon (`sslmode=require&channel_binding=require`), que no se cuelen variables `PG*` del entorno y que la imagen por defecto esté fijada por huella en un solo lugar. Se comprobó con tres mutantes que las pruebas detectan fallos: sin decodificar la clave (falla 3 de 52), aceptando `%00` (falla 1) y con la imagen por etiqueta, sin huella (falla 1). `shellcheck` (imagen fijada del CI, con `-x`) sobre los cinco scripts: sin avisos.
+
+**4. Ida y vuelta repetida con los scripts nuevos** sobre `faro_r` (8 tablas): `contar.sh`, `respaldar.sh` (30 641 bytes, 69 objetos, 8 tablas), `restaurar.sh` a `faro_r_restaurada` con `RESTAURAR_COMPARAR_CON=faro_r` (código 0, «Los conteos de todas las tablas coinciden», el disparador `auditoria_sin_cambios` activo, `UPDATE` y `DELETE` sobre la auditoría de la copia rechazados) y las negativas con `faro`, `faro_test`, `postgres`, la base de origen y una base que ya existe.
+
+**5. Limpieza:** se borraron la base y el rol descartables, `faro_r_restaurada` y todos los archivos de respaldo de esta prueba. La lista de bases quedó como antes (`faro`, `faro_test` y las de los otros carriles sin tocar).
 
 ## 8. Activar el respaldo programado: lo que le toca al usuario
 
@@ -271,8 +329,8 @@ En GitHub, **Settings → Secrets and variables → Actions**:
 | Variables | `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER` | Las mismas que ya crea el guion de despliegue |
 | Variables | `GCP_RESPALDO_SA` | El valor de `$SA_RESPALDO` |
 | Variables | `GCS_RESPALDO_BUCKET` | El valor de `$BUCKET_RESPALDO` |
-| Variables (opcional) | `RESPALDO_IMAGEN` | Solo si la base de Neon no es PostgreSQL 17, p. ej. `postgres:18-alpine` |
-| **Secretos** | `RESPALDO_DATABASE_URL` | La cadena de conexión **directa** de Neon (sin `-pooler`) con `?sslmode=require` |
+| Variables (opcional) | `RESPALDO_IMAGEN` | Solo si la base de Neon no es PostgreSQL 17, p. ej. `postgres:18-alpine@sha256:<huella>` (por huella, como la de `comun.sh`; la huella se obtiene como en «Actualizar la imagen fijada», sección 3). Vacía o ausente = la fijada en `comun.sh` |
+| **Secretos** | `RESPALDO_DATABASE_URL` | La cadena de conexión **directa** de Neon (sin `-pooler`) con `?sslmode=require` (si la cadena trae también `&channel_binding=require`, el script la admite). Si la clave tiene símbolos como `@`, `:`, `/`, `#`, `%` o `?`, deben ir con codificación porcentual |
 
 El secreto lo crea el usuario con su propia mano; nadie más lo ve ni lo escribe. [PROPUESTA] Que sea un rol de Neon **solo de lectura** creado para el respaldo (`pg_dump` solo necesita leer), no el dueño de la base que usa la aplicación: así una filtración de ese secreto no permite modificar los datos. [POR VERIFICAR] Cómo se crea ese rol en Neon y que `pg_dump` funcione con él; si no se logra, se usa la cadena de siempre y se anota.
 
@@ -299,6 +357,11 @@ Después de crearlo todo: **Actions → Respaldo → Run workflow** (desde `main
 - **Los datos son ficticios.** Si algún día hubiera datos reales, la copia en el bucket está cifrada en reposo por Google pero no con una clave propia; [PROPUESTA] estudiar una clave propia y la autorización de la entidad antes de guardar datos reales (queda fuera de este issue).
 - **Una copia que nunca se restaura es una esperanza, no un respaldo.** Por eso la restauración se prueba en cada PR (trabajo `respaldo` del CI). [PROPUESTA] Repetir la prueba contra el bucket real tras la primera ejecución programada: bajar el archivo y pasarlo por `restaurar.sh`.
 - **Neon suspende el cómputo sin uso** y el primer acceso tarda. [POR VERIFICAR] si el respaldo programado lo despierta cada día y cuánto del cupo de horas de cómputo del plan gratuito gasta (la documentación pública habla de 100 horas por proyecto al mes; no se midió).
-- **Los límites de Neon** (almacenamiento del plan gratuito, ventana de restauración, versiones de PostgreSQL) cambian: [POR VERIFICAR] en la página de precios el día de activar el respaldo. Lo leído el 22 de noviembre de 2026 en la documentación pública, sin cuenta: Neon admite PostgreSQL 14 a 19, **los proyectos nuevos usan la 18 por omisión** y la versión mayor de un proyecto no se cambia en el sitio. Como el Compose, el CI y esta guía usan 17, **al crear el proyecto de Neon conviene elegir PostgreSQL 17** (`docs/despliegue.md`, sección 4); si queda en 18, se pone `RESPALDO_IMAGEN=postgres:18-alpine` y `RESTAURAR_IMAGEN` igual. [POR VERIFICAR] que la API y las migraciones funcionan en 18 (el CI solo prueba 17).
+- **Los límites de Neon** (almacenamiento del plan gratuito, ventana de restauración, versiones de PostgreSQL) cambian: [POR VERIFICAR] en la página de precios el día de activar el respaldo. Lo leído el 22 de noviembre de 2026 en la documentación pública, sin cuenta: Neon admite PostgreSQL 14 a 19, **los proyectos nuevos usan la 18 por omisión** y la versión mayor de un proyecto no se cambia en el sitio. Como el Compose, el CI y esta guía usan 17, **al crear el proyecto de Neon conviene elegir PostgreSQL 17** (`docs/despliegue.md`, sección 4); si queda en 18, se pone `RESPALDO_IMAGEN=postgres:18-alpine@sha256:<huella>` y `RESTAURAR_IMAGEN` igual. [POR VERIFICAR] que la API y las migraciones funcionan en 18 (el CI solo prueba 17).
 - **Restaurar un respaldo de PostgreSQL 18 en un servidor 17 no está garantizado**: lo que documenta PostgreSQL es restaurar en la misma versión mayor o en una más nueva. [SUPUESTO] No se probó el caso contrario; por eso el destino debe ser de la misma versión mayor que el origen o más nuevo.
 - **El flujo programado no se ha ejecutado nunca** (requiere la cuenta). Se revisó con actionlint y shellcheck, y sus scripts se prueban a diario en el CI, pero la parte de Google Cloud es [POR VERIFICAR].
+
+### Pendientes de la revisión de seguridad del 23 de noviembre de 2026 (gravedad baja, sin hacer)
+
+- **H-06 [PROPUESTA, la decide el usuario]:** pasar `RESPALDO_DATABASE_URL` de secreto del repositorio a un secreto de un *Environment* `respaldo` limitado a la rama `main`, y que el trabajo declare `environment: respaldo`. Hoy, un flujo en cualquier rama del repositorio por alguien con permiso de escritura (hoy solo el dueño) podría leer el secreto; la restricción a `main` existe solo del lado de Google Cloud.
+- **I-08 [PROPUESTA]:** guardar la huella SHA-256 que imprime `respaldar.sh` junto al `.dump` (un `.sha256`) y que `restaurar.sh` la compruebe antes de restaurar, y avisar si el destino no es local y falta TLS (`PGSSLMODE`). Hoy `pg_restore` ejecuta el SQL del archivo con los derechos de `PGUSER` sin verificar que no se alteró; alterarlo exige acceso de escritura al bucket, que la cuenta del flujo no tiene.
