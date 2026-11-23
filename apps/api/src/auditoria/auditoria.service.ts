@@ -3,7 +3,9 @@ import {
   AuditoriaRepository,
   type EjecutorInsercion,
   type EventoAuditoria,
+  type PaginaDeEventos,
 } from './auditoria.repository.js';
+import type { FiltrosAuditoria } from './filtros-auditoria.js';
 
 @Injectable()
 export class AuditoriaService {
@@ -16,5 +18,10 @@ export class AuditoriaService {
    */
   registrar(evento: EventoAuditoria, ejecutor?: EjecutorInsercion): Promise<void> {
     return this.repositorio.insertar(evento, ejecutor);
+  }
+
+  /** Solo lectura: la auditoría no ofrece editar ni borrar eventos. */
+  consultar(filtros: FiltrosAuditoria): Promise<PaginaDeEventos> {
+    return this.repositorio.consultar(filtros);
   }
 }
