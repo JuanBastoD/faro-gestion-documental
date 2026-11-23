@@ -16,8 +16,9 @@
 # Variables de entorno (ninguna credencial vive en el repositorio):
 #   PGHOST (por defecto host.docker.internal), PGPORT (5432), PGUSER y PGPASSWORD (obligatorias), PGSSLMODE.
 #                          La clave viaja por el entorno del contenedor, no como argumento ni en pantalla.
-#   RESTAURAR_IMAGEN       Imagen con pg_restore y psql. Por defecto postgres:17-alpine. Debe ser de la misma
-#                          versión mayor que el servidor de destino (y no más vieja que la de pg_dump).
+#   RESTAURAR_IMAGEN       Imagen con pg_restore y psql. Por defecto postgres:17-alpine FIJADA POR HUELLA (digest) en
+#                          comun.sh. Debe ser de la misma versión mayor que el servidor de destino (y no más vieja
+#                          que la de pg_dump).
 #   RESTAURAR_BD_MANTENIMIENTO  Base a la que se conecta para crear la nueva. Por defecto postgres.
 #   RESTAURAR_BASE_ORIGEN  Base de origen que también está prohibida como destino (opcional).
 #   RESTAURAR_COMPARAR_CON Base con la que se comparan los conteos (opcional).
@@ -28,13 +29,16 @@
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
 
-IMAGEN="${RESTAURAR_IMAGEN:-postgres:17-alpine}"
+AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=comun.sh
+source "$AQUI/comun.sh"
+
+IMAGEN="${RESTAURAR_IMAGEN:-$IMAGEN_POR_DEFECTO}"
 MANTENIMIENTO="${RESTAURAR_BD_MANTENIMIENTO:-postgres}"
 export RESTAURAR_IMAGEN="$IMAGEN"
 export PGHOST="${PGHOST:-host.docker.internal}"
 export PGPORT="${PGPORT:-5432}"
 export PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-15}"
-AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 fallar() {
   echo "ERROR: $*" >&2

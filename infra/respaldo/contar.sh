@@ -8,13 +8,17 @@
 #   infra/respaldo/contar.sh <base>
 #
 # Variables de entorno: las estándar de libpq (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGSSLMODE) y
-#   RESTAURAR_IMAGEN  Imagen con psql. Por defecto postgres:17-alpine.
+#   RESTAURAR_IMAGEN  Imagen con psql. Por defecto postgres:17-alpine FIJADA POR HUELLA (digest) en comun.sh.
 # Solo lee; no cambia nada. La clave viaja por el entorno del contenedor, no como argumento.
 
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
 
-IMAGEN="${RESTAURAR_IMAGEN:-postgres:17-alpine}"
+AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=comun.sh
+source "$AQUI/comun.sh"
+
+IMAGEN="${RESTAURAR_IMAGEN:-$IMAGEN_POR_DEFECTO}"
 export PGHOST="${PGHOST:-host.docker.internal}"
 export PGPORT="${PGPORT:-5432}"
 export PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-15}"

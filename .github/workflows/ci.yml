@@ -162,7 +162,10 @@ jobs:
         run: |
           for script in infra/respaldo/*.sh; do bash -n "$script"; done
           docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d \
-            infra/respaldo/respaldar.sh infra/respaldo/restaurar.sh infra/respaldo/contar.sh
+            -x -P SCRIPTDIR infra/respaldo/comun.sh infra/respaldo/respaldar.sh infra/respaldo/restaurar.sh \
+            infra/respaldo/contar.sh infra/respaldo/probar-conexion.sh
+      - name: Probar el analizador de la cadena de conexión (la clave no viaja como argumento; imagen fijada por huella)
+        run: infra/respaldo/probar-conexion.sh
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
