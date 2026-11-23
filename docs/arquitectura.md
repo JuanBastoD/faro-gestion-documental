@@ -70,9 +70,9 @@ flowchart TB
 
 | Componente | Responsabilidad | Pieza principal |
 |---|---|---|
-| Guardas globales | Otro origen en una petición que modifica → 403 (`OrigenGuard`, módulo `seguridad`); sin sesión → 401; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
-| `auth` | Ingreso, cierre de sesión, sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id`, y el límite de intentos de ingreso por usuario e IP (ADR-009) | `auth.service.ts`, `sesiones.repository.ts` |
-| `usuarios` | Crear, listar, cambiar rol y desactivar; protege al último administrador (ADR-008) | `usuarios.service.ts` |
+| Guardas globales | Otro origen en una petición que modifica → 403 (`OrigenGuard`, módulo `seguridad`); sin sesión → 401; **con clave temporal sin cambiar → 403 `cambio_de_clave_requerido` en todo salvo las rutas marcadas `@PermitidoConClaveTemporal()` (la decide `AuthGuard`, antes que el rol, [ADR-011](adr/0011-cambio-y-restablecimiento-de-clave.md))**; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
+| `auth` | Ingreso, cierre de sesión, **cambio de la clave propia** (ADR-011), sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id`, y el límite de intentos de ingreso por usuario e IP (ADR-009), que el cambio de clave comparte | `auth.service.ts`, `sesiones.repository.ts` |
+| `usuarios` | Crear, listar, cambiar rol y desactivar; protege al último administrador (ADR-008); fija claves temporales a otras personas (ADR-011) | `usuarios.service.ts` |
 | `ccd` | Cuadro de clasificación provisional: árbol de series y subseries. Se carga fuera de la API con `npm run ccd:importar` (CSV) | `series.service.ts`, `importar/` |
 | `documentos` | Cargar, versionar, restaurar, descargar, verificar duplicados (ADR-006) y buscar (ADR-007) | `documentos.service.ts`, `versiones.service.ts`, `duplicados.service.ts` |
 | `auditoria` | Eventos inmutables (disparador en la base) y su consulta, solo para el administrador | `auditoria.service.ts` |
