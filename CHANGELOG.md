@@ -51,7 +51,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 
 - **Interfaz web** (React 19, Vite y TypeScript, CSS propio) servida por la propia API bajo `/app/`: ingreso y cierre de sesión, listado con búsqueda, filtro por serie y paginación (el estado queda en la dirección), detalle con historial de versiones y descarga, menú según el rol y uso desde 360 px de ancho. ADR-0012. Issue #23 *(en revisión, PR #54)*.
 - **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, borrador, apilado sobre el PR #54; [POR VERIFICAR] su estado final)*.
-- Este registro de cambios, las notas de la versión y el borrador del manual de usuario. Issue #27 *(en revisión, PR de esta rama, `Refs`; el tag y el release los publica el usuario)*.
+- Este registro de cambios, las notas de la versión y el borrador del manual de usuario. Issue #27 *(en revisión, PR #61, `Refs`; el tag y el release los publica el usuario)*.
 
 ### Cambiado
 
