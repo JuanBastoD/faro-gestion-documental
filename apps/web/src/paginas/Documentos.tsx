@@ -110,8 +110,8 @@ export function Documentos() {
     <section aria-labelledby="titulo-documentos">
       <h1 id="titulo-documentos">Documentos</h1>
 
-      <search>
-        <form className="filtros" aria-label="Buscar documentos" onSubmit={buscar}>
+      <search aria-label="Buscar documentos">
+        <form className="filtros" onSubmit={buscar}>
           <div className="campo campo--crece">
             <label htmlFor="campo-busqueda">Buscar</label>
             <input
