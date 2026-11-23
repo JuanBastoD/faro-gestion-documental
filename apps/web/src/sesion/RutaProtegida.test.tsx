@@ -110,11 +110,11 @@ describe('guarda de rutas', () => {
       expect(await screen.findByRole('heading', { name: /No tienes permiso/ })).toBeInTheDocument();
     });
 
-    it.each(['editor', 'administrador'] as const)('%s sí llega a la carga (pantalla marcador del #24)', async (rol) => {
+    it.each(['editor', 'administrador'] as const)('%s sí llega al formulario de carga', async (rol) => {
       apiConSesion(rol);
       renderizarApp('/documentos/nuevo');
-      expect(await screen.findByRole('heading', { name: 'Cargar un documento' })).toBeInTheDocument();
-      expect(screen.getByText(/issue #24/)).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Cargar un documento' })).toBeInTheDocument();
+      expect(screen.getByLabelText(/Título/)).toBeInTheDocument();
     });
 
     it.each(['consulta', 'editor'] as const)('%s no ve usuarios ni auditoría', async (rol) => {

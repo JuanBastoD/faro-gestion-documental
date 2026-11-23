@@ -33,6 +33,11 @@ export function formatearTamano(bytes: number): string {
   return `${formatoDecimal.format(bytes / (1024 * 1024))} MB`;
 }
 
+/** Porcentaje entero de una similitud de 0 a 1: `0,93` → `93 %`. */
+export function porcentajeDeSimilitud(similitud: number): string {
+  return `${Math.round(Math.min(1, Math.max(0, similitud)) * 100)} %`;
+}
+
 /** Una espera en segundos como la diría una persona: `30 segundos`, `1 minuto`, `10 minutos`. */
 export function formatearEspera(segundos: number): string {
   if (segundos < 60) {
