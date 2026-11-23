@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { Rol } from '../api/auth';
@@ -471,6 +471,22 @@ describe('desactivar y reactivar', () => {
     expect(within(panel).getByText(/No se borra nada/)).toBeInTheDocument();
     expect(within(panel).queryByText(/Es tu propia cuenta/)).not.toBeInTheDocument();
     expect(api.a('PATCH', '/usuarios/2')).toHaveLength(0);
+  });
+
+  it('dos envíos seguidos del panel de confirmación mandan una sola petición (la guarda no depende de que el botón ya esté deshabilitado)', async () => {
+    const usuario = userEvent.setup();
+    let liberar: (r: Response) => void = () => undefined;
+    const api = montar({ extra: { 'PATCH /usuarios/2': () => new Promise<Response>((resolver) => (liberar = resolver)) } });
+    await esperarLista();
+    await usuario.click(boton('Desactivar a Editor Demo'));
+    const panel = screen.getByRole('form', { name: '¿Desactivar a Editor Demo?' });
+    // Dos «submit» del mismo formulario sin pintar entre uno y otro: el botón aún no se ha deshabilitado en el segundo.
+    fireEvent.submit(panel);
+    fireEvent.submit(panel);
+    await waitFor(() => expect(api.a('PATCH', '/usuarios/2')).toHaveLength(1));
+    liberar(respuestaJson(usuarioAdministrado(2, { usuario: 'editor.demo', nombre: 'Editor Demo', rol: 'editor', activo: false })));
+    await screen.findByText(/Se desactivó a Editor Demo/);
+    expect(api.a('PATCH', '/usuarios/2')).toHaveLength(1);
   });
 
   it('confirmar desactiva: envía solo activo=false, marca la tarjeta como inactiva y cambia el botón por «Reactivar»', async () => {
