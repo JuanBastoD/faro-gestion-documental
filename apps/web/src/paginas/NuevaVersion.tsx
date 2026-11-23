@@ -32,7 +32,7 @@ export function NuevaVersion() {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [motivo, setMotivo] = useState('');
   const [errores, setErrores] = useState<Errores>({});
-  const [errorGeneral, setErrorGeneral] = useState<{ mensaje: string } | null>(null);
+  const [errorGeneral, setErrorGeneral] = useState<{ mensaje: string; enfocar: boolean } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [intento, setIntento] = useState(0);
 
@@ -51,7 +51,7 @@ export function NuevaVersion() {
 
   useEnfocarPrimerError(formulario, intento);
   useEffect(() => {
-    if (errorGeneral) alerta.current?.focus();
+    if (errorGeneral?.enfocar) alerta.current?.focus();
   }, [errorGeneral]);
   useEffect(() => () => control.current?.abort(), []);
 
@@ -111,7 +111,7 @@ export function NuevaVersion() {
       const traducido = traducirError(fallo, 'version');
       setErrores(traducido.campos);
       if (Object.keys(traducido.campos).length > 0) setIntento((n) => n + 1);
-      setErrorGeneral({ mensaje: traducido.mensaje });
+      setErrorGeneral({ mensaje: traducido.mensaje, enfocar: Object.keys(traducido.campos).length === 0 });
     }
     enviandoAhora.current = false;
     setEnviando(false);

@@ -44,7 +44,7 @@ export function CargarDocumento() {
   const [motivo, setMotivo] = useState('');
 
   const [errores, setErrores] = useState<Errores>({});
-  const [errorGeneral, setErrorGeneral] = useState<{ mensaje: string } | null>(null);
+  const [errorGeneral, setErrorGeneral] = useState<{ mensaje: string; enfocar: boolean } | null>(null);
   const [exacto, setExacto] = useState<UbicacionDeVersion | null>(null);
   const [errorDeDecision, setErrorDeDecision] = useState<string | undefined>(undefined);
   const [pantalla, setPantalla] = useState<Pantalla>({ tipo: 'formulario' });
@@ -64,7 +64,7 @@ export function CargarDocumento() {
 
   useEnfocarPrimerError(formulario, intento);
   useEffect(() => {
-    if (errorGeneral) alerta.current?.focus();
+    if (errorGeneral?.enfocar) alerta.current?.focus();
   }, [errorGeneral]);
   useEffect(() => {
     if (exacto) alertaExacto.current?.focus();
@@ -119,7 +119,7 @@ export function CargarDocumento() {
         } else {
           setErrores(traducido.campos);
           if (Object.keys(traducido.campos).length > 0) setIntento((n) => n + 1);
-          setErrorGeneral({ mensaje: traducido.mensaje });
+          setErrorGeneral({ mensaje: traducido.mensaje, enfocar: Object.keys(traducido.campos).length === 0 });
         }
       }
     }

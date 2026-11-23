@@ -1,16 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
+import { crearDireccionFalsa, liberarDireccionFalsa } from './blobs';
 
-// jsdom no implementa `URL.createObjectURL` (la pantalla de duplicado lo usa para abrir el PDF nuevo): se sustituye por
-// funciones espía que devuelven una dirección `blob:` de mentira. Las pruebas pueden mirar sus llamadas con `vi.mocked`.
+// jsdom no implementa `URL.createObjectURL`: se sustituye por los espías de `blobs.ts`, que arrancan limpios en cada prueba.
 beforeEach(() => {
-  Object.defineProperty(URL, 'createObjectURL', {
-    configurable: true,
-    writable: true,
-    value: vi.fn(() => 'blob:prueba/archivo-nuevo'),
-  });
-  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: vi.fn() });
+  crearDireccionFalsa.mockClear();
+  liberarDireccionFalsa.mockClear();
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: crearDireccionFalsa });
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: liberarDireccionFalsa });
 });
 
 // Cada prueba parte limpia: sin árbol montado, sin espías ni sustituciones de `fetch`.

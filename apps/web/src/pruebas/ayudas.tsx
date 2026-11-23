@@ -114,11 +114,18 @@ export function archivoPdf(nombre = 'acta.pdf', tamano?: number): File {
 /** Muestra dónde está el enrutador, para que las pruebas comprueben adónde navegó la interfaz. */
 function UbicacionActual() {
   const ubicacion = useLocation();
-  return <output data-testid="ubicacion">{ubicacion.pathname + ubicacion.search}</output>;
+  return (
+    <output data-testid="ubicacion" data-estado={JSON.stringify(ubicacion.state ?? null)}>
+      {ubicacion.pathname + ubicacion.search}
+    </output>
+  );
 }
 
-/** Monta la aplicación completa (sesión, guarda y rutas) en una ruta. Las pantallas piden a la API simulada. */
-export function renderizarApp(ruta: string) {
+/**
+ * Monta la aplicación completa (sesión, guarda y rutas) en una ruta. Las pantallas piden a la API simulada. La ruta puede
+ * traer un `state` de navegación (así llega a una pantalla, por ejemplo, el aviso que deja la anterior).
+ */
+export function renderizarApp(ruta: string | { pathname: string; state: unknown }) {
   return render(
     <MemoryRouter initialEntries={[ruta]}>
       <ProveedorSesion>
