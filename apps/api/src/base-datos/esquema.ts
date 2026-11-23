@@ -1,7 +1,10 @@
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  check,
   date,
+  foreignKey,
   index,
   integer,
   pgEnum,
@@ -9,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
@@ -77,6 +81,8 @@ export const versiones = pgTable(
     sha256: text('sha256').notNull(),
     tamano: bigint('tamano', { mode: 'number' }).notNull(),
     motivo: text('motivo').notNull(),
+    /** Si esta versión restaura una anterior, el número de la versión de la que viene (mismo documento). */
+    restauradaDe: integer('restaurada_de'),
     autorId: integer('autor_id')
       .notNull()
       .references(() => usuarios.id),
@@ -84,7 +90,18 @@ export const versiones = pgTable(
   },
   (tabla) => [
     unique('versiones_documento_numero_uq').on(tabla.documentoId, tabla.numero),
-    unique('versiones_documento_sha256_uq').on(tabla.documentoId, tabla.sha256),
+    // La huella es única por documento solo entre versiones con contenido nuevo. Una restauración
+    // repite a propósito la huella de la versión que restaura, por eso queda fuera del índice.
+    uniqueIndex('versiones_documento_sha256_uq')
+      .on(tabla.documentoId, tabla.sha256)
+      .where(sql`${tabla.restauradaDe} is null`),
+    // La versión restaurada debe existir en el mismo documento y ser anterior.
+    foreignKey({
+      name: 'versiones_restaurada_de_fk',
+      columns: [tabla.documentoId, tabla.restauradaDe],
+      foreignColumns: [tabla.documentoId, tabla.numero],
+    }),
+    check('versiones_restaurada_anterior_ck', sql`${tabla.restauradaDe} is null or ${tabla.restauradaDe} < ${tabla.numero}`),
     // Para avisar si otro documento ya tiene el mismo archivo.
     index('versiones_sha256_idx').on(tabla.sha256),
   ],

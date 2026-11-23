@@ -70,7 +70,12 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 | `GET /documentos` | Con sesión | Listado, el más reciente primero. `pagina` y `tamano` (máx. 50) |
 | `GET /documentos/:id` | Con sesión | Documento con el historial de versiones |
 | `GET /documentos/:id/versiones/:n/archivo` | Con sesión | Descarga el PDF de una versión (queda en la auditoría) |
+| `GET /documentos/:id/versiones` | Con sesión | Historial de versiones, la más reciente primero (número, autor, fecha, motivo, de cuál se restauró) |
+| `POST /documentos/:id/versiones` | Administrador y editor | Sube una versión nueva (multipart: `archivo` PDF y `motivo` obligatorio, hasta 300 caracteres). 409 si el contenido ya está en una versión de ese documento |
+| `POST /documentos/:id/versiones/:n/restaurar` | Administrador y editor | Crea una versión nueva con el contenido de la `n`; no edita ni borra nada (`motivo` opcional). 409 si la vigente ya tiene ese contenido |
 | `GET /auditoria` | Administrador | Eventos de auditoría, los más recientes primero. Filtros: `usuarioId`, `accion`, `documentoId`, `desde`, `hasta`; paginación: `pagina` y `tamano` (máx. 100). Solo lectura: los eventos no se editan ni se borran, ni por la API ni por SQL |
+
+**Versiones** ([ADR-005](docs/adr/0005-versionado-y-restauracion.md)): el historial solo crece. Restaurar crea una versión nueva que apunta al mismo archivo, y dos personas versionando a la vez reciben números consecutivos porque la transacción bloquea el documento. Si actualizas desde una versión anterior, aplica antes `npm run db:migrate -w apps/api` (migración 0004).
 
 **Dónde se guardan los PDF** ([ADR-004](docs/adr/0004-almacen-de-archivos-y-carga.md)): `ALMACEN_TIPO=disco` (por defecto, la carpeta `apps/api/almacen-local`, sin Docker) o `ALMACEN_TIPO=s3` (el almacén de `npm run infra:up`, y en la nube Cloud Storage; exige las variables `S3_*`). La carga guarda el archivo y después el registro en una transacción; si algo falla no queda ninguno de los dos. `npm run almacen:huerfanos -w apps/api` lista los archivos que ninguna versión usa y, con `-- --borrar`, borra los de más de una hora.
 

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import { Inject, Injectable } from '@nestjs/common';
 import { DB, type BaseDatos } from '../base-datos/base-datos.module.js';
 import { documentos, seriesCcd, usuarios, versiones } from '../base-datos/esquema.js';
@@ -22,6 +22,8 @@ export interface NuevaVersion {
   sha256: string;
   tamano: number;
   motivo: string;
+  /** Número de la versión que esta restaura, si es una restauración. */
+  restauradaDe?: number;
   autorId: number;
 }
 
@@ -42,15 +44,33 @@ export interface VersionDetalle {
   sha256: string;
   tamano: number;
   motivo: string;
+  restauradaDe: number | null;
   autorId: number;
   autor: string;
   creadoEn: Date;
+}
+
+/** Todo lo que hace falta para restaurar o comparar una versión. */
+export interface VersionCompleta {
+  numero: number;
+  archivo: string;
+  nombreOriginal: string;
+  sha256: string;
+  tamano: number;
 }
 
 export interface ResumenDocumento extends DocumentoBasico {
   /** Número de la versión más reciente. */
   versionActual: number;
 }
+
+const columnasCompletas = {
+  numero: versiones.numero,
+  archivo: versiones.archivo,
+  nombreOriginal: versiones.nombreOriginal,
+  sha256: versiones.sha256,
+  tamano: versiones.tamano,
+};
 
 @Injectable()
 export class DocumentosRepository {
@@ -84,6 +104,80 @@ export class DocumentosRepository {
     return new Set(filas.map((f) => f.archivo));
   }
 
+  /** ¿Existe el documento? Barato: sirve para fallar con 404 antes de guardar un archivo. */
+  async existeDocumento(id: number): Promise<boolean> {
+    const [fila] = await this.db
+      .select({ id: documentos.id })
+      .from(documentos)
+      .where(eq(documentos.id, id))
+      .limit(1);
+    return fila !== undefined;
+  }
+
+  /**
+   * Bloquea la fila del documento hasta el fin de la transacción: dos versiones simultáneas del
+   * mismo documento se ponen en fila y la numeración no se repite ni deja huecos.
+   * Devuelve false si el documento no existe.
+   */
+  async bloquearDocumento(tx: Transaccion, id: number): Promise<boolean> {
+    const filas = await tx
+      .select({ id: documentos.id })
+      .from(documentos)
+      .where(eq(documentos.id, id))
+      .for('update');
+    return filas.length > 0;
+  }
+
+  /** La versión vigente es la de número más alto. Undefined si el documento no tiene versiones. */
+  async versionVigente(tx: Transaccion, documentoId: number): Promise<VersionCompleta | undefined> {
+    const [fila] = await tx
+      .select(columnasCompletas)
+      .from(versiones)
+      .where(eq(versiones.documentoId, documentoId))
+      .orderBy(desc(versiones.numero))
+      .limit(1);
+    return fila;
+  }
+
+  /** Número de la versión con esa huella entre las de contenido nuevo (no restauraciones). */
+  async numeroConHuella(
+    tx: Transaccion,
+    documentoId: number,
+    sha256: string,
+  ): Promise<number | undefined> {
+    const [fila] = await tx
+      .select({ numero: versiones.numero })
+      .from(versiones)
+      .where(
+        and(
+          eq(versiones.documentoId, documentoId),
+          eq(versiones.sha256, sha256),
+          isNull(versiones.restauradaDe),
+        ),
+      )
+      .limit(1);
+    return fila?.numero;
+  }
+
+  async buscarVersionCompleta(
+    tx: Transaccion,
+    documentoId: number,
+    numero: number,
+  ): Promise<VersionCompleta | undefined> {
+    const [fila] = await tx
+      .select(columnasCompletas)
+      .from(versiones)
+      .where(and(eq(versiones.documentoId, documentoId), eq(versiones.numero, numero)))
+      .limit(1);
+    return fila;
+  }
+
+  /** Una sola versión con su autor, para devolverla tras crearla. */
+  async detalleDeVersion(documentoId: number, numero: number): Promise<VersionDetalle | undefined> {
+    const todas = await this.listarVersiones(documentoId);
+    return todas.find((v) => v.numero === numero);
+  }
+
   async buscarDocumento(id: number): Promise<DocumentoBasico | undefined> {
     const [fila] = await this.db
       .select({
@@ -112,6 +206,7 @@ export class DocumentosRepository {
         sha256: versiones.sha256,
         tamano: versiones.tamano,
         motivo: versiones.motivo,
+        restauradaDe: versiones.restauradaDe,
         autorId: versiones.autorId,
         autor: usuarios.usuario,
         creadoEn: versiones.creadoEn,
