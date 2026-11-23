@@ -14,7 +14,8 @@ import type { UsuarioSesion } from '../auth/roles.js';
 import { prepararArchivo, type ArchivoRecibido } from './archivo-preparado.js';
 import { compensarObjeto } from './compensar-objeto.js';
 import { DatosInvalidosError } from './datos-carga.js';
-import { DocumentosRepository, type VersionDetalle } from './documentos.repository.js';
+import { DocumentosRepository, type Transaccion, type VersionDetalle } from './documentos.repository.js';
+import { extraerTexto, type TextoDeVersion } from '../similitud/texto-pdf.js';
 
 const MOTIVO_MAXIMO = 300;
 
@@ -51,6 +52,14 @@ function esViolacionUnica(error: unknown): boolean {
   return e?.code === VIOLACION_UNICA || e?.cause?.code === VIOLACION_UNICA;
 }
 
+/** Lo que un llamador que ya hizo parte del trabajo puede aportar a `agregar`. */
+export interface OpcionesVersion {
+  /** Texto ya extraído del archivo, para no extraerlo dos veces. */
+  texto?: TextoDeVersion;
+  /** Se ejecuta dentro de la misma transacción que la versión y su evento (p. ej. otro evento de auditoría). */
+  alRegistrar?: (tx: Transaccion, numero: number) => Promise<void>;
+}
+
 @Injectable()
 export class VersionesService {
   private readonly logger = new Logger(VersionesService.name);
@@ -79,6 +88,7 @@ export class VersionesService {
     cuerpo: unknown,
     archivo: ArchivoRecibido | undefined,
     usuario: UsuarioSesion,
+    opciones: OpcionesVersion = {},
   ): Promise<VersionDetalle> {
     const { motivo } = leer(esquemaNuevaVersion, cuerpo);
     if (!archivo) throw new BadRequestException('Falta el archivo PDF (campo "archivo")');
@@ -87,6 +97,8 @@ export class VersionesService {
     if (!(await this.repositorio.existeDocumento(documentoId))) {
       throw new NotFoundException(`No existe el documento ${documentoId}`);
     }
+
+    const texto = opciones.texto ?? (await extraerTexto(preparado.datos));
 
     await this.almacen.guardar(preparado.clave, preparado.datos, 'application/pdf');
     try {
@@ -109,6 +121,9 @@ export class VersionesService {
           tamano: preparado.datos.length,
           motivo,
           autorId: usuario.id,
+          textoEstado: texto.estado,
+          textoNormalizado: texto.textoNormalizado,
+          firma: texto.firma,
         });
         await this.auditoria.registrar(
           {
@@ -119,6 +134,7 @@ export class VersionesService {
           },
           tx,
         );
+        await opciones.alRegistrar?.(tx, nuevo);
         return nuevo;
       });
       return await this.detalle(documentoId, numero);
@@ -157,6 +173,8 @@ export class VersionesService {
       const vigente = await this.repositorio.versionVigente(tx, documentoId);
       if (vigente && vigente.sha256 === origen.sha256) {
         throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
           message:
             vigente.numero === numeroOrigen
               ? `La versión ${numeroOrigen} ya es la vigente`
@@ -171,6 +189,7 @@ export class VersionesService {
         throw new NotFoundException('El archivo de esa versión no está disponible');
       }
 
+      const texto = await this.repositorio.buscarTexto(tx, documentoId, numeroOrigen);
       const numero = (vigente?.numero ?? 0) + 1;
       await this.repositorio.insertarVersion(tx, {
         documentoId,
@@ -182,6 +201,10 @@ export class VersionesService {
         motivo,
         restauradaDe: numeroOrigen,
         autorId: usuario.id,
+        // El contenido es el mismo: se copian el texto y la firma de la versión restaurada.
+        textoEstado: texto?.textoEstado ?? 'sin_texto',
+        textoNormalizado: texto?.textoNormalizado ?? null,
+        firma: texto?.firma ?? null,
       });
       await this.auditoria.registrar(
         {
@@ -205,6 +228,8 @@ export class VersionesService {
 
   private contenidoRepetido(numero: number | undefined): ConflictException {
     return new ConflictException({
+      statusCode: 409,
+      error: 'Conflict',
       message:
         numero === undefined
           ? 'Este contenido ya está en una versión del documento'

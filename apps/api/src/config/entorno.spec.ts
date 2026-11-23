@@ -12,7 +12,19 @@ describe('validarEntorno', () => {
       DATABASE_URL: URL_VALIDA,
       ALMACEN_TIPO: 'disco',
       ALMACEN_RUTA: 'almacen-local',
+      UMBRAL_SIMILITUD: 0.8,
       S3_REGION: 'us-east-1',
+    });
+  });
+
+  describe('umbral de similitud', () => {
+    it('acepta un número entre 0,5 y 1, también como texto', () => {
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA, UMBRAL_SIMILITUD: '0.9' }).UMBRAL_SIMILITUD).toBe(0.9);
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA, UMBRAL_SIMILITUD: '1' }).UMBRAL_SIMILITUD).toBe(1);
+    });
+
+    it.each(['0.2', '1.5', 'alto', '-1'])('rechaza %s con un mensaje claro', (valor) => {
+      expect(() => validarEntorno({ DATABASE_URL: URL_VALIDA, UMBRAL_SIMILITUD: valor })).toThrow(/UMBRAL_SIMILITUD/);
     });
   });
 

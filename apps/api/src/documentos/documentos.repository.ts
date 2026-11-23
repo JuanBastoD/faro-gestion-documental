@@ -6,6 +6,9 @@ import { documentos, seriesCcd, usuarios, versiones } from '../base-datos/esquem
 /** Transacción abierta por `enTransaccion`. También sirve como ejecutor de inserciones de auditoría. */
 export type Transaccion = Parameters<Parameters<BaseDatos['transaction']>[0]>[0];
 
+/** Algo contra lo que se puede consultar: la base o una transacción abierta. */
+export type Ejecutor = BaseDatos | Transaccion;
+
 export interface NuevoDocumento {
   titulo: string;
   expediente: string;
@@ -25,6 +28,10 @@ export interface NuevaVersion {
   /** Número de la versión que esta restaura, si es una restauración. */
   restauradaDe?: number;
   autorId: number;
+  /** `sin_texto` si no se pudo extraer texto suficiente del PDF. */
+  textoEstado: 'ok' | 'sin_texto';
+  textoNormalizado: string | null;
+  firma: Buffer | null;
 }
 
 export interface DocumentoBasico {
@@ -45,6 +52,8 @@ export interface VersionDetalle {
   tamano: number;
   motivo: string;
   restauradaDe: number | null;
+  /** `sin_texto`: solo se verificó por huella exacta (sin capa de texto o no legible). */
+  textoEstado: string;
   autorId: number;
   autor: string;
   creadoEn: Date;
@@ -63,6 +72,29 @@ export interface ResumenDocumento extends DocumentoBasico {
   /** Número de la versión más reciente. */
   versionActual: number;
 }
+
+/** Dónde está una versión: lo que se muestra al avisar de un duplicado. */
+export interface UbicacionDeVersion {
+  documentoId: number;
+  version: number;
+  titulo: string;
+  expediente: string;
+  serieCodigo: string;
+}
+
+export interface TextoGuardado {
+  textoEstado: 'ok' | 'sin_texto';
+  textoNormalizado: string | null;
+  firma: Buffer | null;
+}
+
+const columnasUbicacion = {
+  documentoId: versiones.documentoId,
+  version: versiones.numero,
+  titulo: documentos.titulo,
+  expediente: documentos.expediente,
+  serieCodigo: seriesCcd.codigo,
+};
 
 const columnasCompletas = {
   numero: versiones.numero,
@@ -102,6 +134,63 @@ export class DocumentosRepository {
   async clavesReferenciadas(): Promise<Set<string>> {
     const filas = await this.db.selectDistinct({ archivo: versiones.archivo }).from(versiones);
     return new Set(filas.map((f) => f.archivo));
+  }
+
+  /** El texto y la firma de una versión, para copiarlos al restaurarla. */
+  async buscarTexto(
+    tx: Transaccion,
+    documentoId: number,
+    numero: number,
+  ): Promise<TextoGuardado | undefined> {
+    const [fila] = await tx
+      .select({
+        textoEstado: versiones.textoEstado,
+        textoNormalizado: versiones.textoNormalizado,
+        firma: versiones.firma,
+      })
+      .from(versiones)
+      .where(and(eq(versiones.documentoId, documentoId), eq(versiones.numero, numero)))
+      .limit(1);
+    return fila && { ...fila, textoEstado: fila.textoEstado === 'ok' ? 'ok' : 'sin_texto' };
+  }
+
+  /**
+   * Bloquea (hasta el fin de la transacción) a quien quiera cargar un archivo con esta huella.
+   * Dos cargas idénticas simultáneas se ponen en fila y la segunda ve a la primera al volver a
+   * verificar, así que no pueden quedar los dos documentos.
+   */
+  async bloquearHuella(tx: Transaccion, sha256: string): Promise<void> {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${sha256}, 0))`);
+  }
+
+  /** La versión más antigua de cualquier documento con esa huella exacta, con dónde está. */
+  async buscarPorHuella(
+    sha256: string,
+    ejecutor: Ejecutor = this.db,
+  ): Promise<UbicacionDeVersion | undefined> {
+    const [fila] = await ejecutor
+      .select(columnasUbicacion)
+      .from(versiones)
+      .innerJoin(documentos, eq(documentos.id, versiones.documentoId))
+      .innerJoin(seriesCcd, eq(seriesCcd.id, documentos.serieId))
+      .where(eq(versiones.sha256, sha256))
+      .orderBy(versiones.creadoEn, versiones.id)
+      .limit(1);
+    return fila;
+  }
+
+  /**
+   * Firma de todas las versiones con texto y contenido propio (las restauraciones repiten la firma
+   * de otra versión y se dejan fuera). Con las cantidades de la entidad caben en memoria: 1 KB cada una.
+   */
+  async firmasParaComparar(): Promise<Array<UbicacionDeVersion & { firma: Buffer }>> {
+    const filas = await this.db
+      .select({ ...columnasUbicacion, firma: versiones.firma })
+      .from(versiones)
+      .innerJoin(documentos, eq(documentos.id, versiones.documentoId))
+      .innerJoin(seriesCcd, eq(seriesCcd.id, documentos.serieId))
+      .where(and(eq(versiones.textoEstado, 'ok'), isNull(versiones.restauradaDe)));
+    return filas.flatMap((fila) => (fila.firma ? [{ ...fila, firma: fila.firma }] : []));
   }
 
   /** ¿Existe el documento? Barato: sirve para fallar con 404 antes de guardar un archivo. */
@@ -207,6 +296,7 @@ export class DocumentosRepository {
         tamano: versiones.tamano,
         motivo: versiones.motivo,
         restauradaDe: versiones.restauradaDe,
+        textoEstado: versiones.textoEstado,
         autorId: versiones.autorId,
         autor: usuarios.usuario,
         creadoEn: versiones.creadoEn,

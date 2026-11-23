@@ -25,7 +25,7 @@ El motivo es opcional al restaurar (por defecto «Restaura la versión n»); al 
 
 ### 2.2 La huella es única por documento solo entre versiones con contenido nuevo [CONFIRMADO en #11]
 
-El índice único `versiones_documento_sha256_uq` pasó a ser **parcial**: `(documento_id, sha256) WHERE restaurada_de IS NULL`. Así subir de nuevo un archivo idéntico a una versión que ya tiene el documento se rechaza con 409 y se dice cuál es, pero una restauración puede repetir la huella a propósito. La huella **no** es única entre documentos distintos: el mismo PDF puede estar en dos expedientes (el aviso entre documentos llega en #12).
+El índice único `versiones_documento_sha256_uq` pasó a ser **parcial**: `(documento_id, sha256) WHERE restaurada_de IS NULL`. Así subir de nuevo un archivo idéntico a una versión que ya tiene el documento se rechaza con 409 y se dice cuál es, pero una restauración puede repetir la huella a propósito. La huella **no** es única entre documentos distintos: el mismo PDF puede estar en dos expedientes (la verificación entre documentos es la de la carga, ADR-006).
 
 Dos restricciones más protegen el campo nuevo, ya en la base y no solo en el servicio:
 

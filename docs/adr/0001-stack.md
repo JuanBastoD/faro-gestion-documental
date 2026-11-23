@@ -44,7 +44,7 @@ Versiones tomadas de `package-lock.json` al 22 de noviembre de 2026. Las imágen
 
 - **TypeScript en todo:** un solo lenguaje para API y web y tipos compartidos, que es lo que un desarrollador solo puede mantener.
 - **NestJS:** impone módulos, inyección de dependencias y validación de forma estándar, lo que se explica fácil ante el docente y evita repetir el problema del prototipo (Express a mano sin estructura).
-- **PostgreSQL:** estándar de servidor, con búsqueda de texto completo en español (`tsvector`) y similitud (`pg_trgm`), que la verificación doble de duplicados necesita. Se comprobó que `pg_trgm` está disponible en la imagen usada.
+- **PostgreSQL:** estándar de servidor, con búsqueda de texto completo en español (`tsvector`). Se había previsto `pg_trgm` para la similitud de duplicados; la medición de #12 lo descartó (ver ADR-006).
 - **Drizzle:** el esquema se escribe en TypeScript, no hay un paso aparte de generación de cliente y el SQL de cada migración queda visible y editable (útil para índices de texto y extensiones). No se eligió por una medición: Prisma también habría servido.
 - **Archivos tras una interfaz S3:** la API habla S3 estándar, así que el mismo adaptador sirve con cualquier almacén compatible y mover el despliegue es cambiar configuración.
 - **Vitest y Oxlint:** son los de la plantilla oficial de NestJS 12 y funcionan con módulos ESM sin configuración adicional. Esa fue la razón principal; no se compararon en rendimiento.
@@ -90,7 +90,7 @@ Versiones tomadas de `package-lock.json` al 22 de noviembre de 2026. Las imágen
 Quedan para su propio registro cuando se aborden:
 
 - Mecanismo de autenticación (sesión o JWT en cookie `httpOnly`) y de protección contra CSRF (#8 y #18).
-- Librería de extracción de texto de los PDF y umbral de similitud (#12). El umbral se calibra con PDF reales, que requieren autorización de la entidad.
+- Librería de extracción de texto de los PDF y umbral de similitud (#12): resuelto en el ADR-006 (`unpdf` y una firma MinHash; `pg_trgm` se midió y se descartó). El umbral inicial se calibra con PDF reales, que requieren autorización de la entidad.
 - Estructura de la interfaz web y su biblioteca de componentes (#23 a #25).
 - Estrategia de base de datos de pruebas aparte, antes de que las pruebas de integración escriban filas.
 

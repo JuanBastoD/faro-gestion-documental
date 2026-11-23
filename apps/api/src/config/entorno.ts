@@ -27,6 +27,13 @@ const esquema = z.object({
   // Dónde se guardan los PDF: en una carpeta del equipo (desarrollo y pruebas) o en un almacén S3.
   ALMACEN_TIPO: z.enum(['disco', 's3'], { error: 'debe ser disco o s3' }).default('disco'),
   ALMACEN_RUTA: z.string().min(1, { error: 'no puede estar vacía' }).default('almacen-local'),
+  // Desde qué similitud de texto (0,5 a 1) se avisa de un duplicado probable. Ver ADR-006: el 0,80 es
+  // un valor inicial que hay que calibrar con PDF reales de la entidad.
+  UMBRAL_SIMILITUD: z.coerce
+    .number({ error: 'debe ser un número entre 0,5 y 1' })
+    .min(0.5, { error: 'debe ser un número entre 0,5 y 1' })
+    .max(1, { error: 'debe ser un número entre 0,5 y 1' })
+    .default(0.8),
   S3_ENDPOINT: z
     .string()
     .refine((valor) => /^https?:\/\//.test(valor) && URL.canParse(valor), {
