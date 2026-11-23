@@ -93,6 +93,8 @@ La configuración sale de variables de entorno que se validan al arrancar (`apps
 | `npm run build` | Compila a `apps/api/dist` |
 | `npm run db:generate -w apps/api -- --name <nombre>` | Genera una migración SQL nueva a partir de `esquema.ts` |
 
+**Pruebas de aceptación.** `apps/api/test/aceptacion.e2e-spec.ts` repite contra la API nueva las 7 del prototipo v1 (`legacy/prototipo-v1/test/flujo.test.js`), encadenadas como allá: credenciales y sesión, carga con búsqueda sin tildes y versión, rol de consulta, archivo ya digitalizado, no-PDF y datos incompletos, auditoría solo para el administrador y **persistencia tras reiniciar la aplicación** (cierra la instancia y levanta otra contra la misma base y el mismo almacén). Cambios respecto a v1, a propósito: la API responde con códigos y JSON (sin sesión es 401, no una redirección a `/login`) y un archivo que no es PDF es 415, no 400. Los servicios de versiones y de duplicados tienen además pruebas unitarias con repositorio falso (`*.service.spec.ts`).
+
 Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se editan una vez fusionadas: un cambio de esquema es una migración nueva.
 
 ## Integración continua
