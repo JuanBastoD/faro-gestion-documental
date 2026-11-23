@@ -161,7 +161,7 @@ En el listado, pulsa el título de un documento. Verás:
 
 ![Detalle de un documento con cuatro versiones: la versión 4 vigente restaura la versión 1](manual/capturas/08-detalle-con-historial.png)
 
-*Captura 9. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar», que llega con el PR #58 (se ve en las capturas 24 y 28, secciones 8 y 9). [CONFIRMADO]*
+*Captura 9. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar», que llega con el PR #58 (se ve en las capturas 27 y 31, secciones 8 y 9). [CONFIRMADO]*
 
 **Leer el historial.** «La más reciente primero. El historial solo crece: nada se edita ni se borra.» Si una versión se subió por error, no se borra: se corrige con una versión nueva o restaurando otra, y el error queda en el historial.
 
@@ -180,7 +180,7 @@ Todos los roles pueden descargar. **Cada descarga queda registrada en la auditor
 
 ## 7. Cargar un documento nuevo
 
-> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
+> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`; las capturas 18 a 20, tomadas tras el arreglo de diseño `cac8cfe`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
 
 **Quién:** editor y administrador. **Dónde:** menú **Cargar documento** (también el enlace «Cargar el primer documento» cuando el sistema no tiene ningún documento).
 
@@ -263,7 +263,21 @@ La **verificación es doble** (ADR-0006): primero compara la huella del archivo 
 
 [POR VERIFICAR] **El PDF no se muestra dentro de la página: se abre en otra pestaña.** La política de seguridad de la API no admite incrustarlo (ADR-0012, sección 6.1). Eso significa que no verás los dos documentos lado a lado en la misma pantalla, solo sus datos y el porcentaje; falta confirmar con personas de la entidad si eso basta para decidir (ADR-0012, sección 6.2). La pantalla tampoco muestra **qué texto cambió**, solo cuánto se parecen [PROPUESTA: un visor de diferencias queda fuera del alcance del prototipo].
 
-**Si hay varios documentos parecidos**, aparece primero «Elige con cuál quieres comparar», con una opción por candidato (título, expediente y porcentaje), y la comparación cambia según la que elijas. [POR VERIFICAR: sin captura] Se descartó la captura de esta variante: en 1280 y en 360 px las opciones de la lista se ven encimadas unas sobre otras (defecto visual del PR #58, avisado al responsable). Esta descripción sale del código de la rama.
+**Si hay varios documentos parecidos**, el texto de arriba dice cuántos son («…muy parecido al de 2 documentos ya guardados») y, antes de los dos lados, aparece el grupo «**Elige con cuál quieres comparar**». Cada candidato es una **tarjeta propia, una por línea**, con un botón de opción, el título completo entre comillas, el expediente y el porcentaje de parecido (por ejemplo «…· expediente EXP-2026-031 · 95 % de parecido»). Un título largo ocupa dos o más renglones, pero se lee entero. Viene elegido el primero de la lista; al elegir otro cambia el lado «Ya existe en el sistema» (sus datos, su porcentaje y sus enlaces) y la opción «Es una versión nueva de «…»» pasa a nombrar ese documento. El lado «Lo que intentas cargar» no cambia.
+
+![Pantalla de comparación con la lista «Elige con cuál quieres comparar»: dos tarjetas con botón de opción, la primera elegida (95 % de parecido) y la segunda con un título largo que ocupa dos renglones (89 %)](manual/capturas/18-varios-candidatos-dos.png)
+
+*Captura 18. Dos documentos parecidos: la lista de candidatos, cada uno en su tarjeta. [CONFIRMADO]*
+
+![Lista con tres candidatos (94 %, 89 % y 88 % de parecido), el primero elegido, sobre las dos tarjetas de comparación](manual/capturas/19-varios-candidatos-tres.png)
+
+*Captura 19. Tres documentos parecidos. [CONFIRMADO]*
+
+![Lista con tres candidatos en una pantalla de 360 píxeles, con el segundo elegido y su comparación debajo](manual/capturas/20-varios-candidatos-en-celular.png)
+
+*Captura 20. Tres candidatos en el celular (360 px), con el segundo elegido: la tarjeta «Ya existe en el sistema» muestra ese documento. [CONFIRMADO]*
+
+Estas tres capturas se tomaron **después de un arreglo de diseño** del PR #58 (commit `cac8cfe`): antes las tarjetas de la lista se veían encimadas unas sobre otras.
 
 El sistema **solo avisa: decides tú**. Hay tres opciones, y cada una explica en la pantalla qué va a pasar:
 
@@ -275,21 +289,21 @@ El sistema **solo avisa: decides tú**. Hay tres opciones, y cada una explica en
 
 Si pulsas el botón sin elegir, la pantalla dice «Elige qué quieres hacer con este archivo.» Si eliges la segunda o la tercera y dejas vacío el texto, dice «Escribe el motivo: explica qué cambió respecto a la versión que ya existe.» o «Escribe la justificación: explica por qué no es un duplicado.» **Volver y corregir los datos** te devuelve al formulario sin perder lo escrito ni el archivo elegido.
 
-![Aviso verde «No se cargó nada: el archivo ya estaba en el sistema como «Contrato de obra de la vía Tibú-Convención»» sobre el detalle del documento existente](manual/capturas/18-decision-mismo-documento-resultado.png)
+![Aviso verde «No se cargó nada: el archivo ya estaba en el sistema como «Contrato de obra de la vía Tibú-Convención»» sobre el detalle del documento existente](manual/capturas/21-decision-mismo-documento-resultado.png)
 
-*Captura 18. Resultado de «Es el mismo documento»: no se guardó nada. [CONFIRMADO]*
+*Captura 21. Resultado de «Es el mismo documento»: no se guardó nada. [CONFIRMADO]*
 
-![Opción «Es una versión nueva de…» elegida, con el campo «Motivo de la versión nueva (obligatorio)» vacío y su mensaje en rojo](manual/capturas/19-decision-version-nueva-motivo.png)
+![Opción «Es una versión nueva de…» elegida, con el campo «Motivo de la versión nueva (obligatorio)» vacío y su mensaje en rojo](manual/capturas/22-decision-version-nueva-motivo.png)
 
-*Captura 19. «Es una versión nueva»: el motivo es obligatorio. [CONFIRMADO]*
+*Captura 22. «Es una versión nueva»: el motivo es obligatorio. [CONFIRMADO]*
 
-![Detalle del documento con el aviso «Se agregó el archivo como la versión 2 del documento…» y dos versiones en el historial](manual/capturas/20-decision-version-nueva-resultado.png)
+![Detalle del documento con el aviso «Se agregó el archivo como la versión 2 del documento…» y dos versiones en el historial](manual/capturas/23-decision-version-nueva-resultado.png)
 
-*Captura 20. Resultado de «Es una versión nueva»: el archivo quedó como la versión 2. [CONFIRMADO]*
+*Captura 23. Resultado de «Es una versión nueva»: el archivo quedó como la versión 2. [CONFIRMADO]*
 
-![Opción «Es otro documento: cargarlo de todos modos» elegida, con el campo «Justificación (obligatorio)» vacío y su mensaje en rojo](manual/capturas/21-decision-otro-documento-justificacion.png)
+![Opción «Es otro documento: cargarlo de todos modos» elegida, con el campo «Justificación (obligatorio)» vacío y su mensaje en rojo](manual/capturas/24-decision-otro-documento-justificacion.png)
 
-*Captura 21. «Es otro documento»: la justificación es obligatoria. [CONFIRMADO]*
+*Captura 24. «Es otro documento»: la justificación es obligatoria. [CONFIRMADO]*
 
 El resultado de «Es otro documento» es un documento nuevo, con el mismo aspecto que la captura 12 y con el título y el expediente que escribiste. No tiene captura propia en este borrador.
 
@@ -304,9 +318,9 @@ El resultado de «Es otro documento» es un documento nuevo, con el mismo aspect
 
 **En el celular.** El formulario se adapta desde 360 px de ancho: los campos ocupan todo el ancho de la pantalla y se leen uno debajo del otro.
 
-![Formulario de carga en una pantalla de 360 píxeles de ancho](manual/capturas/22-carga-en-celular.png)
+![Formulario de carga en una pantalla de 360 píxeles de ancho](manual/capturas/25-carga-en-celular.png)
 
-*Captura 22. Formulario de carga en celular (360 px). [CONFIRMADO]*
+*Captura 25. Formulario de carga en celular (360 px). [CONFIRMADO]*
 
 ## 8. Subir una versión nueva
 
@@ -314,9 +328,9 @@ El resultado de «Es otro documento» es un documento nuevo, con el mismo aspect
 
 La pantalla muestra el enlace «← título del documento» para volver y recuerda el documento, su expediente y su versión vigente, y avisa: «No se borra nada: la versión actual queda en el historial y la que subas pasa a ser la vigente.» Pide:
 
-![Pantalla «Subir una versión nueva» con los campos Archivo PDF y Motivo del cambio](manual/capturas/23-version-nueva-formulario.png)
+![Pantalla «Subir una versión nueva» con los campos Archivo PDF y Motivo del cambio](manual/capturas/26-version-nueva-formulario.png)
 
-*Captura 23. Formulario de versión nueva. [CONFIRMADO]*
+*Captura 26. Formulario de versión nueva. [CONFIRMADO]*
 
 - **Archivo PDF** (obligatorio, hasta 20 MB; las mismas reglas que en la carga).
 - **Motivo del cambio** (obligatorio, hasta 300 caracteres, con contador): explica qué cambió, por ejemplo «Se corrigió el valor de la cláusula 4». Queda en el historial y es lo que le explica el cambio a un auditor.
@@ -325,21 +339,21 @@ Si dejas algo vacío, la pantalla dice «Elige el archivo PDF que quieres subir.
 
 Pulsa **Subir versión nueva** (mientras sube dice «Subiendo la versión…»). Te lleva al detalle con el aviso «Se agregó la versión n de «…». Las versiones anteriores siguen en el historial.» y la versión nueva arriba, como vigente.
 
-![Detalle del documento con el aviso «Se agregó la versión 3 de «…». Las versiones anteriores siguen en el historial.» y tres versiones en el historial](manual/capturas/24-version-nueva-resultado.png)
+![Detalle del documento con el aviso «Se agregó la versión 3 de «…». Las versiones anteriores siguen en el historial.» y tres versiones en el historial](manual/capturas/27-version-nueva-resultado.png)
 
-*Captura 24. Resultado de subir una versión nueva: la versión 3 es la vigente. [CONFIRMADO]*
+*Captura 27. Resultado de subir una versión nueva: la versión 3 es la vigente. [CONFIRMADO]*
 
 **Si el archivo ya está en una versión de ese documento**, el sistema lo rechaza y no crea nada: «Este archivo tiene el mismo contenido que la versión n del documento, así que no se creó ninguna versión nueva. Si hiciste cambios, guarda el archivo corregido y súbelo de nuevo.» (ADR-0005).
 
-![Formulario de versión nueva con un aviso rojo: «Este archivo tiene el mismo contenido que la versión 3 del documento, así que no se creó ninguna versión nueva…»](manual/capturas/25-version-nueva-contenido-repetido.png)
+![Formulario de versión nueva con un aviso rojo: «Este archivo tiene el mismo contenido que la versión 3 del documento, así que no se creó ninguna versión nueva…»](manual/capturas/28-version-nueva-contenido-repetido.png)
 
-*Captura 25. Se intentó subir el mismo contenido que la versión vigente. [CONFIRMADO]*
+*Captura 28. Se intentó subir el mismo contenido que la versión vigente. [CONFIRMADO]*
 
 Si dos personas suben una versión del mismo documento a la vez, cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
-![Pantalla «Subir una versión nueva» en 360 píxeles de ancho](manual/capturas/26-version-nueva-en-celular.png)
+![Pantalla «Subir una versión nueva» en 360 píxeles de ancho](manual/capturas/29-version-nueva-en-celular.png)
 
-*Captura 26. Versión nueva en celular (360 px). [CONFIRMADO]*
+*Captura 29. Versión nueva en celular (360 px). [CONFIRMADO]*
 
 ## 9. Restaurar una versión anterior
 
@@ -347,15 +361,15 @@ Si dos personas suben una versión del mismo documento a la vez, cada una recibe
 
 Restaurar **no borra ni edita nada**. Al pulsar **Restaurar** se abre, bajo esa versión, un panel «**¿Restaurar la versión n?**» que lo explica: «Se creará una **versión nueva** (la siguiente) con el mismo contenido que la versión n, y pasará a ser la vigente. **No se borra nada**: las versiones que ya existen, incluida la vigente, siguen en el historial.» Puedes escribir un **motivo** (opcional, hasta 300 caracteres; si lo dejas vacío se guarda como «Restaura la versión n»). Confirma con **Sí, restaurar la versión n** (mientras trabaja dice «Restaurando…») o con **Cancelar**.
 
-![Historial con el panel «¿Restaurar la versión 1?» abierto bajo la versión 1, con el campo de motivo opcional y los botones «Sí, restaurar la versión 1» y «Cancelar»](manual/capturas/27-restaurar-confirmacion.png)
+![Historial con el panel «¿Restaurar la versión 1?» abierto bajo la versión 1, con el campo de motivo opcional y los botones «Sí, restaurar la versión 1» y «Cancelar»](manual/capturas/30-restaurar-confirmacion.png)
 
-*Captura 27. Confirmación para restaurar la versión 1. [CONFIRMADO]*
+*Captura 30. Confirmación para restaurar la versión 1. [CONFIRMADO]*
 
 Verás el aviso «Se creó la versión N con el contenido de la versión n. Las versiones anteriores siguen en el historial.» y la versión nueva aparece como vigente, con la etiqueta «Restaura la versión n».
 
-![Detalle con el aviso «Se creó la versión 4 con el contenido de la versión 1» y la versión 4 con las etiquetas «Vigente» y «Restaura la versión 1»](manual/capturas/28-restaurar-resultado.png)
+![Detalle con el aviso «Se creó la versión 4 con el contenido de la versión 1» y la versión 4 con las etiquetas «Vigente» y «Restaura la versión 1»](manual/capturas/31-restaurar-resultado.png)
 
-*Captura 28. Resultado de restaurar: la versión 4 repite el contenido de la versión 1 y el historial conserva las anteriores. [CONFIRMADO]*
+*Captura 31. Resultado de restaurar: la versión 4 repite el contenido de la versión 1 y el historial conserva las anteriores. [CONFIRMADO]*
 
 Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y lo explica: «La versión vigente (n) ya tiene el mismo contenido que la versión que quieres restaurar, así que no se creó ninguna versión nueva.» (ADR-0005). Este mensaje no tiene captura en este borrador; sale del código de la interfaz [POR VERIFICAR: verlo en pantalla]. Se puede restaurar una restauración: el historial solo crece.
 
@@ -363,13 +377,13 @@ Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y l
 
 El rol de consulta **no ve** los botones «Subir una versión nueva» ni «Restaurar», ni el enlace «Cargar documento» del menú. Si abre a mano la dirección de una pantalla de carga, ve el aviso de falta de permiso. La API también rechaza la acción con un 403, aunque alguien llegue por otro camino.
 
-![Detalle de un documento visto con el usuario de consulta: solo el botón «Descargar la versión vigente (PDF)» y, en cada versión, «Descargar»](manual/capturas/29-consulta-detalle-sin-acciones.png)
+![Detalle de un documento visto con el usuario de consulta: solo el botón «Descargar la versión vigente (PDF)» y, en cada versión, «Descargar»](manual/capturas/32-consulta-detalle-sin-acciones.png)
 
-*Captura 29. El detalle visto como consulta: sin «Subir una versión nueva» ni «Restaurar». [CONFIRMADO]*
+*Captura 32. El detalle visto como consulta: sin «Subir una versión nueva» ni «Restaurar». [CONFIRMADO]*
 
-![Pantalla «No tienes permiso para ver esta pantalla», con el texto «Tu rol no incluye esta función» y el enlace «Volver a los documentos»](manual/capturas/30-consulta-sin-permiso.png)
+![Pantalla «No tienes permiso para ver esta pantalla», con el texto «Tu rol no incluye esta función» y el enlace «Volver a los documentos»](manual/capturas/33-consulta-sin-permiso.png)
 
-*Captura 30. Un usuario de consulta abre la pantalla de carga: «No tienes permiso para ver esta pantalla». [CONFIRMADO]*
+*Captura 33. Un usuario de consulta abre la pantalla de carga: «No tienes permiso para ver esta pantalla». [CONFIRMADO]*
 
 ## 10. Administración de usuarios y auditoría (administrador)
 
@@ -424,7 +438,7 @@ La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede e
 
 **¿Qué pasa si dos personas suben una versión del mismo documento a la vez?** Cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
-**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (capturas 8, 22 y 26). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
+**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (capturas 8, 25 y 29). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
 
 **¿Qué es la «huella SHA-256» del historial?** Un código que identifica el contenido exacto del archivo. Si dos versiones tienen la misma huella, son el mismo archivo.
 
@@ -452,8 +466,8 @@ Los mensajes de la carga, la versión nueva y la restauración están en las sec
 
 Lo que falta antes de convertirlo en la versión final:
 
-1. **Capturas que faltan:** usuarios y auditoría (issue #25, si se construye), cambio de clave (rama `feat/51-web-clave`), la lista de varios candidatos en la comparación de un duplicado (sección 7; se descartó por un defecto visual), el mensaje de restaurar una versión que ya es la vigente (sección 9) y el resultado de «Es otro documento». Las de carga, duplicado, versión nueva y restaurar ya existen (capturas 11 a 30, datos ficticios). Todas se rehacen si el PR #58 cambia la interfaz en la revisión.
-2. **Confirmar los textos** sin captura de las secciones 7 a 9 y todo lo de la sección 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de la rama del PR #58 (commit `a6d6eb1`); el PR sigue en revisión y puede cambiar.
+1. **Capturas que faltan:** usuarios y auditoría (issue #25, si se construye), cambio de clave (rama `feat/51-web-clave`), el mensaje de restaurar una versión que ya es la vigente (sección 9) y el resultado de «Es otro documento». Las de carga, duplicado (incluida la lista de varios candidatos, capturas 18 a 20, tomadas tras el arreglo `cac8cfe`), versión nueva y restaurar ya existen (capturas 11 a 33, datos ficticios). Todas se rehacen si el PR #58 cambia la interfaz en la revisión.
+2. **Confirmar los textos** sin captura de las secciones 7 a 9 y todo lo de la sección 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de la rama del PR #58 (commits `a6d6eb1` y `cac8cfe`); el PR sigue en revisión y puede cambiar.
 3. **La sección 11 (cambiar la clave)** queda vacía hasta que exista la pantalla en el PR de la rama `feat/51-web-clave`; entonces se escribe con sus textos y capturas.
 4. **Quién redacta la versión final** [POR VERIFICAR]: César (parte académica) o Juan (parte técnica). Los dos revisan.
 5. **Revisión con personas que usen el sistema** (ingeniería, jurídica, contabilidad, gerencia): este texto no se ha probado con nadie [SUPUESTO] que sea claro.
@@ -461,7 +475,7 @@ Lo que falta antes de convertirlo en la versión final:
 
 ## 15. Fuentes
 
-- Capturas: `docs/manual/capturas/` (datos ficticios; 1 a 10 de la interfaz del PR #54 y 11 a 30 de la del PR #58, a 1280 px y a 360 px).
+- Capturas: `docs/manual/capturas/` (datos ficticios; 1 a 10 de la interfaz del PR #54 y 11 a 33 de la del PR #58, a 1280 px y a 360 px).
 - Código de la interfaz leído en las ramas `feat/23-web-listado` (PR #54) y `feat/24-web-carga` (PR #58).
 - [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) y, en revisión, ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54; la sección 6 de ese ADR, del PR #58, explica las decisiones de la carga).
 - [`README.md`](../README.md) y [`CHANGELOG.md`](../CHANGELOG.md).

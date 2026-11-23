@@ -80,7 +80,7 @@ Orden sugerido por la coordinación del trabajo del 22 y 23 de noviembre: **#60,
 | 4 | #55 | Importar el cuadro desde CSV (#19) | `main` | ADR-0010 |
 | 5 | #57 | Cambio y restablecimiento de clave (#51) | `feat/19-importar-ccd` | Apilado sobre #55; migración `0008`. Al fusionar #55, GitHub reenfoca #57 a `main` |
 | 6 | #54 | Interfaz: ingreso, listado y detalle (#23) | `main` | ADR-0012; toca `package-lock.json` |
-| 7 | #58 | Interfaz: carga, versión y duplicado (#24) | `feat/23-web-listado` | Listo para revisar y apilado sobre #54: va después de #54. Su `secretos` salió en rojo por el contagio que corrige #60 [POR VERIFICAR al volver a ejecutarlo] |
+| 7 | #58 | Interfaz: carga, versión y duplicado (#24) | `feat/23-web-listado` | Listo para revisar, con un arreglo de diseño posterior (`cac8cfe`), y apilado sobre #54: va después de #54. Su `secretos` salió en rojo por el contagio que corrige #60 [POR VERIFICAR al volver a ejecutarlo] |
 | — | #59 | Arreglo del bloqueo mutuo de usuarios | `main` | Listo para revisar y sin issue; el usuario decide si entra. Mismo caso de `secretos` que #58 |
 | al final | #61 | Este borrador (#27) | `main` | Ver B.4 |
 
@@ -106,7 +106,7 @@ o, desde la imagen: `node apps/api/dist/base-datos/migrar-cli.js` (README, secci
 ### B.4 Cerrar el borrador del CHANGELOG y del manual
 
 - **Quitar las marcas «(en revisión, PR #n)»** de `CHANGELOG.md` de lo que ya se fusionó (hoy están en #19, #51, #21, #23, #24, #52 y en el PR #60 y el #59), y revisar que lo que no se fusionó quede fuera.
-- Completar el manual: las secciones de carga, versión nueva y restaurar (#24) ya tienen capturas con datos ficticios (capturas 11 a 30). Faltan las de administración de usuarios y auditoría (#25), el cambio de clave (rama `feat/51-web-clave`, sección 11 vacía), la lista de varios candidatos de un duplicado y dos mensajes sueltos; esos puntos siguen marcados [POR VERIFICAR]. Confirmar los textos con las pantallas reales cuando se fusionen.
+- Completar el manual: las secciones de carga, versión nueva y restaurar (#24) ya tienen capturas con datos ficticios (capturas 11 a 33, incluida la lista de varios candidatos de un duplicado). Faltan las de administración de usuarios y auditoría (#25), el cambio de clave (rama `feat/51-web-clave`, sección 11 vacía) y dos mensajes sueltos; esos puntos siguen marcados [POR VERIFICAR]. Confirmar los textos con las pantallas reales cuando se fusionen.
 - Decidir quién redacta la versión final del manual: [POR VERIFICAR] César (parte académica) o Juan (parte técnica). El borrador lo deben revisar los dos.
 - **Versiones de `package.json`:** hoy son `0.0.0` en la raíz y en los paquetes. Este borrador no las cambia. [PROPUESTA] ponerlas en `2.0.0` en el mismo commit que prepara el tag, si se quiere que coincidan.
 - Fusionar este PR (#61) con commit de fusión o con squash (es independiente de los demás).

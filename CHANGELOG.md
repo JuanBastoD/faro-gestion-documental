@@ -50,7 +50,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 **V2-M4 Interfaz y cierre**
 
 - **Interfaz web** (React 19, Vite y TypeScript, CSS propio) servida por la propia API bajo `/app/`: ingreso y cierre de sesión, listado con búsqueda, filtro por serie y paginación (el estado queda en la dirección), detalle con historial de versiones y descarga, menú según el rol y uso desde 360 px de ancho. ADR-0012. Issue #23 *(en revisión, PR #54)*.
-- **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, listo para revisar y apilado sobre el PR #54: no puede fusionarse antes que él; ADR-0012, sección 6)*.
+- **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, listo para revisar, con un arreglo de diseño posterior (commit `cac8cfe`: las opciones de la lista de candidatos se montaban unas sobre otras); apilado sobre el PR #54, no puede fusionarse antes que él; ADR-0012, sección 6)*.
 - Este registro de cambios, las notas de la versión y el borrador del manual de usuario. Issue #27 *(en revisión, PR #61, `Refs`; el tag y el release los publica el usuario)*.
 
 ### Cambiado
