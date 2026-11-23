@@ -12,10 +12,12 @@ on:
 permissions:
   contents: read
 
-# Un push nuevo a la misma rama cancela la ejecución anterior que sigue en curso.
+# Un push nuevo a la misma rama de trabajo cancela la ejecución anterior que sigue en curso.
+# En main nunca se cancela: si se fusionan dos PR seguidos, cada commit conserva su resultado
+# y un fallo intermedio no queda oculto.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   api:
