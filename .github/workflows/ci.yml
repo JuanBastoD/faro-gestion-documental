@@ -95,3 +95,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validar docker-compose con las variables de ejemplo
         run: docker compose --env-file .env.example -f infra/docker-compose.yml config --quiet
+
+  # Que el Dockerfile de la API siga compilando y la imagen siga siendo segura: sin esto se pudre sin que
+  # nadie lo note hasta el día del despliegue. No sube nada a ningún registro.
+  imagen:
+    name: imagen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Construir la imagen de la API
+        run: docker build -f apps/api/Dockerfile -t faro-api:ci .
+      - name: Comprobar que no corre como administrador ni trae pruebas, fuentes ni .env
+        run: |
+          usuario="$(docker run --rm --entrypoint id faro-api:ci -u)"
+          echo "uid del proceso: $usuario"
+          test "$usuario" != "0"
+          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -d /app/apps/api/drizzle'

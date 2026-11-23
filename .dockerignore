@@ -1,0 +1,29 @@
+# Nada de esto debe entrar a la imagen ni al contexto de construcción.
+
+# Dependencias y compilados: la imagen los genera por su cuenta
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+
+# Secretos y entorno local (nunca van en una imagen)
+.env
+.env.*
+!.env.example
+
+# Archivos locales de desarrollo y datos
+**/almacen-local
+**/*.log
+data/
+demo-pdfs/
+iniciar-demo.bat
+
+# Lo que no hace falta para compilar la API
+.git
+.github
+legacy
+docs
+infra
+apps/api/test
+apps/web
+**/*.md

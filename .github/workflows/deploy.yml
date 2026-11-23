@@ -1,0 +1,90 @@
+# Despliegue manual a Google Cloud Run. Guion paso a paso y requisitos: docs/despliegue.md.
+#
+# INACTIVO POR DEFECTO: solo se ejecuta cuando alguien lo lanza a mano (workflow_dispatch) Y existen las
+# seis variables del repositorio (Settings → Secrets and variables → Actions → Variables). Sin ellas, el
+# trabajo se omite y no hace nada. Son identificadores, no secretos.
+#
+# SIN LLAVES: se autentica con Workload Identity Federation (token OIDC de GitHub, de corta vida). No hay
+# ningún archivo de llave JSON en el repositorio ni en los secretos de GitHub. Los secretos de la aplicación
+# (URL de la base, claves del almacén) viven en Secret Manager y Cloud Run los inyecta al arrancar.
+#
+# [POR VERIFICAR] Este flujo se escribió y se revisó, pero NO se ha ejecutado: hacerlo requiere la cuenta de
+# Google Cloud. La imagen sí se probó localmente (docs/despliegue.md, sección 11).
+#
+# Las acciones están fijadas por commit (SHA) y no por etiqueta; el comentario indica la versión.
+
+name: Despliegue
+
+on:
+  workflow_dispatch:
+    inputs:
+      migrar:
+        description: Aplicar las migraciones pendientes antes de publicar la versión nueva
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # Solo para pedir el token de Workload Identity Federation
+
+# Un solo despliegue a la vez, y uno en curso nunca se cancela a la mitad.
+concurrency:
+  group: despliegue
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: desplegar
+    if: >-
+      ${{ vars.GCP_PROJECT_ID != '' && vars.GCP_REGION != '' && vars.GCP_WIF_PROVIDER != ''
+      && vars.GCP_DEPLOYER_SA != '' && vars.GCP_RUNTIME_SA != '' && vars.GCS_BUCKET != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REGION: ${{ vars.GCP_REGION }}
+      RUNTIME_SA: ${{ vars.GCP_RUNTIME_SA }}
+      BUCKET: ${{ vars.GCS_BUCKET }}
+      IMAGEN: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/faro/faro-api:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Construir y subir la imagen (etiquetada con el commit)
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -f apps/api/Dockerfile -t "$IMAGEN" .
+          docker push "$IMAGEN"
+
+      # La API no migra al arrancar (varias instancias, arranques en frío): se migra aquí, una sola vez,
+      # con un trabajo de Cloud Run que usa la misma imagen y falla el despliegue si la migración falla.
+      - name: Migraciones
+        if: ${{ inputs.migrar }}
+        run: |
+          gcloud run jobs deploy faro-migrar \
+            --image "$IMAGEN" --region "$REGION" --service-account "$RUNTIME_SA" \
+            --command node --args apps/api/dist/base-datos/migrar-cli.js \
+            --set-secrets DATABASE_URL=faro-database-url:latest \
+            --max-retries 0 --task-timeout 300s
+          gcloud run jobs execute faro-migrar --region "$REGION" --wait
+
+      - name: Publicar la versión nueva
+        run: |
+          gcloud run deploy faro-api \
+            --image "$IMAGEN" --region "$REGION" --service-account "$RUNTIME_SA" \
+            --allow-unauthenticated --port 8080 \
+            --min-instances 0 --max-instances 2 --memory 1Gi --cpu 1 --timeout 120s \
+            --set-env-vars "ALMACEN_TIPO=s3,S3_ENDPOINT=https://storage.googleapis.com,S3_BUCKET=${BUCKET},S3_REGION=auto" \
+            --set-secrets "DATABASE_URL=faro-database-url:latest,S3_ACCESS_KEY=faro-s3-access-key:latest,S3_SECRET_KEY=faro-s3-secret-key:latest"
+
+      - name: Comprobar que responde
+        run: |
+          URL="$(gcloud run services describe faro-api --region "$REGION" --format 'value(status.url)')"
+          echo "Servicio en: $URL"
+          curl --fail --silent --show-error --retry 6 --retry-delay 5 --retry-all-errors "$URL/health"
