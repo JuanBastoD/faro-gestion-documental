@@ -2,6 +2,7 @@ import type { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type pg from 'pg';
 import request from 'supertest';
+import { ALMACEN, type AlmacenArchivos } from '../src/almacen/almacen-archivos.js';
 import { AppModule } from '../src/app.module.js';
 import { hashear } from '../src/auth/hash-clave.js';
 import type { Rol } from '../src/auth/roles.js';
@@ -15,6 +16,7 @@ export interface AppDePrueba {
   app: INestApplication;
   pool: pg.Pool;
   db: BaseDatos;
+  almacen: AlmacenArchivos;
 }
 
 /** Levanta la API completa contra la base de pruebas. `controladores` agrega rutas solo para la prueba. */
@@ -27,8 +29,9 @@ export async function crearApp(controladores: Type[] = []): Promise<AppDePrueba>
   await app.init();
   const pool = app.get<pg.Pool>(POOL);
   const db = app.get<BaseDatos>(DB);
+  const almacen = app.get<AlmacenArchivos>(ALMACEN);
   await migrar(db);
-  return { app, pool, db };
+  return { app, pool, db, almacen };
 }
 
 /** Deja todas las tablas vacías y reinicia los contadores. Solo para la base de pruebas. */

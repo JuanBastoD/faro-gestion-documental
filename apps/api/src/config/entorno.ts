@@ -24,6 +24,30 @@ const esquema = z.object({
     .refine((valor) => /^postgres(ql)?:\/\//.test(valor), {
       error: 'debe empezar por postgresql:// o postgres://',
     }),
+  // Dónde se guardan los PDF: en una carpeta del equipo (desarrollo y pruebas) o en un almacén S3.
+  ALMACEN_TIPO: z.enum(['disco', 's3'], { error: 'debe ser disco o s3' }).default('disco'),
+  ALMACEN_RUTA: z.string().min(1, { error: 'no puede estar vacía' }).default('almacen-local'),
+  S3_ENDPOINT: z
+    .string()
+    .refine((valor) => /^https?:\/\//.test(valor) && URL.canParse(valor), {
+      error: 'debe ser una URL que empiece por http:// o https://',
+    })
+    .optional(),
+  S3_REGION: z.string().min(1, { error: 'no puede estar vacía' }).default('us-east-1'),
+  S3_BUCKET: z.string().min(1, { error: 'no puede estar vacío' }).optional(),
+  S3_ACCESS_KEY: z.string().min(1, { error: 'no puede estar vacía' }).optional(),
+  S3_SECRET_KEY: z.string().min(1, { error: 'no puede estar vacía' }).optional(),
+}).superRefine((valores, contexto) => {
+  if (valores.ALMACEN_TIPO !== 's3') return;
+  for (const nombre of ['S3_ENDPOINT', 'S3_BUCKET', 'S3_ACCESS_KEY', 'S3_SECRET_KEY'] as const) {
+    if (!valores[nombre]) {
+      contexto.addIssue({
+        code: 'custom',
+        path: [nombre],
+        message: 'es obligatoria cuando ALMACEN_TIPO=s3',
+      });
+    }
+  }
 });
 
 export type Entorno = z.infer<typeof esquema>;

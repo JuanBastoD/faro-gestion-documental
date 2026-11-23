@@ -8,6 +8,8 @@ export const ACCION = {
   INGRESO_FALLIDO: 'ingreso_fallido',
   CIERRE_SESION: 'cierre_sesion',
   ACCESO_DENEGADO: 'acceso_denegado',
+  CARGA: 'carga',
+  DESCARGA: 'descarga',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];

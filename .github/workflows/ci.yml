@@ -60,7 +60,13 @@ jobs:
         run: npm run db:seed -w apps/api
         env:
           SEMILLA_CLAVE: clave-ci-sin-valor-real
-      - name: Pruebas de integración (contra PostgreSQL)
+      - name: Almacén S3 (RustFS) para las pruebas del adaptador
+        # Las claves son las de ejemplo de .env.example: un almacén efímero del propio trabajo.
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f infra/docker-compose.yml up -d --wait almacen
+          docker compose --env-file .env -f infra/docker-compose.yml run --rm almacen-init
+      - name: Pruebas de integración (contra PostgreSQL y el almacén S3)
         run: npm run test:e2e
 
   legacy:
