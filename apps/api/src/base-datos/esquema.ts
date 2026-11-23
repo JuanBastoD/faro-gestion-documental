@@ -36,6 +36,11 @@ export const usuarios = pgTable('usuarios', {
   rol: rolUsuario('rol').notNull(),
   claveHash: text('clave_hash').notNull(),
   activo: boolean('activo').notNull().default(true),
+  /**
+   * La clave actual la fijó un administrador (restablecimiento, ADR-011): hasta que la persona la cambie, la API
+   * solo le deja ver quién es, cerrar sesión y cambiar la clave.
+   */
+  debeCambiarClave: boolean('debe_cambiar_clave').notNull().default(false),
   creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
 });
 
