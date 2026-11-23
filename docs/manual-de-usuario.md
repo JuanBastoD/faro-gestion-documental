@@ -5,7 +5,7 @@
 > - **Estado:** borrador del issue #27, 23 de noviembre de 2026. Describe **solo lo que existe en el código**, leído de las ramas de los PR abiertos. Lo que no se pudo confirmar va marcado.
 > - **Etiquetas de certeza:** [CONFIRMADO] comprobado con una captura, un PR o un documento del repositorio; [POR VERIFICAR] falta comprobarlo con la pantalla real o con una persona; [SUPUESTO] razonable pero sin medir; [PROPUESTA] sugerencia de uso, no una regla del sistema.
 > - **Datos de demostración:** todo lo que se ve en las capturas es **ficticio** (usuarios `*.demo`, documentos inventados). El sistema es un prototipo de clase: **no cargues documentos reales de la entidad** hasta que la entidad lo autorice por escrito.
-> - **Qué pantallas están listas hoy.** La interfaz está en construcción y vive en PR que aún no se fusionan en `main`: ingreso, listado y detalle (PR #54, con capturas) y carga, versión nueva, comparación de duplicado y restaurar (PR #58, borrador, **sin captura todavía**). Las pantallas de administración de usuarios y de auditoría (issue #25) **no existen aún**: hoy esas funciones se usan por la API. Cada sección dice en cuál de estos casos está.
+> - **Qué pantallas están listas hoy.** La interfaz está en construcción y vive en PR que aún no se fusionan en `main`: ingreso, listado y detalle (PR #54, con capturas) y carga, versión nueva, comparación de duplicado y restaurar (PR #58, *en revisión*, con capturas de datos ficticios). Faltan por construir las pantallas de administración de usuarios y de auditoría (issue #25), que **no existen aún** (hoy esas funciones se usan por la API), y las de cambio de clave (rama `feat/51-web-clave`, **no existe aún**). Cada sección dice en cuál de estos casos está.
 > - Para quien instala o prueba el sistema, no para quien lo usa: [`README.md`](../README.md).
 
 ## 1. Qué es Faro
@@ -70,7 +70,7 @@ Para **salir**, pulsa **Cerrar sesión**, arriba a la derecha. Hazlo siempre que
 
 ### Si te dieron una clave temporal
 
-Cuando un administrador restablece tu clave, la clave que te da es **temporal**. Con ella el sistema solo te deja **ver quién eres, cerrar sesión y cambiar tu clave**; todo lo demás se rechaza con un error 403 de «cambio de clave requerido» (ADR-0011, PR #57, en revisión). [POR VERIFICAR] **La interfaz todavía no tiene la pantalla de cambio de clave**, así que hoy ese cambio se hace por la API (sección 11); mientras no exista la pantalla, quien reciba una clave temporal no podrá usar las pantallas. Ver los pendientes (sección 14).
+Cuando un administrador restablece tu clave, la clave que te da es **temporal** y tendrás que cambiarla (ADR-0011, PR #57, en revisión). Sobre la pantalla para hacerlo, ver la sección 11: [POR VERIFICAR: pantalla en el PR de la rama `feat/51-web-clave`, aún no existe].
 
 ## 3. Los tres roles: quién puede hacer qué
 
@@ -83,10 +83,10 @@ Tu **rol** lo ves arriba a la derecha, debajo de tu nombre. El menú de la parte
 | Cargar un documento nuevo | No | Sí | Sí |
 | Subir una versión nueva | No | Sí | Sí |
 | Restaurar una versión anterior | No | Sí | Sí |
-| Cambiar tu propia clave (solo por la API; PR #57, en revisión) | Sí | Sí | Sí |
+| Cambiar tu propia clave (PR #57, en revisión; sin pantalla todavía, sección 11) | Sí | Sí | Sí |
 | Ver la auditoría | No | No | Sí |
 | Crear usuarios, cambiar roles y desactivar (hoy por la API) | No | No | Sí |
-| Restablecer la clave de otra persona (solo por la API; PR #57, en revisión) | No | No | Sí |
+| Restablecer la clave de otra persona (PR #57, en revisión; sin pantalla todavía, secciones 10 y 11) | No | No | Sí |
 
 **Menú que ves:**
 
@@ -161,7 +161,7 @@ En el listado, pulsa el título de un documento. Verás:
 
 ![Detalle de un documento con cuatro versiones: la versión 4 vigente restaura la versión 1](manual/capturas/08-detalle-con-historial.png)
 
-*Captura 9. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar» de la sección 9, que llega con el PR #58. [CONFIRMADO]*
+*Captura 9. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar», que llega con el PR #58 (se ve en las capturas 24 y 28, secciones 8 y 9). [CONFIRMADO]*
 
 **Leer el historial.** «La más reciente primero. El historial solo crece: nada se edita ni se borra.» Si una versión se subió por error, no se borra: se corrige con una versión nueva o restaurando otra, y el error queda en el historial.
 
@@ -180,87 +180,196 @@ Todos los roles pueden descargar. **Cada descarga queda registrada en la auditor
 
 ## 7. Cargar un documento nuevo
 
-> **[POR VERIFICAR: sin captura]** Esta pantalla es del PR #58 (issue #24), todavía en borrador. Esta sección sale del código de esa rama y de los ADR, no de una pantalla comprobada. Los textos pueden cambiar.
+> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
 
-**Quién:** editor y administrador. **Dónde:** menú **Cargar documento** (también «Cargar el primer documento» cuando el sistema está vacío).
+**Quién:** editor y administrador. **Dónde:** menú **Cargar documento** (también el enlace «Cargar el primer documento» cuando el sistema no tiene ningún documento).
 
 La pantalla «**Cargar un documento**» explica que, antes de guardar, el sistema revisa si ese mismo archivo, o uno muy parecido (por ejemplo, un reescaneo), ya existe. Pide:
 
+![Formulario «Cargar un documento» vacío, con los campos Archivo PDF, Título, Expediente, Subserie, Fecha del documento y Motivo de la carga](manual/capturas/11-carga-formulario.png)
+
+*Captura 11. Formulario de carga, vacío (PR #58, 1280 px). [CONFIRMADO]*
+
 | Campo | Qué escribir | Obligatorio |
 |---|---|---|
-| **Archivo PDF** | El PDF. Solo PDF, hasta **20 MB**. El servidor revisa que el contenido sea de verdad un PDF (no basta con cambiar la extensión). | Sí |
-| **Título** | El nombre con el que se buscará, por ejemplo «Acta de comité n.º 12». Hasta 200 caracteres. | Sí |
+| **Archivo PDF** | El PDF. Solo PDF, hasta **20 MB**. El servidor revisa que el contenido sea de verdad un PDF (no basta con cambiar la extensión). Al elegirlo, la pantalla muestra «Elegido: nombre · tamaño». | Sí |
+| **Título** | El nombre con el que se buscará, por ejemplo «Acta de comité n.º 12». Hasta 200 caracteres (hay un contador). | Sí |
 | **Expediente** | El código del expediente, por ejemplo `EXP-2026-014`. Hasta 60 caracteres. | Sí |
-| **Subserie** | Dónde se clasifica en el cuadro de clasificación. Solo aparecen las subseries. | Sí |
-| **Fecha del documento** | La fecha que figura **en el documento**, no la de hoy. Formato AAAA-MM-DD; no puede ser anterior a 1900. | Sí |
+| **Subserie** | Dónde se clasifica en el cuadro de clasificación documental. Solo aparecen las subseries, agrupadas por serie. | Sí |
+| **Fecha del documento** | La fecha que figura **en el documento**, no la de hoy. Formato AAAA-MM-DD. La interfaz no admite años anteriores a **1900** [PROPUESTA: tope del prototipo para evitar un año mal escrito como `0026`; si la entidad tiene documentos anteriores, se cambia, ADR-0012 sección 6.1]. | Sí |
 | **Motivo de la carga** | Opcional. Si lo dejas vacío se guarda como «Carga inicial». Hasta 300 caracteres. | No |
 
-Pulsa **Cargar documento**. Si todo está bien, te lleva al documento con el aviso «Documento «…» cargado: quedó como la versión 1.» Si falta algo, cada campo muestra qué corregir y el cursor va al primero con error. **Cancelar** vuelve al listado.
+Pulsa **Cargar documento**. Mientras sube, el botón dice «Subiendo el documento…», el formulario queda deshabilitado y no se puede enviar dos veces. Si todo está bien, te lleva al documento con un aviso verde.
 
-Mensajes que puedes encontrar (se muestran en español, con qué hacer):
+![Detalle del documento recién cargado, con el aviso «Documento «Contrato de obra de la vía Tibú-Convención» cargado: quedó como la versión 1» y el historial con la versión 1 vigente](manual/capturas/12-carga-correcta.png)
+
+*Captura 12. Carga correcta: «Documento «…» cargado: quedó como la versión 1.» [CONFIRMADO]*
+
+**Cancelar** vuelve al listado.
+
+### Si falta algo o algo está mal
+
+Antes de enviar, el navegador revisa lo que puede. Cada campo con problema se marca en rojo con una frase que dice qué corregir, y el cursor va al primero.
+
+![Formulario con los cinco campos obligatorios vacíos, cada uno con su mensaje en rojo](manual/capturas/13-carga-errores-de-campo.png)
+
+*Captura 13. Se pulsó «Cargar documento» con todo vacío: «Elige el archivo PDF que quieres subir.», «Escribe el título del documento.», «Escribe el número o código del expediente.», «Elige la subserie donde se clasifica el documento.» e «Indica la fecha que figura en el documento.» [CONFIRMADO]*
+
+- **PDF de más de 20 MB.** La pantalla avisa **antes de subir** y no gasta tiempo en enviarlo: «Pasa de 20 MB: este archivo pesa 21,0 MB. Reduce su tamaño o divídelo.» [CONFIRMADO]
+
+  ![Campo Archivo PDF con el mensaje «Pasa de 20 MB: este archivo pesa 21,0 MB. Reduce su tamaño o divídelo.»](manual/capturas/14-carga-archivo-muy-grande.png)
+
+  *Captura 14. Archivo demasiado grande.*
+
+- **Un archivo que se llama `.pdf` pero no es un PDF.** El navegador no lo puede notar; lo rechaza el servidor y la pantalla lo explica: «El archivo no es un PDF válido. Solo se aceptan archivos PDF: revisa que no sea otro tipo de archivo con la extensión cambiada, o vuelve a guardarlo como PDF.» [CONFIRMADO]
+
+  ![Formulario con el archivo texto-con-extension-pdf.pdf, el campo marcado «No es un PDF válido.» y un aviso rojo con la explicación](manual/capturas/15-carga-archivo-no-pdf.png)
+
+  *Captura 15. El servidor rechaza un archivo que no es un PDF.*
+
+Otros mensajes que puedes encontrar **no tienen captura** en este borrador: salen del código de la interfaz de esa rama (`apps/web/src/api/errores.ts` y `apps/web/src/utilidades/validacion.ts`) [POR VERIFICAR: verlos en pantalla antes de la versión final].
 
 | Si ves... | Qué pasó y qué hacer |
 |---|---|
-| «Elige el archivo PDF que quieres subir.» / «El archivo no es un PDF. Solo se aceptan archivos PDF (extensión .pdf).» | No elegiste archivo o no es PDF. Guárdalo como PDF. |
-| «Pasa de 20 MB: …» / «El archivo pesa más de 20 MB, que es el máximo…» | El PDF es muy pesado. Expórtalo con menos calidad de imagen o divídelo en partes. |
-| «El archivo no es un PDF válido…» | Es otro tipo de archivo con la extensión cambiada. Vuelve a guardarlo como PDF. |
-| «Elige la subserie donde se clasifica el documento.» / «La serie elegida no admite documentos. Elige una subserie del cuadro de clasificación.» | Solo las subseries admiten documentos. |
-| «Indica la fecha que figura en el documento.» / «Esa fecha no existe en el calendario…» | Revisa el día y el mes. |
-| «No se pudo conectar con el servidor…» | Revisa tu conexión. Si el archivo llegó a subirse, el sistema te avisará de que ya existe y no se duplicará. |
-| «Tu usuario no tiene permiso para esta acción. Solo los administradores y los editores pueden cargar documentos y versiones.» | Tu rol es de consulta. |
+| «El archivo no es un PDF. Solo se aceptan archivos PDF (extensión .pdf).» / «El archivo está vacío. Elige otro.» | El archivo no es PDF o no tiene contenido. Guárdalo como PDF. |
+| «El archivo pesa más de 20 MB, que es el máximo. Vuelve a exportarlo con menos calidad de imagen o divídelo en partes.» | El servidor rechazó un archivo muy pesado. |
+| «Máximo 200 caracteres: este tiene N.» (con el máximo de ese campo) | El texto es demasiado largo. Acórtalo. |
+| «La serie elegida no admite documentos. Elige una subserie del cuadro de clasificación.» | Solo las subseries admiten documentos. |
+| «Escribe la fecha como AAAA-MM-DD, por ejemplo 2026-03-15.» / «Esa fecha no existe en el calendario. Revisa el día y el mes.» / «Revisa el año: la fecha no puede ser anterior a 1900.» | La fecha está mal escrita o no existe. |
+| «La subserie o el documento elegido ya no existe. Recarga la página para ver el cuadro de clasificación actualizado.» | Alguien cambió el cuadro mientras llenabas el formulario. |
+| «No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo. Si el archivo llegó a subirse, el sistema te avisará de que ya existe y no se duplicará.» | Sin conexión. Revisa la red y repite. |
+| «Tu sesión terminó. Ingresa de nuevo para continuar.» | La sesión venció (sección 2). |
+| «Tu usuario no tiene permiso para esta acción. Solo los administradores y los editores pueden cargar documentos y versiones.» | Tu rol es de consulta (ver el final de la sección 9). |
+| «Hiciste demasiadas peticiones en poco tiempo. Intenta de nuevo en …» | Límite de peticiones (ADR-0009). Espera. |
 
 ### Si el sistema avisa de un duplicado
 
 La **verificación es doble** (ADR-0006): primero compara la huella del archivo con todo lo que ya existe y, si el PDF tiene capa de texto, compara también el **parecido del texto**.
 
-**a) El archivo es idéntico a uno que ya existe.** El sistema **no lo carga** y muestra «**Este archivo ya está en el sistema**»: dice a qué versión de qué documento (título, expediente y subserie) es idéntico y ofrece un enlace para **abrir el documento que ya existe**. El mismo archivo no se puede cargar dos veces. Si lo que tienes es una corrección, guarda el archivo corregido y súbelo como **versión nueva** de ese documento (sección 8).
+**a) El archivo es idéntico a uno que ya existe.** El sistema **no lo carga** y muestra, debajo del formulario, «**Este archivo ya está en el sistema**»: dice a qué versión de qué documento (título, expediente y subserie) es idéntico, ofrece un enlace para **abrir el documento que ya existe** y recuerda que, si lo que tienes es una corrección, la subas como **versión nueva** de ese documento (sección 8). Lo que escribiste en el formulario se conserva.
+
+![Formulario completo con un recuadro rojo: «Este archivo ya está en el sistema. Es idéntico, byte por byte, a la versión 1 del documento…» y el enlace «Abrir el documento…»](manual/capturas/16-duplicado-exacto.png)
+
+*Captura 16. Archivo idéntico (aviso de duplicado exacto). [CONFIRMADO]*
 
 **b) El archivo se parece mucho a uno que existe (por ejemplo, un reescaneo).** Aparece la pantalla «**Este archivo se parece a un documento que ya existe**», con los dos lados:
 
-- **Ya existe en el sistema:** título, el **porcentaje de parecido en el texto**, expediente, subserie, fecha del documento, versión parecida, quién la cargó y cuándo, y enlaces para ver el documento (se abre en otra pestaña) y descargar esa versión.
-- **Lo que intentas cargar:** tu archivo y los datos que escribiste, con un enlace para abrir tu PDF en otra pestaña.
+![Pantalla de comparación: a la izquierda «Ya existe en el sistema» con 95 % de parecido; a la derecha «Lo que intentas cargar»; debajo, las tres opciones y los botones «Confirmar mi decisión» y «Volver y corregir los datos»](manual/capturas/17-duplicado-probable.png)
 
-Si hay varios candidatos, eliges con cuál comparar. El sistema **solo avisa: decides tú**. Hay tres opciones:
+*Captura 17. Comparación de un duplicado probable. Los dos documentos son ficticios. [CONFIRMADO]*
+
+- **Ya existe en el sistema:** título, el **porcentaje de parecido en el texto** («95 % de parecido en el texto (el aviso salta desde 80 %)»; el umbral de 80 % es provisional, ADR-0006), expediente, subserie, fecha del documento, versión parecida (por ejemplo «1 (la vigente)» o «1 (la vigente es la 2)»), quién la cargó y cuándo, y los enlaces «Ver el documento (se abre en otra pestaña)» y «Descargar la versión n (PDF)».
+- **Lo que intentas cargar** (borde punteado: «Archivo nuevo, todavía sin guardar»): nombre y tamaño del archivo y los datos que escribiste, con el enlace «Abrir el PDF nuevo (se abre en otra pestaña)». En el celular, los dos lados se apilan.
+
+[POR VERIFICAR] **El PDF no se muestra dentro de la página: se abre en otra pestaña.** La política de seguridad de la API no admite incrustarlo (ADR-0012, sección 6.1). Eso significa que no verás los dos documentos lado a lado en la misma pantalla, solo sus datos y el porcentaje; falta confirmar con personas de la entidad si eso basta para decidir (ADR-0012, sección 6.2). La pantalla tampoco muestra **qué texto cambió**, solo cuánto se parecen [PROPUESTA: un visor de diferencias queda fuera del alcance del prototipo].
+
+**Si hay varios documentos parecidos**, aparece primero «Elige con cuál quieres comparar», con una opción por candidato (título, expediente y porcentaje), y la comparación cambia según la que elijas. [POR VERIFICAR: sin captura] Se descartó la captura de esta variante: en 1280 y en 360 px las opciones de la lista se ven encimadas unas sobre otras (defecto visual del PR #58, avisado al responsable). Esta descripción sale del código de la rama.
+
+El sistema **solo avisa: decides tú**. Hay tres opciones, y cada una explica en la pantalla qué va a pasar:
 
 | Opción | Qué pasa | Qué te pide |
 |---|---|---|
-| **Es el mismo documento: no cargar nada** | No se guarda el archivo y no cambia nada. Te lleva al documento que ya existe. | Nada. Botón: «No cargar el archivo». |
-| **Es una versión nueva de «…»** | Tu archivo se agrega como una versión más del documento que ya existe y pasa a ser la vigente. Las versiones anteriores quedan en el historial. El título, el expediente, la subserie y la fecha que escribiste **no** cambian los del documento existente. | El **motivo** de la versión nueva (obligatorio), por ejemplo «Reescaneo con mejor calidad». Botón: «Agregar como versión nueva». |
-| **Es otro documento: cargarlo de todos modos** | Se crea un documento nuevo con los datos que escribiste; el que ya existe queda como está. | Una **justificación** (obligatoria), por ejemplo «Es el contrato del segundo lote: usa la misma plantilla». Botón: «Cargar como documento nuevo». |
+| **Es el mismo documento: no cargar nada** | No se guarda el archivo y no cambia nada: la pantalla no llama a la API. Te lleva al documento que ya existe con el aviso «No se cargó nada: el archivo ya estaba en el sistema como «…».» | Nada. Botón: «No cargar el archivo». |
+| **Es una versión nueva de «…»** | Tu archivo se agrega como una versión más del documento que ya existe y pasa a ser la vigente. Las versiones anteriores quedan en el historial. El título, el expediente, la subserie y la fecha que escribiste **no** cambian los del documento existente. | El **motivo** de la versión nueva (obligatorio, hasta 300 caracteres), por ejemplo «Reescaneo con mejor calidad». Botón: «Agregar como versión nueva». |
+| **Es otro documento: cargarlo de todos modos** | Se crea un documento nuevo con los datos que escribiste; el que ya existe queda como está. Tu justificación queda registrada en la auditoría. | Una **justificación** (obligatoria, hasta 500 caracteres), por ejemplo «Es el contrato del segundo lote: usa la misma plantilla». Botón: «Cargar como documento nuevo». |
+
+Si pulsas el botón sin elegir, la pantalla dice «Elige qué quieres hacer con este archivo.» Si eliges la segunda o la tercera y dejas vacío el texto, dice «Escribe el motivo: explica qué cambió respecto a la versión que ya existe.» o «Escribe la justificación: explica por qué no es un duplicado.» **Volver y corregir los datos** te devuelve al formulario sin perder lo escrito ni el archivo elegido.
+
+![Aviso verde «No se cargó nada: el archivo ya estaba en el sistema como «Contrato de obra de la vía Tibú-Convención»» sobre el detalle del documento existente](manual/capturas/18-decision-mismo-documento-resultado.png)
+
+*Captura 18. Resultado de «Es el mismo documento»: no se guardó nada. [CONFIRMADO]*
+
+![Opción «Es una versión nueva de…» elegida, con el campo «Motivo de la versión nueva (obligatorio)» vacío y su mensaje en rojo](manual/capturas/19-decision-version-nueva-motivo.png)
+
+*Captura 19. «Es una versión nueva»: el motivo es obligatorio. [CONFIRMADO]*
+
+![Detalle del documento con el aviso «Se agregó el archivo como la versión 2 del documento…» y dos versiones en el historial](manual/capturas/20-decision-version-nueva-resultado.png)
+
+*Captura 20. Resultado de «Es una versión nueva»: el archivo quedó como la versión 2. [CONFIRMADO]*
+
+![Opción «Es otro documento: cargarlo de todos modos» elegida, con el campo «Justificación (obligatorio)» vacío y su mensaje en rojo](manual/capturas/21-decision-otro-documento-justificacion.png)
+
+*Captura 21. «Es otro documento»: la justificación es obligatoria. [CONFIRMADO]*
+
+El resultado de «Es otro documento» es un documento nuevo, con el mismo aspecto que la captura 12 y con el título y el expediente que escribiste. No tiene captura propia en este borrador.
 
 **Cómo decidir** [PROPUESTA, no es una regla del sistema]:
 
 - Si es **el mismo papel escaneado otra vez**, normalmente conviene **no cargar nada** (primera opción) o, si el escaneo nuevo es mejor, **agregarlo como versión nueva**.
 - Si es una **actualización o corrección** del mismo documento, **versión nueva**.
 - Si es **otro documento que usa la misma plantilla** (actas, contratos y oficios se parecen mucho entre sí), **otro documento**, y escribe bien la justificación.
-- Si no estás seguro, abre los dos PDF en otra pestaña y compáralos antes de decidir. **Volver y corregir los datos** te devuelve al formulario sin perder lo escrito ni el archivo elegido.
+- Si no estás seguro, abre los dos PDF en otra pestaña y compáralos antes de decidir.
 
 **Tu decisión queda en la auditoría** (acción `decision_duplicado`), con tu justificación o tu motivo. Un PDF sin capa de texto, o con menos de 50 palabras, no se compara por parecido: solo se verifica por huella exacta.
 
+**En el celular.** El formulario se adapta desde 360 px de ancho: los campos ocupan todo el ancho de la pantalla y se leen uno debajo del otro.
+
+![Formulario de carga en una pantalla de 360 píxeles de ancho](manual/capturas/22-carga-en-celular.png)
+
+*Captura 22. Formulario de carga en celular (360 px). [CONFIRMADO]*
+
 ## 8. Subir una versión nueva
 
-> **[POR VERIFICAR: sin captura]** Pantalla del PR #58 (issue #24).
+**Quién:** editor y administrador. **Dónde:** en el detalle de un documento, botón **Subir una versión nueva** (también se llega a una versión nueva desde la comparación de un duplicado, sección 7). Estado: PR #58 (issue #24), *en revisión*.
 
-**Quién:** editor y administrador. **Dónde:** en el detalle de un documento, botón **Subir una versión nueva**.
+La pantalla muestra el enlace «← título del documento» para volver y recuerda el documento, su expediente y su versión vigente, y avisa: «No se borra nada: la versión actual queda en el historial y la que subas pasa a ser la vigente.» Pide:
 
-La pantalla recuerda el documento y su versión vigente, y avisa: «No se borra nada: la versión actual queda en el historial y la que subas pasa a ser la vigente.» Pide:
+![Pantalla «Subir una versión nueva» con los campos Archivo PDF y Motivo del cambio](manual/capturas/23-version-nueva-formulario.png)
 
-- **Archivo PDF** (hasta 20 MB).
-- **Motivo del cambio** (obligatorio, hasta 300 caracteres): explica qué cambió, por ejemplo «Se corrigió el valor de la cláusula 4». Queda en el historial y es lo que le explica el cambio a un auditor.
+*Captura 23. Formulario de versión nueva. [CONFIRMADO]*
 
-Pulsa **Subir versión nueva**. Te lleva al detalle con el aviso «Se agregó la versión n de «…». Las versiones anteriores siguen en el historial.»
+- **Archivo PDF** (obligatorio, hasta 20 MB; las mismas reglas que en la carga).
+- **Motivo del cambio** (obligatorio, hasta 300 caracteres, con contador): explica qué cambió, por ejemplo «Se corrigió el valor de la cláusula 4». Queda en el historial y es lo que le explica el cambio a un auditor.
 
-**Si el archivo ya está en una versión de ese documento**, el sistema lo rechaza: «Este archivo tiene el mismo contenido que la versión n del documento, así que no se creó ninguna versión nueva. Si hiciste cambios, guarda el archivo corregido y súbelo de nuevo.» (ADR-0005). Si dos personas suben una versión del mismo documento a la vez, cada una recibe un número distinto y consecutivo; no se pierde ninguna.
+Si dejas algo vacío, la pantalla dice «Elige el archivo PDF que quieres subir.» o «Escribe el motivo: explica qué cambió en esta versión.» (misma forma que la captura 13).
+
+Pulsa **Subir versión nueva** (mientras sube dice «Subiendo la versión…»). Te lleva al detalle con el aviso «Se agregó la versión n de «…». Las versiones anteriores siguen en el historial.» y la versión nueva arriba, como vigente.
+
+![Detalle del documento con el aviso «Se agregó la versión 3 de «…». Las versiones anteriores siguen en el historial.» y tres versiones en el historial](manual/capturas/24-version-nueva-resultado.png)
+
+*Captura 24. Resultado de subir una versión nueva: la versión 3 es la vigente. [CONFIRMADO]*
+
+**Si el archivo ya está en una versión de ese documento**, el sistema lo rechaza y no crea nada: «Este archivo tiene el mismo contenido que la versión n del documento, así que no se creó ninguna versión nueva. Si hiciste cambios, guarda el archivo corregido y súbelo de nuevo.» (ADR-0005).
+
+![Formulario de versión nueva con un aviso rojo: «Este archivo tiene el mismo contenido que la versión 3 del documento, así que no se creó ninguna versión nueva…»](manual/capturas/25-version-nueva-contenido-repetido.png)
+
+*Captura 25. Se intentó subir el mismo contenido que la versión vigente. [CONFIRMADO]*
+
+Si dos personas suben una versión del mismo documento a la vez, cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
+
+![Pantalla «Subir una versión nueva» en 360 píxeles de ancho](manual/capturas/26-version-nueva-en-celular.png)
+
+*Captura 26. Versión nueva en celular (360 px). [CONFIRMADO]*
 
 ## 9. Restaurar una versión anterior
 
-> **[POR VERIFICAR: sin captura]** Pantalla del PR #58 (issue #24).
+**Quién:** editor y administrador. **Dónde:** en el historial del detalle, botón **Restaurar** de cada versión que no sea la vigente. Estado: PR #58 (issue #24), *en revisión*.
 
-**Quién:** editor y administrador. **Dónde:** en el historial del detalle, botón **Restaurar** de cada versión que no sea la vigente.
+Restaurar **no borra ni edita nada**. Al pulsar **Restaurar** se abre, bajo esa versión, un panel «**¿Restaurar la versión n?**» que lo explica: «Se creará una **versión nueva** (la siguiente) con el mismo contenido que la versión n, y pasará a ser la vigente. **No se borra nada**: las versiones que ya existen, incluida la vigente, siguen en el historial.» Puedes escribir un **motivo** (opcional, hasta 300 caracteres; si lo dejas vacío se guarda como «Restaura la versión n»). Confirma con **Sí, restaurar la versión n** (mientras trabaja dice «Restaurando…») o con **Cancelar**.
 
-Restaurar **no borra ni edita nada**. Al pulsar **Restaurar** se abre un panel «**¿Restaurar la versión n?**» que lo explica: «Se creará una **versión nueva** (la siguiente) con el mismo contenido que la versión n, y pasará a ser la vigente. **No se borra nada**: las versiones que ya existen siguen en el historial.» Puedes escribir un **motivo** (opcional; si lo dejas vacío se guarda como «Restaura la versión n»). Confirma con **Sí, restaurar la versión n** o **Cancelar**.
+![Historial con el panel «¿Restaurar la versión 1?» abierto bajo la versión 1, con el campo de motivo opcional y los botones «Sí, restaurar la versión 1» y «Cancelar»](manual/capturas/27-restaurar-confirmacion.png)
 
-Verás el aviso «Se creó la versión N con el contenido de la versión n.» y la versión nueva aparece con la etiqueta «Restaura la versión n». Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y lo explica (ADR-0005). Se puede restaurar una restauración: el historial solo crece.
+*Captura 27. Confirmación para restaurar la versión 1. [CONFIRMADO]*
+
+Verás el aviso «Se creó la versión N con el contenido de la versión n. Las versiones anteriores siguen en el historial.» y la versión nueva aparece como vigente, con la etiqueta «Restaura la versión n».
+
+![Detalle con el aviso «Se creó la versión 4 con el contenido de la versión 1» y la versión 4 con las etiquetas «Vigente» y «Restaura la versión 1»](manual/capturas/28-restaurar-resultado.png)
+
+*Captura 28. Resultado de restaurar: la versión 4 repite el contenido de la versión 1 y el historial conserva las anteriores. [CONFIRMADO]*
+
+Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y lo explica: «La versión vigente (n) ya tiene el mismo contenido que la versión que quieres restaurar, así que no se creó ninguna versión nueva.» (ADR-0005). Este mensaje no tiene captura en este borrador; sale del código de la interfaz [POR VERIFICAR: verlo en pantalla]. Se puede restaurar una restauración: el historial solo crece.
+
+### Si tu rol es de consulta
+
+El rol de consulta **no ve** los botones «Subir una versión nueva» ni «Restaurar», ni el enlace «Cargar documento» del menú. Si abre a mano la dirección de una pantalla de carga, ve el aviso de falta de permiso. La API también rechaza la acción con un 403, aunque alguien llegue por otro camino.
+
+![Detalle de un documento visto con el usuario de consulta: solo el botón «Descargar la versión vigente (PDF)» y, en cada versión, «Descargar»](manual/capturas/29-consulta-detalle-sin-acciones.png)
+
+*Captura 29. El detalle visto como consulta: sin «Subir una versión nueva» ni «Restaurar». [CONFIRMADO]*
+
+![Pantalla «No tienes permiso para ver esta pantalla», con el texto «Tu rol no incluye esta función» y el enlace «Volver a los documentos»](manual/capturas/30-consulta-sin-permiso.png)
+
+*Captura 30. Un usuario de consulta abre la pantalla de carga: «No tienes permiso para ver esta pantalla». [CONFIRMADO]*
 
 ## 10. Administración de usuarios y auditoría (administrador)
 
@@ -297,15 +406,7 @@ La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede e
 
 ## 11. Cambiar la clave
 
-> **[POR VERIFICAR] La pantalla de cambio de clave no existe todavía.** Hoy el cambio de clave solo existe por la API y es del PR #57 (issue #51, *en revisión*, no fusionado). Quien no pueda usar la API debe pedirle el cambio a quien administre el sistema.
-
-Lo que el sistema hace (ADR-0011):
-
-- **Cambio de tu propia clave:** cualquier rol. Pide tu **clave actual** (aunque ya tengas la sesión abierta), y la **clave nueva**, de 12 a 256 caracteres y **distinta de la actual**. Al cambiarla se **cierran tus otras sesiones** y se mantiene la actual. Si escribes mal la clave actual, el error cuenta en el límite de intentos del ingreso (5 en 15 minutos).
-- **Restablecer la clave de otra persona:** solo el administrador, con una **clave temporal** que el administrador fija y entrega. La persona queda obligada a cambiarla al ingresar, y hasta entonces solo puede ver quién es, cerrar sesión y cambiarla.
-- **Si olvidas tu clave:** no hay «recuperar por correo» ni preguntas secretas (están descartados, ADR-0011). **Pide a un administrador que restablezca tu clave.** [POR VERIFICAR] **Si quien la olvida es el único administrador, no hay salida por el sistema:** hace falta que alguien con acceso a la base de datos intervenga, y el comando para eso aún no existe.
-
-**Buenas prácticas** [PROPUESTA]: no compartas tu clave, no la escribas en el computador de la oficina ni en mensajes, usa una frase larga en vez de una palabra, y cierra la sesión al terminar.
+> **[POR VERIFICAR: pantalla en el PR de la rama `feat/51-web-clave`, aún no existe]**
 
 ## 12. Preguntas frecuentes
 
@@ -323,7 +424,7 @@ Lo que el sistema hace (ADR-0011):
 
 **¿Qué pasa si dos personas suben una versión del mismo documento a la vez?** Cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
-**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (captura 8). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
+**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (capturas 8, 22 y 26). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
 
 **¿Qué es la «huella SHA-256» del historial?** Un código que identifica el contenido exacto del archivo. Si dos versiones tienen la misma huella, son el mismo archivo.
 
@@ -343,24 +444,24 @@ Lo que el sistema hace (ADR-0011):
 | «El servidor tuvo un problema. Intenta de nuevo en unos minutos.» | Falla del servidor | Reintenta; si persiste, avisa al administrador |
 | Un botón de **Reintentar** en el listado o el detalle | Falló la carga de datos | Pulsa **Reintentar** |
 | «Ningún documento coincide con lo que buscaste…» | La búsqueda o el filtro no tiene resultados | Prueba con otras palabras o pulsa **Quitar filtros** |
-| Un error 403 de «cambio de clave requerido» (el texto exacto que muestra la pantalla es [POR VERIFICAR]) | Entraste con una clave temporal (PR #57, en revisión) | Cambia tu clave (sección 11) [POR VERIFICAR: sin pantalla] |
+| Un error 403 de «cambio de clave requerido» (el texto exacto que muestra la pantalla es [POR VERIFICAR]) | Entraste con una clave temporal (PR #57, en revisión) | Ver la sección 11 [POR VERIFICAR: pantalla de cambio de clave pendiente] |
 
-Los mensajes de la carga, la versión nueva y la restauración están en la sección 7 y en la 8 [POR VERIFICAR: sin captura].
+Los mensajes de la carga, la versión nueva y la restauración están en las secciones 7, 8 y 9. Los que no tienen captura salen del código de la interfaz y están marcados [POR VERIFICAR].
 
 ## 14. Pendientes de este borrador
 
 Lo que falta antes de convertirlo en la versión final:
 
-1. **Capturas** de las pantallas de carga, duplicado probable, versión nueva y restaurar (PR #58, issue #24), y de usuarios y auditoría (issue #25, si se construye). Con datos ficticios.
-2. **Confirmar los textos** de las secciones 7 a 10 contra las pantallas reales (se leyeron del código de la rama del PR #58, que sigue en borrador).
-3. **La pantalla de cambio de clave** no existe (sección 11): decidir si se construye antes de usar el sistema con más personas. Mientras tanto, una persona con clave temporal **no puede usar las pantallas**, porque la interfaz no tiene dónde cambiarla [POR VERIFICAR con una prueba].
+1. **Capturas que faltan:** usuarios y auditoría (issue #25, si se construye), cambio de clave (rama `feat/51-web-clave`), la lista de varios candidatos en la comparación de un duplicado (sección 7; se descartó por un defecto visual), el mensaje de restaurar una versión que ya es la vigente (sección 9) y el resultado de «Es otro documento». Las de carga, duplicado, versión nueva y restaurar ya existen (capturas 11 a 30, datos ficticios). Todas se rehacen si el PR #58 cambia la interfaz en la revisión.
+2. **Confirmar los textos** sin captura de las secciones 7 a 9 y todo lo de la sección 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de la rama del PR #58 (commit `a6d6eb1`); el PR sigue en revisión y puede cambiar.
+3. **La sección 11 (cambiar la clave)** queda vacía hasta que exista la pantalla en el PR de la rama `feat/51-web-clave`; entonces se escribe con sus textos y capturas.
 4. **Quién redacta la versión final** [POR VERIFICAR]: César (parte académica) o Juan (parte técnica). Los dos revisan.
 5. **Revisión con personas que usen el sistema** (ingeniería, jurídica, contabilidad, gerencia): este texto no se ha probado con nadie [SUPUESTO] que sea claro.
 6. **Capturas descartadas:** la del aviso «Tu sesión terminó» se ve con el cuadro del aviso cortado y superpuesto sobre la tarjeta de ingreso; se dejó fuera hasta que se corrija o se confirme que es un defecto de la captura.
 
 ## 15. Fuentes
 
-- Capturas: `docs/manual/capturas/` (datos ficticios; interfaz del PR #54, 1280 px y 360 px).
+- Capturas: `docs/manual/capturas/` (datos ficticios; 1 a 10 de la interfaz del PR #54 y 11 a 30 de la del PR #58, a 1280 px y a 360 px).
 - Código de la interfaz leído en las ramas `feat/23-web-listado` (PR #54) y `feat/24-web-carga` (PR #58).
-- [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) y, en revisión, ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54).
+- [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) y, en revisión, ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54; la sección 6 de ese ADR, del PR #58, explica las decisiones de la carga).
 - [`README.md`](../README.md) y [`CHANGELOG.md`](../CHANGELOG.md).
