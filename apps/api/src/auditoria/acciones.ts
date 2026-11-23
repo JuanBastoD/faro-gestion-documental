@@ -19,6 +19,8 @@ export const ACCION = {
   USUARIO_DESACTIVADO: 'usuario_desactivado',
   USUARIO_REACTIVADO: 'usuario_reactivado',
   CCD_IMPORTADO: 'ccd_importado',
+  CLAVE_CAMBIADA: 'clave_cambiada',
+  CLAVE_RESTABLECIDA: 'clave_restablecida',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];

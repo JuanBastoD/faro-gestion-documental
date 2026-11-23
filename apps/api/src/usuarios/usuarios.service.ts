@@ -128,6 +128,46 @@ export class UsuariosService {
     });
   }
 
+  /**
+   * Un administrador fija una clave temporal a otra persona (ADR-011). La clave anterior deja de servir, se
+   * cierran todas las sesiones de esa persona y, hasta que cambie la clave, solo podrá ver quién es, cerrar sesión
+   * y cambiarla. Todo en una transacción con su evento de auditoría. No sirve para la cuenta propia: quien actúa
+   * con una cookie robada no debe poder fijar su clave sin conocer la actual; para eso está `POST /auth/clave`.
+   * Un usuario inactivo sí se puede restablecer (no tiene sesiones; así se prepara su reactivación).
+   */
+  async restablecerClave(id: number, clave: string, actor: UsuarioSesion): Promise<void> {
+    if (id === actor.id) {
+      throw new ConflictException({
+        statusCode: 409,
+        error: 'Conflict',
+        codigo: 'restablecer_clave_propia',
+        message: 'Tu propia clave se cambia con POST /auth/clave, dando la clave actual',
+      });
+    }
+    // El hash es lento a propósito: se calcula antes de abrir la transacción para no retener la conexión.
+    const claveHash = await hashear(clave);
+    await this.repositorio.enTransaccion(async (tx) => {
+      // Los bloqueos van en el mismo orden que en `cambiar` (primero los administradores activos, luego el
+      // usuario), y no se debe cambiar solo en uno de los dos. Bloquear solo al usuario no basta: el evento de
+      // auditoría referencia al administrador que actúa por clave foránea, y esa inserción pide un bloqueo sobre
+      // su fila; si un `cambiar` simultáneo ya la tiene bloqueada y espera la fila de este usuario, quedan
+      // esperándose mutuamente.
+      await this.repositorio.bloquearAdministradoresActivos(tx);
+      const actual = await this.repositorio.buscarBloqueando(tx, id);
+      if (!actual) throw new NotFoundException(`No existe el usuario ${id}`);
+      await this.repositorio.fijarClaveTemporal(tx, id, claveHash);
+      const cerradas = await this.repositorio.borrarSesiones(tx, id);
+      await this.auditoria.registrar(
+        {
+          usuarioId: actor.id,
+          accion: ACCION.CLAVE_RESTABLECIDA,
+          detalle: `${this.quien(actual)}; sesiones cerradas: ${cerradas}`,
+        },
+        tx,
+      );
+    });
+  }
+
   /** «usuario 7 (ana.perez)»: el número no cambia nunca; el nombre ayuda a leer la auditoría. */
   private quien(u: Pick<UsuarioAdministrado, 'id' | 'usuario'>): string {
     return `usuario ${u.id} (${u.usuario})`;
