@@ -179,7 +179,36 @@ Con todo lo anterior (y los PR de #8 a #20 fusionados a `main`, porque el despli
    ```
 
    Después ingresa con ese usuario y crea a los demás con `POST /usuarios`. [PENDIENTE] Hoy nadie puede cambiar su clave (ADR-008, sección 4): usa una clave que estés dispuesto a conservar, o desactiva la cuenta y crea otra.
-4. **[PENDIENTE #19] El cuadro de clasificación llega vacío** y sin él no se puede cargar ningún documento (cada documento va en una subserie). La importación por CSV (#19) todavía no existe. Mientras tanto, para una demostración, el cuadro ficticio de `apps/api/src/semilla/ccd-demo.ts` se puede cargar con SQL directo contra Neon; **no uses `db:seed`: crea usuarios de demostración con una clave conocida**.
+4. **Cargar el cuadro de clasificación** (#19, [ADR-010](adr/0010-importacion-del-cuadro-por-comando.md)). **El cuadro llega vacío** y sin él no se puede cargar ningún documento (cada documento va en una subserie). Se carga con un comando de la misma imagen, `importar-cli`, a partir de un CSV (formato y opciones en el README, sección «Cuadro de clasificación desde un CSV»; ejemplo ficticio en `docs/ejemplos/cuadro-ejemplo.csv`). **No uses `db:seed`: crea usuarios de demostración con una clave conocida.** Sin `--aplicar` el comando solo muestra lo que haría; ejecútalo siempre así primero. Es seguro repetirlo y nunca mueve ni elimina lo que ya tiene documentos. Con datos reales, solo el cuadro que la encargada del archivo haya validado [POR VERIFICAR cuándo]; para una demostración, el ejemplo ficticio.
+
+   El comando necesita `DATABASE_URL` y el archivo. Dos caminos [POR VERIFICAR: ninguno se ha probado en la nube; el comando sí se probó compilado y dentro de la imagen contra el PostgreSQL local, sección 11]:
+
+   **A. Desde tu equipo contra Neon** (lo más simple; necesitas Node y el repositorio):
+
+   ```bash
+   read -rs DATABASE_URL && export DATABASE_URL        # pega la cadena DIRECTA de Neon (sección 4); no queda en el historial
+   npm ci
+   npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv            # simulación: no escribe nada
+   npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar  # escribe
+   ```
+
+   **B. Como trabajo de Cloud Run, con la misma imagen** (el archivo entra como un secreto montado como archivo: el cuadro no es secreto, pero así llega al contenedor sin meterlo en la imagen ni en el repositorio; el límite de un secreto es de 64 KiB, de sobra para un cuadro):
+
+   ```bash
+   gcloud secrets create faro-cuadro-csv --data-file=docs/ejemplos/cuadro-ejemplo.csv   # o el archivo validado
+   gcloud secrets add-iam-policy-binding faro-cuadro-csv \
+     --member="serviceAccount:$SA_EJECUCION" --role="roles/secretmanager.secretAccessor"
+   IMAGEN="$(gcloud run services describe faro-api --region "$REGION" --format 'value(spec.template.spec.containers[0].image)')"
+   gcloud run jobs deploy faro-cuadro --image "$IMAGEN" --region "$REGION" --service-account "$SA_EJECUCION" \
+     --command node --args apps/api/dist/ccd/importar/importar-cli.js,/cuadro/cuadro.csv \
+     --set-secrets "DATABASE_URL=faro-database-url:latest,/cuadro/cuadro.csv=faro-cuadro-csv:latest" \
+     --max-retries 0
+   gcloud run jobs execute faro-cuadro --region "$REGION" --wait     # simulación: el resultado queda en los registros del trabajo
+   gcloud run jobs execute faro-cuadro --region "$REGION" --wait \
+     --args apps/api/dist/ccd/importar/importar-cli.js,/cuadro/cuadro.csv,--aplicar
+   ```
+
+   [POR VERIFICAR] Que `--set-secrets` con una ruta de archivo monte el secreto como `/cuadro/cuadro.csv` (es lo que documenta Cloud Run para montar un secreto como archivo), y que `--args` en `jobs execute` sustituya los argumentos del trabajo. Para cambiar el cuadro después: nueva versión del secreto (`gcloud secrets versions add`) y repetir los dos `execute`. Comprueba el resultado con `curl -b cookies.txt "$URL/series"` tras ingresar.
 
 ## 10. Comprobar
 

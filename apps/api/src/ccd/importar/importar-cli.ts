@@ -56,6 +56,13 @@ async function ejecutar(): Promise<void> {
       info: (texto) => console.log(texto),
       error: (texto) => console.error(texto),
     });
+  } catch (error) {
+    // Todo se escribe en una transacción: si algo falló (la conexión, una regla de la base), no quedó nada a medias.
+    // Drizzle envuelve el error de PostgreSQL en `cause`; ni uno ni otro traen la clave de la base.
+    const causa = error instanceof Error && error.cause instanceof Error ? ` Causa: ${error.cause.message}` : '';
+    const mensaje = error instanceof Error ? error.message.split('\n')[0] : String(error);
+    console.error(`La importación falló (se escribe todo en una transacción: no queda nada a medias). ${mensaje}${causa}`);
+    process.exitCode = SALIDA.RECHAZADO;
   } finally {
     await pool.end();
   }
