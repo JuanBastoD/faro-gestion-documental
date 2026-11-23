@@ -1,0 +1,94 @@
+# Copia de seguridad de la base de datos a un bucket PRIVADO de Cloud Storage. Guía, qué se respalda y qué no,
+# y cómo restaurar: docs/respaldo.md.
+#
+# INACTIVO POR DEFECTO: aunque el calendario (cron) lo despierte cada día, el trabajo se omite y no hace nada
+# mientras no existan las cuatro variables del repositorio de abajo (Settings → Secrets and variables → Actions →
+# Variables). Son identificadores, no secretos. Además necesita UN secreto del repositorio: RESPALDO_DATABASE_URL,
+# la cadena de conexión de la base de Neon. Lo crea el usuario; este flujo no lo crea ni lo imprime.
+#
+#   Variables obligatorias: GCP_PROJECT_ID, GCP_WIF_PROVIDER (las mismas de deploy.yml), GCP_RESPALDO_SA (cuenta de
+#   servicio que solo puede CREAR objetos en el bucket de respaldos) y GCS_RESPALDO_BUCKET (bucket de respaldos,
+#   distinto del de los documentos).
+#   Variable opcional: RESPALDO_IMAGEN (imagen con pg_dump; por defecto postgres:17-alpine. Debe ser de la misma
+#   versión mayor que el servidor de Neon o más nueva).
+#   Secreto obligatorio: RESPALDO_DATABASE_URL.
+#
+# EL RESPALDO NUNCA SE SUBE COMO ARTEFACTO DE GITHUB ACTIONS NI SE IMPRIME EN EL REGISTRO: el repositorio es
+# público y cualquiera puede descargar los artefactos de una ejecución. Solo va al bucket privado.
+#
+# SIN LLAVES: se autentica con Workload Identity Federation (token OIDC de GitHub, de corta vida), igual que
+# deploy.yml. No hay ningún archivo de llave JSON en el repositorio ni en los secretos de GitHub.
+#
+# [POR VERIFICAR] Este flujo se escribió y se revisó (actionlint), pero NO se ha ejecutado: hacerlo requiere la
+# cuenta de Google Cloud y la de Neon. Lo que sí se probó en local es respaldar.sh y restaurar.sh
+# (docs/respaldo.md, «Prueba de restauración»).
+#
+# Las acciones están fijadas por commit (SHA) y no por etiqueta; el comentario indica la versión.
+
+name: Respaldo
+
+on:
+  # [PROPUESTA] Todos los días a las 02:17 en Colombia (07:17 UTC); el minuto raro evita la hora punta de GitHub.
+  # GitHub desactiva los flujos programados de un repositorio público tras 60 días sin actividad: si pasa,
+  # se reactiva a mano desde la pestaña Actions.
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # Solo para pedir el token de Workload Identity Federation
+
+# Un solo respaldo a la vez, y uno en curso nunca se cancela a la mitad.
+concurrency:
+  group: respaldo
+  cancel-in-progress: false
+
+jobs:
+  respaldar:
+    name: respaldar
+    if: >-
+      ${{ vars.GCP_PROJECT_ID != '' && vars.GCP_WIF_PROVIDER != '' && vars.GCP_RESPALDO_SA != ''
+      && vars.GCS_RESPALDO_BUCKET != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BUCKET: ${{ vars.GCS_RESPALDO_BUCKET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Falla pronto y con un mensaje claro si falta el secreto (job.if no puede consultar los secretos).
+      - name: Comprobar que existe el secreto con la conexión a la base
+        env:
+          HAY_SECRETO: ${{ secrets.RESPALDO_DATABASE_URL != '' }}
+        run: |
+          if [ "$HAY_SECRETO" != "true" ]; then
+            echo "::error::Falta el secreto del repositorio RESPALDO_DATABASE_URL (cadena de conexión de Neon). Ver docs/respaldo.md."
+            exit 1
+          fi
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_RESPALDO_SA }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      # El script no imprime la conexión ni la clave. No se usa `set -x` ni se hace eco de nada de esto.
+      - name: Respaldar la base (pg_dump) y verificar el archivo
+        env:
+          RESPALDO_DATABASE_URL: ${{ secrets.RESPALDO_DATABASE_URL }}
+          RESPALDO_IMAGEN: ${{ vars.RESPALDO_IMAGEN }}
+        run: RESPALDO_DIR="$RUNNER_TEMP/respaldo" infra/respaldo/respaldar.sh
+
+      # Solo al bucket privado. La cuenta puede crear objetos pero no leerlos, listarlos, sobrescribirlos ni
+      # borrarlos; la retención la aplica el propio bucket (regla de ciclo de vida, docs/respaldo.md).
+      - name: Subir el respaldo al bucket privado
+        run: |
+          for archivo in "$RUNNER_TEMP"/respaldo/*.dump; do
+            gcloud storage cp "$archivo" "gs://${BUCKET}/respaldos/$(basename "$archivo")" --quiet
+            echo "Subido: respaldos/$(basename "$archivo")"
+          done

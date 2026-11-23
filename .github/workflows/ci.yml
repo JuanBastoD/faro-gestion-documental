@@ -130,3 +130,79 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             git /repo --config /repo/.gitleaks.toml --redact --no-banner
+
+  # Que la copia de seguridad (infra/respaldo, docs/respaldo.md) siga funcionando con el esquema real: sin esto
+  # una migración nueva podría romper la restauración sin que nadie lo note hasta el día del desastre. Revisa los
+  # scripts, respalda la base migrada y sembrada del propio trabajo, la restaura en una base nueva, compara los
+  # conteos por tabla y comprueba que el script se niega a restaurar sobre una base protegida o ya existente.
+  # Todo es efímero y ficticio: no toca la nube.
+  respaldo:
+    name: respaldo
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: faro
+          POSTGRES_PASSWORD: faro-ci-no-es-secreto
+          POSTGRES_DB: faro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U faro -d faro"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@localhost:5432/faro
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Revisar los scripts (bash -n y shellcheck v0.11.0)
+        run: |
+          for script in infra/respaldo/*.sh; do bash -n "$script"; done
+          docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d \
+            infra/respaldo/respaldar.sh infra/respaldo/restaurar.sh infra/respaldo/contar.sh
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Migrar y sembrar la base del trabajo
+        run: |
+          npm run db:migrate -w apps/api
+          npm run db:seed -w apps/api
+        env:
+          SEMILLA_CLAVE: clave-ci-sin-valor-real
+      - name: Respaldar y restaurar en una base nueva, y comparar
+        env:
+          RESPALDO_DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@host.docker.internal:5432/faro
+          PGUSER: faro
+          PGPASSWORD: faro-ci-no-es-secreto
+          PGPORT: "5432"
+          RESTAURAR_COMPARAR_CON: faro
+        run: |
+          export RESPALDO_DIR="$RUNNER_TEMP/respaldo"
+          infra/respaldo/respaldar.sh
+          infra/respaldo/restaurar.sh "$RESPALDO_DIR"/faro-*.dump faro_restaurada
+      - name: El script se niega a restaurar sobre bases protegidas o que ya existen
+        env:
+          PGUSER: faro
+          PGPASSWORD: faro-ci-no-es-secreto
+          PGPORT: "5432"
+        run: |
+          for destino in faro postgres faro_test faro_restaurada; do
+            if salida="$(infra/respaldo/restaurar.sh "$RUNNER_TEMP"/respaldo/faro-*.dump "$destino" 2>&1)"; then
+              echo "::error::restaurar.sh debía negarse a restaurar sobre ${destino} y terminó bien"
+              exit 1
+            fi
+            # Debe ser una negativa expresa, no un fallo cualquiera (por ejemplo, de conexión).
+            case "$salida" in
+              *"ME NIEGO"*) echo "Se negó, como debía, con ${destino}: ${salida}" ;;
+              *)
+                echo "::error::restaurar.sh falló con ${destino}, pero no con una negativa expresa"
+                echo "$salida"
+                exit 1
+                ;;
+            esac
+          done
