@@ -102,3 +102,23 @@ export const auditoria = pgTable(
   },
   (tabla) => [index('auditoria_creado_en_idx').on(tabla.creadoEn)],
 );
+
+/**
+ * Sesiones de ingreso (ADR-003). El token que viaja en la cookie nunca se guarda:
+ * aquí queda solo su SHA-256, así que quien lea la base no puede usar las sesiones.
+ */
+export const sesiones = pgTable(
+  'sesiones',
+  {
+    /** SHA-256 (hex) del token de la cookie. */
+    id: text('id').primaryKey(),
+    usuarioId: integer('usuario_id')
+      .notNull()
+      .references(() => usuarios.id),
+    creadaEn: timestamp('creada_en', { withTimezone: true }).notNull().defaultNow(),
+    ultimoUso: timestamp('ultimo_uso', { withTimezone: true }).notNull().defaultNow(),
+    /** Vence por inactividad; se renueva al usarla. */
+    venceEn: timestamp('vence_en', { withTimezone: true }).notNull(),
+  },
+  (tabla) => [index('sesiones_usuario_idx').on(tabla.usuarioId)],
+);

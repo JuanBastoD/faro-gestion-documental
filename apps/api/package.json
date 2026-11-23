@@ -16,12 +16,14 @@
     "test:watch": "vitest",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "nest build && node dist/semilla/sembrar.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.6.0",
     "@nestjs/core": "^12.6.0",
     "@nestjs/platform-express": "^12.6.0",
+    "argon2": "^0.45.2",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",

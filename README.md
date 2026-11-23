@@ -52,13 +52,27 @@ npm run start:dev -w apps/api      # API en http://127.0.0.1:3000
 
 `GET /health` devuelve el estado de la API y de la base. Responde 200 si todo está bien y 503 si la base no contesta.
 
+**Ingreso y roles** ([ADR-003](docs/adr/0003-autenticacion-y-sesiones.md)): todo exige sesión salvo `/health` y `POST /auth/login`. Las sesiones viven en PostgreSQL y las claves usan argon2id.
+
+```
+npm run db:seed -w apps/api      # migra y crea admin.demo, editor.demo y consulta.demo (ficticios)
+```
+
+La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a correr con `NODE_ENV=production`.
+
+| Ruta | Quién | Qué hace |
+|---|---|---|
+| `POST /auth/login` | Cualquiera | Recibe `{ usuario, clave }` y pone la cookie `faro_sesion` |
+| `GET /auth/yo` | Con sesión | Devuelve quién tiene la sesión |
+| `POST /auth/logout` | Con sesión | Cierra la sesión |
+
 La configuración sale de variables de entorno que se validan al arrancar (`apps/api/src/config/entorno.ts`). Si falta o es inválida alguna, la API no arranca y dice cuál corregir, sin mostrar sus valores. En local se leen del `.env` de la raíz.
 
 | Comando (desde la raíz) | Qué hace |
 |---|---|
 | `npm run lint` | Oxlint con tipos |
 | `npm test` | Pruebas unitarias (no necesitan base de datos) |
-| `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`) |
+| `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`). Usan una base aparte, `faro_test`, que se crea sola: nunca tocan la de desarrollo |
 | `npm run build` | Compila a `apps/api/dist` |
 | `npm run db:generate -w apps/api -- --name <nombre>` | Genera una migración SQL nueva a partir de `esquema.ts` |
 
