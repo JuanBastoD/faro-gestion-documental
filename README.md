@@ -15,6 +15,7 @@ Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyec
 ## Dónde está el trabajo
 
 - Plan de mejora y arquitectura: [`docs/PLAN_MEJORA.md`](docs/PLAN_MEJORA.md)
+- Modelo de datos (diagrama entidad-relación y diccionario por tabla y campo): [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Una prueba lo compara con la base migrada, así que el CI falla si queda desactualizado
 - Issues e hitos `V2-M1` a `V2-M4`: pestaña Issues del repositorio
 - Tablero: <https://github.com/users/JuanBastoD/projects/2>
 
