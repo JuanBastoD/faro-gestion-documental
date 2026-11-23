@@ -50,7 +50,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 **V2-M4 Interfaz y cierre**
 
 - **Interfaz web** (React 19, Vite y TypeScript, CSS propio) servida por la propia API bajo `/app/`: ingreso y cierre de sesión, listado con búsqueda, filtro por serie y paginación (el estado queda en la dirección), detalle con historial de versiones y descarga, menú según el rol y uso desde 360 px de ancho. ADR-0012. Issue #23 *(en revisión, PR #54)*.
-- **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, borrador, apilado sobre el PR #54; [POR VERIFICAR] su estado final)*.
+- **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, listo para revisar y apilado sobre el PR #54: no puede fusionarse antes que él; ADR-0012, sección 6)*.
 - Este registro de cambios, las notas de la versión y el borrador del manual de usuario. Issue #27 *(en revisión, PR #61, `Refs`; el tag y el release los publica el usuario)*.
 
 ### Cambiado
@@ -73,7 +73,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 ### Corregido
 
 - **Defecto de diseño del esquema inicial:** la restricción `UNIQUE (documento_id, sha256)` impedía restaurar una versión anterior. Se reemplazó por un índice único parcial (`WHERE restaurada_de IS NULL`): subir de nuevo un archivo idéntico a una versión del mismo documento sigue siendo imposible; restaurar sí. Migración `0004`, ADR-0005. Issue #11, PR #41.
-- **Bloqueo mutuo (`deadlock`, error 500) intermitente** en `PATCH /usuarios/:id` cuando varios administradores cambian roles a la vez (falló una vez en el CI): los cambios que pueden quitar administradores se ponen en fila con un candado consultivo y se repite la transacción hasta 3 veces ante ese error. Sin issue *(en revisión, PR #59, borrador; [PROPUESTA] hasta que el usuario decida)*.
+- **Bloqueo mutuo (`deadlock`, error 500) intermitente** en `PATCH /usuarios/:id` cuando varios administradores cambian roles a la vez (falló una vez en el CI): los cambios que pueden quitar administradores se ponen en fila con un candado consultivo y se repite la transacción hasta 3 veces ante ese error. Sin issue *(en revisión, PR #59, listo para revisar; [PROPUESTA] hasta que el usuario decida)*.
 
 ### Seguridad
 
@@ -120,7 +120,7 @@ Todo esto queda **fuera**, a propósito o por falta de tiempo. No se debe presen
 **[CONFIRMADO]** (con la fuente que lo respalda):
 
 - `main` está en `4a4a1d1` y el CI de las últimas ejecuciones sobre `main` terminó en verde (`gh run list --branch main`, 23 de noviembre de 2026).
-- Los PR #53, #54, #55, #56, #57 y #60 tenían los cinco o seis trabajos del CI en verde al redactar este archivo (`gh pr view`, 23 de noviembre de 2026). El PR #58 es un borrador y el PR #59, también; su CI no se da por bueno aquí (el #59 tenía `secretos` en rojo por el defecto que corrige el PR #60).
+- Los PR #53, #54, #55, #56, #57 y #60 tenían los cinco o seis trabajos del CI en verde (`gh pr view`, 23 de noviembre de 2026). Los PR #58 y #59 ya están listos para revisar y tienen en verde `api`, `legacy`, `infra` e `imagen`; su trabajo `secretos` salió en rojo porque ese trabajo escanea el historial de todas las ramas y arrastra dos falsos positivos de otra rama (56 commits revisados, 2 hallazgos), defecto que corrige el PR #60. Hasta que se fusione el #60 y se vuelvan a ejecutar, no se da por bueno su `secretos` [POR VERIFICAR].
 - Las 7 pruebas de aceptación de v1 pasan contra la API nueva (PR #44) y la matriz de roles y el modelo de datos se comprueban contra la API y la base en cada ejecución del CI (PR #45 y PR #48).
 - La interfaz del PR #54 se comprobó con Chromium 159 (Playwright 1.65.1, fuera del repositorio) a 1280 y 360 px: 60 de 60 comprobaciones, sin errores en la consola ni violaciones de la política de contenido; axe-core (WCAG 2.1 A y AA) no halló violaciones (ADR-0012, sección 2.5).
 - El restablecimiento de clave tiene 68 casos de integración (ADR-0011, sección 5).

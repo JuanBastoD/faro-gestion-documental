@@ -6,7 +6,7 @@
 - **Etiquetas de certeza:** [CONFIRMADO], [POR VERIFICAR], [SUPUESTO], [PROPUESTA], [DESCARTADO].
 - **Estructura:** la **parte A** es el texto para pegar en el release. La **parte B** son los pasos del usuario y no va en el release.
 
-> **Antes de publicar:** el texto de la parte A describe el sistema **con todos los PR de la lista de la parte B ya fusionados en `main`**. Hoy (23 de noviembre) los PR #53 a #60 siguen abiertos y #58 es un borrador. Si alguno no se fusiona, hay que quitar su viñeta de la parte A y su ítem del `CHANGELOG.md`.
+> **Antes de publicar:** el texto de la parte A describe el sistema **con todos los PR de la lista de la parte B ya fusionados en `main`**. Hoy (23 de noviembre) los PR #53 a #60 siguen abiertos (ninguno es ya un borrador, salvo este, el #61). Si alguno no se fusiona, hay que quitar su viñeta de la parte A y su ítem del `CHANGELOG.md`.
 
 ---
 
@@ -80,8 +80,8 @@ Orden sugerido por la coordinación del trabajo del 22 y 23 de noviembre: **#60,
 | 4 | #55 | Importar el cuadro desde CSV (#19) | `main` | ADR-0010 |
 | 5 | #57 | Cambio y restablecimiento de clave (#51) | `feat/19-importar-ccd` | Apilado sobre #55; migración `0008`. Al fusionar #55, GitHub reenfoca #57 a `main` |
 | 6 | #54 | Interfaz: ingreso, listado y detalle (#23) | `main` | ADR-0012; toca `package-lock.json` |
-| 7 | #58 | Interfaz: carga, versión y duplicado (#24) | `feat/23-web-listado` | Borrador y apilado sobre #54; [POR VERIFICAR] que esté listo antes de fusionar |
-| — | #59 | Arreglo del bloqueo mutuo de usuarios | `main` | Borrador y sin issue; el usuario decide si entra |
+| 7 | #58 | Interfaz: carga, versión y duplicado (#24) | `feat/23-web-listado` | Listo para revisar y apilado sobre #54: va después de #54. Su `secretos` salió en rojo por el contagio que corrige #60 [POR VERIFICAR al volver a ejecutarlo] |
+| — | #59 | Arreglo del bloqueo mutuo de usuarios | `main` | Listo para revisar y sin issue; el usuario decide si entra. Mismo caso de `secretos` que #58 |
 | al final | #61 | Este borrador (#27) | `main` | Ver B.4 |
 
 Por cada PR: diff revisado, CI en verde y criterios del issue verificados (`docs/PLAN_EJECUCION.md`, sección 4.5). Los PR #53 y #55 tocan los mismos archivos de documentación que otros (`README.md`, `docs/adr/README.md`, `docs/despliegue.md`): si GitHub avisa de conflicto, se resuelve conservando las dos partes. [SUPUESTO] los conflictos son triviales porque cada carril añadió su parte en un bloque aparte.
@@ -106,7 +106,7 @@ o, desde la imagen: `node apps/api/dist/base-datos/migrar-cli.js` (README, secci
 ### B.4 Cerrar el borrador del CHANGELOG y del manual
 
 - **Quitar las marcas «(en revisión, PR #n)»** de `CHANGELOG.md` de lo que ya se fusionó (hoy están en #19, #51, #21, #23, #24, #52 y en el PR #60 y el #59), y revisar que lo que no se fusionó quede fuera.
-- Completar el manual: las secciones de carga, duplicado y administración están marcadas `[POR VERIFICAR: sin captura]`; faltan sus capturas (con datos ficticios) y confirmar los textos con las pantallas reales de #24 y #25.
+- Completar el manual: las secciones de carga, versión nueva y restaurar (#24) ya tienen capturas con datos ficticios (capturas 11 a 30). Faltan las de administración de usuarios y auditoría (#25), el cambio de clave (rama `feat/51-web-clave`, sección 11 vacía), la lista de varios candidatos de un duplicado y dos mensajes sueltos; esos puntos siguen marcados [POR VERIFICAR]. Confirmar los textos con las pantallas reales cuando se fusionen.
 - Decidir quién redacta la versión final del manual: [POR VERIFICAR] César (parte académica) o Juan (parte técnica). El borrador lo deben revisar los dos.
 - **Versiones de `package.json`:** hoy son `0.0.0` en la raíz y en los paquetes. Este borrador no las cambia. [PROPUESTA] ponerlas en `2.0.0` en el mismo commit que prepara el tag, si se quiere que coincidan.
 - Fusionar este PR (#61) con commit de fusión o con squash (es independiente de los demás).
