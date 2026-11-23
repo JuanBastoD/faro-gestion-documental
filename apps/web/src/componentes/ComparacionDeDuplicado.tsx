@@ -248,20 +248,28 @@ export function ComparacionDeDuplicado({ conflicto, datos, series, enviando, err
       {candidatos.length > 1 && (
         <fieldset className="grupo">
           <legend>Elige con cuál quieres comparar</legend>
-          {candidatos.map((c) => (
-            <label key={c.documentoId} className="opcion opcion--simple">
-              <input
-                type="radio"
-                name={`${base}-candidato`}
-                checked={c.documentoId === candidato.documentoId}
-                disabled={enviando}
-                onChange={() => setSeleccionado(c.documentoId)}
-              />
-              <span>
-                «{c.titulo}» · expediente {c.expediente} · {porcentajeDeSimilitud(c.similitud)} de parecido
-              </span>
-            </label>
-          ))}
+          {candidatos.map((c) => {
+            const elegido = c.documentoId === candidato.documentoId;
+            // Cada candidato es una fila en bloque (el recuadro es un <div>, no el <label>): una por línea, con el texto
+            // completo y la fila entera como área de clic. Si el recuadro fuera el propio <label> (en línea), las filas
+            // se montarían unas sobre otras.
+            return (
+              <div key={c.documentoId} className={`opcion opcion--simple${elegido ? ' opcion--activa' : ''}`}>
+                <label>
+                  <input
+                    type="radio"
+                    name={`${base}-candidato`}
+                    checked={elegido}
+                    disabled={enviando}
+                    onChange={() => setSeleccionado(c.documentoId)}
+                  />
+                  <span className="opcion__texto">
+                    <span className="opcion__titulo">«{c.titulo}»</span> · expediente {c.expediente} · {porcentajeDeSimilitud(c.similitud)} de parecido
+                  </span>
+                </label>
+              </div>
+            );
+          })}
         </fieldset>
       )}
 
