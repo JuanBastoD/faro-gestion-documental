@@ -80,7 +80,7 @@ jobs:
             --image "$IMAGEN" --region "$REGION" --service-account "$RUNTIME_SA" \
             --allow-unauthenticated --port 8080 \
             --min-instances 0 --max-instances 2 --memory 1Gi --cpu 1 --timeout 120s \
-            --set-env-vars "ALMACEN_TIPO=s3,S3_ENDPOINT=https://storage.googleapis.com,S3_BUCKET=${BUCKET},S3_REGION=auto" \
+            --set-env-vars "ALMACEN_TIPO=s3,S3_ENDPOINT=https://storage.googleapis.com,S3_BUCKET=${BUCKET},S3_REGION=auto,CONFIAR_EN_PROXY=1" \
             --set-secrets "DATABASE_URL=faro-database-url:latest,S3_ACCESS_KEY=faro-s3-access-key:latest,S3_SECRET_KEY=faro-s3-secret-key:latest"
 
       - name: Comprobar que responde

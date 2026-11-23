@@ -160,7 +160,7 @@ describe('Búsqueda por texto completo con paginación (contra PostgreSQL real)'
     it('sin q (o con q vacío, de espacios o solo signos) lista todo, el más reciente primero', async () => {
       const a = await cargar('Primero');
       const b = await cargar('Segundo');
-      for (const consulta of [{}, { q: '' }, { q: '   ' }, { q: '---' }]) {
+      for (const consulta of [{}, { q: '' }, { q: '   ' }, { q: '---' }] as Array<Record<string, string | number>>) {
         const pagina = await buscar(consulta);
         expect(pagina.items.map((i) => i.id), JSON.stringify(consulta)).toEqual([b, a]);
         expect(pagina.total).toBe(2);
@@ -200,7 +200,7 @@ describe('Búsqueda por texto completo con paginación (contra PostgreSQL real)'
       const ids: number[] = [];
       for (let i = 0; i < 23; i++) ids.push(await cargar(`Informe ${i} de seguimiento`));
 
-      for (const consulta of [{}, { q: 'seguimiento' }]) {
+      for (const consulta of [{}, { q: 'seguimiento' }] as Array<Record<string, string | number>>) {
         const vistos: number[] = [];
         for (const pagina of [1, 2, 3, 4]) {
           const p = await buscar({ ...consulta, pagina, tamano: 10 });

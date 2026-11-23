@@ -137,6 +137,26 @@ export const versiones = pgTable(
   ],
 );
 
+/**
+ * Intentos de ingreso recientes, para limitarlos por usuario y por IP (ADR-009). Se guardan en la base y
+ * no en la memoria del proceso porque Cloud Run puede tener varias instancias: un contador en memoria
+ * dejaría que cada instancia concediera sus propios intentos. Un ingreso correcto borra los del usuario.
+ */
+export const intentosIngreso = pgTable(
+  'intentos_ingreso',
+  {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    /** Lo escrito en el campo usuario, en minúsculas y truncado; existiera o no. */
+    usuario: text('usuario').notNull(),
+    ip: text('ip').notNull(),
+    creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    index('intentos_ingreso_usuario_idx').on(tabla.usuario, tabla.creadoEn),
+    index('intentos_ingreso_ip_idx').on(tabla.ip, tabla.creadoEn),
+  ],
+);
+
 export const auditoria = pgTable(
   'auditoria',
   {

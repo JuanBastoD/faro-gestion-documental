@@ -4,6 +4,8 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
+  HttpStatus,
   Inject,
   Post,
   Req,
@@ -16,6 +18,7 @@ import type { Entorno } from '../config/entorno.js';
 import { AuthService } from './auth.service.js';
 import { COOKIE_SESION, leerCookie, opcionesCookie } from './cookie-sesion.js';
 import { Publico, UsuarioActual, type PeticionConUsuario } from './decoradores.js';
+import { DemasiadosIntentosError } from './limite-ingreso.js';
 import type { UsuarioSesion } from './roles.js';
 
 // Los topes evitan que alguien mande cuerpos enormes para hacer trabajar al hash.
@@ -36,13 +39,34 @@ export class AuthController {
   @HttpCode(200)
   async ingresar(
     @Body() cuerpo: unknown,
+    @Req() peticion: PeticionConUsuario,
     @Res({ passthrough: true }) respuesta: Response,
   ): Promise<{ usuario: UsuarioSesion }> {
     const datos = credenciales.safeParse(cuerpo);
     if (!datos.success) {
       throw new BadRequestException('Se requieren usuario y clave');
     }
-    const { token, usuario } = await this.auth.ingresar(datos.data.usuario, datos.data.clave);
+    let sesion;
+    try {
+      // La IP es la que Express ve según CONFIAR_EN_PROXY (ADR-009), no un encabezado que escriba el cliente.
+      sesion = await this.auth.ingresar(datos.data.usuario, datos.data.clave, peticion.ip ?? 'desconocida');
+    } catch (error) {
+      if (error instanceof DemasiadosIntentosError) {
+        respuesta.setHeader('Retry-After', String(error.esperaSeg));
+        const minutos = Math.ceil(error.esperaSeg / 60);
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            error: 'Too Many Requests',
+            codigo: 'demasiados_intentos',
+            message: `Demasiados intentos de ingreso. Intenta de nuevo en ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}.`,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      throw error;
+    }
+    const { token, usuario } = sesion;
     respuesta.cookie(COOKIE_SESION, token, opcionesCookie(this.entorno.NODE_ENV === 'production'));
     return { usuario };
   }

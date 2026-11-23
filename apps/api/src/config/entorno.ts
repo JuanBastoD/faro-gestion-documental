@@ -34,6 +34,29 @@ const esquema = z.object({
     .min(0.5, { error: 'debe ser un número entre 0,5 y 1' })
     .max(1, { error: 'debe ser un número entre 0,5 y 1' })
     .default(0.8),
+  // Cuántos proxies hay delante de la API (0 si se accede directo). Cloud Run: 1. De esto depende qué IP ve la API
+  // y, con ella, el límite de intentos de ingreso por IP: con un valor mal puesto, todos parecen venir de la misma IP
+  // o cualquiera puede escribir la suya en X-Forwarded-For. Ver ADR-009.
+  CONFIAR_EN_PROXY: z.coerce
+    .number({ error: 'debe ser un entero entre 0 y 5' })
+    .int({ error: 'debe ser un entero entre 0 y 5' })
+    .min(0, { error: 'debe ser un entero entre 0 y 5' })
+    .max(5, { error: 'debe ser un entero entre 0 y 5' })
+    .default(0),
+  // Orígenes (https://dominio, sin ruta ni barra final) desde los que un navegador puede hacer peticiones que
+  // modifican datos, además del propio de la API. Lista separada por comas. Ver ADR-009.
+  ORIGENES_PERMITIDOS: z
+    .string()
+    .default('')
+    .transform((valor) =>
+      valor
+        .split(',')
+        .map((parte) => parte.trim())
+        .filter((parte) => parte !== ''),
+    )
+    .refine((lista) => lista.every((o) => URL.canParse(o) && new URL(o).origin === o && o !== 'null'), {
+      error: 'cada origen debe tener la forma https://dominio[:puerto], sin ruta ni barra final',
+    }),
   S3_ENDPOINT: z
     .string()
     .refine((valor) => /^https?:\/\//.test(valor) && URL.canParse(valor), {

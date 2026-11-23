@@ -13,8 +13,40 @@ describe('validarEntorno', () => {
       ALMACEN_TIPO: 'disco',
       ALMACEN_RUTA: 'almacen-local',
       UMBRAL_SIMILITUD: 0.8,
+      CONFIAR_EN_PROXY: 0,
+      ORIGENES_PERMITIDOS: [],
       S3_REGION: 'us-east-1',
     });
+  });
+
+  describe('proxies de confianza (ADR-009)', () => {
+    it('acepta un entero de 0 a 5, también como texto', () => {
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA, CONFIAR_EN_PROXY: '1' }).CONFIAR_EN_PROXY).toBe(1);
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA, CONFIAR_EN_PROXY: '5' }).CONFIAR_EN_PROXY).toBe(5);
+    });
+
+    it.each(['-1', '6', '1.5', 'dos'])('rechaza %s y nombra la variable', (valor) => {
+      expect(() => validarEntorno({ DATABASE_URL: URL_VALIDA, CONFIAR_EN_PROXY: valor })).toThrow(/CONFIAR_EN_PROXY/);
+    });
+  });
+
+  describe('orígenes permitidos (ADR-009)', () => {
+    it('separa por comas, recorta espacios e ignora los vacíos', () => {
+      const entorno = validarEntorno({
+        DATABASE_URL: URL_VALIDA,
+        ORIGENES_PERMITIDOS: ' https://app.ejemplo.com , http://localhost:5173,, ',
+      });
+      expect(entorno.ORIGENES_PERMITIDOS).toEqual(['https://app.ejemplo.com', 'http://localhost:5173']);
+    });
+
+    it.each(['app.ejemplo.com', 'https://app.ejemplo.com/', 'https://app.ejemplo.com/ruta', 'null', 'https://a.com,b'])(
+      'rechaza %s: un origen es https://dominio[:puerto] sin ruta ni barra final',
+      (valor) => {
+        expect(() => validarEntorno({ DATABASE_URL: URL_VALIDA, ORIGENES_PERMITIDOS: valor })).toThrow(
+          /ORIGENES_PERMITIDOS/,
+        );
+      },
+    );
   });
 
   describe('umbral de similitud', () => {

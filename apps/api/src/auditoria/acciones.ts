@@ -6,6 +6,7 @@
 export const ACCION = {
   INGRESO: 'ingreso',
   INGRESO_FALLIDO: 'ingreso_fallido',
+  INGRESO_BLOQUEADO: 'ingreso_bloqueado',
   CIERRE_SESION: 'cierre_sesion',
   ACCESO_DENEGADO: 'acceso_denegado',
   CARGA: 'carga',

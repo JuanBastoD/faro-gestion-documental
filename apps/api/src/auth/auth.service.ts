@@ -3,6 +3,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ACCION } from '../auditoria/acciones.js';
 import { AuditoriaService } from '../auditoria/auditoria.service.js';
 import { hashDeRelleno, verificar } from './hash-clave.js';
+import { LimiteIngreso } from './limite-ingreso.js';
 import type { UsuarioSesion } from './roles.js';
 import { SesionesRepository } from './sesiones.repository.js';
 import { UsuariosRepository } from './usuarios.repository.js';
@@ -28,13 +29,20 @@ export class AuthService {
     @Inject(UsuariosRepository) private readonly usuarios: UsuariosRepository,
     @Inject(SesionesRepository) private readonly sesiones: SesionesRepository,
     @Inject(AuditoriaService) private readonly auditoria: AuditoriaService,
+    @Inject(LimiteIngreso) private readonly limite: LimiteIngreso,
   ) {}
 
-  /** Verifica las credenciales y abre una sesión. Devuelve el token para la cookie. */
+  /**
+   * Verifica las credenciales y abre una sesión. Devuelve el token para la cookie.
+   * Lanza `DemasiadosIntentosError` si el usuario o la IP agotaron sus intentos (ADR-009): en ese caso ni siquiera
+   * se verifica la clave.
+   */
   async ingresar(
     usuario: string,
     clave: string,
+    ip: string,
   ): Promise<{ token: string; usuario: UsuarioSesion }> {
+    const reserva = await this.limite.reservar(usuario, ip);
     const fila = await this.usuarios.buscarPorUsuario(usuario);
     // Se verifica siempre, aunque el usuario no exista, para que el tiempo no delate cuáles existen.
     const claveCorrecta = await verificar(fila?.claveHash ?? (await hashDeRelleno()), clave);
@@ -51,9 +59,18 @@ export class AuthService {
         accion: ACCION.INGRESO_FALLIDO,
         detalle: motivo,
       });
+      if (reserva.alcanzados.length > 0) {
+        // Solo se audita el paso al bloqueo, no cada intento rechazado después: insistir no llena la auditoría.
+        await this.auditoria.registrar({
+          usuarioId: fila?.id ?? null,
+          accion: ACCION.INGRESO_BLOQUEADO,
+          detalle: `límite de intentos alcanzado por ${reserva.alcanzados.join(' e ')}`,
+        });
+      }
       throw new UnauthorizedException(MENSAJE_INGRESO_FALLIDO);
     }
 
+    await this.limite.perdonar(usuario);
     const ahora = new Date();
     const token = randomBytes(32).toString('hex');
     await this.sesiones.borrarVencidasDe(fila.id, ahora);
