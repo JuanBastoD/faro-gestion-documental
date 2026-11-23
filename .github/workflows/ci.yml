@@ -50,6 +50,10 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      # tsc --noEmit sobre src/ Y test/: el build solo compila src/ y Vitest no revisa tipos,
+      # así que un error de tipos en una prueba no lo vería nada más.
+      - name: Revisión de tipos (tsc --noEmit)
+        run: npm run typecheck
       - name: Pruebas unitarias
         run: npm test
       - name: Build
