@@ -16,6 +16,9 @@ import type { FilaUsuario, Transaccion, UsuariosRepository } from './usuarios.re
 
 const CLAVE = 'una-clave-larga-de-prueba';
 const CLAVE_NUEVA = 'otra-clave-larga-distinta';
+const CLAVE_ACTUAL_INCORRECTA = 'no-es-la-clave-actual';
+/** Valor de la cookie de la sesión que cambia la clave: su huella es lo que se conserva. */
+const SESION_ACTUAL = 'valor-de-la-sesion-actual';
 const IP = '203.0.113.7';
 
 describe('AuthService', () => {
@@ -261,7 +264,7 @@ describe('AuthService', () => {
     const sesion: UsuarioSesion = { id: 7, usuario: 'editor', nombre: 'E', rol: 'editor', debeCambiarClave: false };
 
     it('con la clave actual correcta guarda un hash argon2id nuevo, conserva la sesión actual y audita en la transacción', async () => {
-      const cerradas = await servicio.cambiarClave(sesion, 'token-actual', CLAVE, CLAVE_NUEVA, IP);
+      const cerradas = await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP);
       expect(cerradas).toBe(3);
       expect(escrituras).toHaveLength(1);
       expect(escrituras[0].id).toBe(7);
@@ -270,20 +273,20 @@ describe('AuthService', () => {
       expect(escrituras[0].nueva).not.toContain(CLAVE_NUEVA);
       expect(await verificar(escrituras[0].nueva, CLAVE_NUEVA)).toBe(true);
       // Las demás sesiones se cierran dejando la de la huella del token actual.
-      expect(conservadas).toEqual([{ usuarioId: 7, conservar: huellaDeToken('token-actual') }]);
+      expect(conservadas).toEqual([{ usuarioId: 7, conservar: huellaDeToken(SESION_ACTUAL) }]);
       expect(transacciones).toBe(1);
       expect(eventos).toEqual([{ usuarioId: 7, accion: 'clave_cambiada', detalle: 'otras sesiones cerradas: 3' }]);
       expect(eventosEnTransaccion).toEqual([true]);
     });
 
     it('reserva el intento con el nombre de la persona y la IP, y un cambio correcto la perdona', async () => {
-      await servicio.cambiarClave(sesion, 'token-actual', CLAVE, CLAVE_NUEVA, IP);
+      await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP);
       expect(reservas).toEqual([{ usuario: 'editor', ip: IP }]);
       expect(perdonados).toEqual(['editor']);
     });
 
     it('con la clave actual incorrecta responde 400 clave_actual_incorrecta (nunca 401), no cambia nada y audita el fallo', async () => {
-      const error = await servicio.cambiarClave(sesion, 'token-actual', 'incorrecta-123456', CLAVE_NUEVA, IP).catch((e: unknown) => e);
+      const error = await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE_ACTUAL_INCORRECTA, CLAVE_NUEVA, IP).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(BadRequestException);
       expect((error as BadRequestException).getResponse()).toMatchObject({
         statusCode: 400,
@@ -296,19 +299,19 @@ describe('AuthService', () => {
       expect(eventos).toEqual([
         { usuarioId: 7, accion: 'ingreso_fallido', detalle: 'cambio de clave: clave actual incorrecta' },
       ]);
-      expect(JSON.stringify(eventos)).not.toContain('incorrecta-123456');
+      expect(JSON.stringify(eventos)).not.toContain(CLAVE_ACTUAL_INCORRECTA);
     });
 
     it('el fallo que agota el límite audita ingreso_bloqueado', async () => {
       alcanzados = ['usuario'];
-      await servicio.cambiarClave(sesion, 'token-actual', 'incorrecta-123456', CLAVE_NUEVA, IP).catch(() => undefined);
+      await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE_ACTUAL_INCORRECTA, CLAVE_NUEVA, IP).catch(() => undefined);
       expect(eventos.map((e) => e.accion)).toEqual(['ingreso_fallido', 'ingreso_bloqueado']);
       expect(eventos[1].detalle).toBe('límite de intentos alcanzado por usuario');
     });
 
     it('si el límite está agotado, no consulta ni verifica la clave, no audita y no cambia nada', async () => {
       bloqueo = new DemasiadosIntentosError(120);
-      const error = await servicio.cambiarClave(sesion, 'token-actual', CLAVE, CLAVE_NUEVA, IP).catch((e: unknown) => e);
+      const error = await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP).catch((e: unknown) => e);
       expect(error).toBe(bloqueo);
       expect(escrituras).toEqual([]);
       expect(eventos).toEqual([]);
@@ -317,7 +320,7 @@ describe('AuthService', () => {
 
     it('si otra petición cambió la clave entre la verificación y la escritura: 409 y no se cierra ninguna sesión ni se audita', async () => {
       claveYaCambiada = true;
-      const error = await servicio.cambiarClave(sesion, 'token-actual', CLAVE, CLAVE_NUEVA, IP).catch((e: unknown) => e);
+      const error = await servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(ConflictException);
       expect((error as ConflictException).getResponse()).toMatchObject({ codigo: 'conflicto_de_clave' });
       expect(conservadas).toEqual([]);
@@ -328,7 +331,7 @@ describe('AuthService', () => {
       const original = fila;
       fila = { ...original!, activo: false };
       try {
-        await expect(servicio.cambiarClave(sesion, 'token-actual', CLAVE, CLAVE_NUEVA, IP)).rejects.toBeInstanceOf(
+        await expect(servicio.cambiarClave(sesion, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP)).rejects.toBeInstanceOf(
           UnauthorizedException,
         );
         expect(eventos).toEqual([]);

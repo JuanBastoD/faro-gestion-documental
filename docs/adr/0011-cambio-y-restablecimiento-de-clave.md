@@ -102,4 +102,4 @@ El cambio de clave propio (`POST /auth/clave`) bloquea una sola fila (la de la p
 
 - Issue #51 (cambio y restablecimiento de clave); ADR-008, sección 4 (el hueco que cierra); ADR-009 (límite de intentos y verificación de origen).
 - Código: `apps/api/src/auth/auth.service.ts` (`cambiarClave`), `auth.guard.ts` (clave temporal), `datos-clave.ts`, `apps/api/src/usuarios/usuarios.service.ts` (`restablecerClave`), migración `0008_cambio_de_clave`.
-- Pruebas: `apps/api/test/clave.e2e-spec.ts` (66 + 2 casos de integración), `auth.service.spec.ts` y `guardas.spec.ts` (unitarias), `matriz-de-roles.e2e-spec.ts` y `modelo-de-datos.e2e-spec.ts` (documentos al día).
+- Pruebas: `apps/api/test/clave.e2e-spec.ts` (68 casos de integración), `auth.service.spec.ts` y `guardas.spec.ts` (unitarias), `matriz-de-roles.e2e-spec.ts` y `modelo-de-datos.e2e-spec.ts` (documentos al día).
