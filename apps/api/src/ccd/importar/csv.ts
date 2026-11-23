@@ -97,7 +97,7 @@ export function detectarSeparador(texto: string): ',' | ';' | null {
 
 /** Quita el BOM que haya quedado (si el archivo lo traía duplicado) para que no se pegue al primer campo. */
 function sinBom(texto: string): string {
-  return texto.startsWith('﻿') ? texto.slice(1) : texto;
+  return texto.startsWith('\uFEFF') ? texto.slice(1) : texto;
 }
 
 /** Lee todos los registros del texto. Una línea en blanco no produce registro. */

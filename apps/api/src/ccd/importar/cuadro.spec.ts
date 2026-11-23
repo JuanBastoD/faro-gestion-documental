@@ -49,7 +49,7 @@ describe('validarCuadro: el cuadro válido', () => {
   });
 
   it('acepta el BOM y los saltos CRLF que deja Excel', () => {
-    const texto = '﻿codigo;nombre;codigo_padre\r\n100;Gestión;\r\n100.1;Obras;100\r\n';
+    const texto = '\uFEFFcodigo;nombre;codigo_padre\r\n100;Gestión;\r\n100.1;Obras;100\r\n';
     expect(validarCuadro(texto).errores).toEqual([]);
   });
 

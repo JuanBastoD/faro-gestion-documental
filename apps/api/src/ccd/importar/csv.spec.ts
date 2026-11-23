@@ -72,7 +72,7 @@ describe('analizarCsv', () => {
   });
 
   it('quita un BOM que haya quedado pegado al primer campo', () => {
-    expect(campos('﻿codigo,nombre\n1,2')[0]).toEqual(['codigo', 'nombre']);
+    expect(campos('\uFEFFcodigo,nombre\n1,2')[0]).toEqual(['codigo', 'nombre']);
   });
 
   it('lee punto y coma como separador cuando la cabecera lo usa, aunque haya comas en los datos', () => {
