@@ -111,3 +111,32 @@ Observado en Chromium con Vite en 5173 y la API en otro puerto: ingreso 200, lis
 - `apps/api/src/interfaz/servir-interfaz.ts` y su prueba; `apps/api/src/config/entorno.ts` (`INTERFAZ_RUTA`); `apps/web/` (`vite.config.ts`, `src/`); `apps/web/src/indice.test.ts`; `apps/api/Dockerfile`.
 - ADR-009 (guarda de origen y cabeceras), ADR-003 (sesión), ADR-001 y ADR-002 (pila y arquitectura).
 - Vite: documentación de `server.proxy` y `base`; React Router: `basename`. OWASP: *Cross-Site Request Forgery Prevention Cheat Sheet*, «Verifying Origin With Standard Headers».
+
+## 6. Actualización del 23 de noviembre de 2026 (issue #24, PR #58)
+
+Esta sección registra cómo #24 aplicó las decisiones de arriba y lo que decidió dentro de ellas. **No cambia nada de lo decidido en las secciones 1 a 5**: la interfaz sigue bajo `/app/`, en el mismo origen, con la política de contenido por defecto de helmet y sin dependencias nuevas. Una decisión grande (cambiar de pila, de origen o de política) iría en un ADR nuevo, no aquí.
+
+### 6.1 Decisiones de #24
+
+- **[CONFIRMADO] El PDF no se incrusta: se abre en otra pestaña.** La política por defecto de helmet restringe `object-src` y no declara `frame-src`, así que un `<iframe>` o `<object>` con una dirección `blob:` quedaría bloqueado, y aflojar la política queda fuera de lo decidido en 2.6. La pantalla de comparación crea una dirección con `URL.createObjectURL` para el archivo que se intenta cargar (un enlace con `target="_blank"` y `rel="noopener noreferrer"`), la libera con `URL.revokeObjectURL` al salir, y enlaza la descarga del documento existente por la ruta de la API. Una prueba comprueba que no hay `iframe`, `object` ni `embed` y que la dirección se libera.
+- **[CONFIRMADO] «Es el mismo documento» no llama a la API.** El contrato solo tiene dos decisiones (`nueva_version` y `documento_distinto`) y no hay nada que guardar: la pantalla lleva al documento existente con un aviso. Alternativa descartada: reenviar el archivo con una decisión inventada, que habría creado una versión o un documento no deseados.
+- **[CONFIRMADO] «Es una versión nueva» reenvía `documentoId` y `motivo`; «es otro documento» reenvía `justificacion`** (obligatoria, 500 caracteres como máximo). El cliente (`formularioDeCarga`) envía solo los campos que valen para la decisión elegida. Con `nueva_version` la API ignora el título, el expediente, la subserie y la fecha escritos; la pantalla lo dice. Dos pruebas de mutación lo protegen (ver 6.3).
+- **[CONFIRMADO] El formulario sigue montado, solo oculto (`hidden`), mientras se muestra la pantalla de duplicado.** Así «Volver y corregir los datos» conserva el archivo elegido (un `<input type="file">` no se puede volver a llenar por código) y lo escrito. Alternativa descartada: desmontarlo y guardar los valores en el estado, que perdería el archivo.
+- **[CONFIRMADO] Un archivo idéntico (409 `duplicado_exacto`) no se puede cargar:** no se ofrece decidir nada; el aviso dice dónde está y enlaza al documento.
+- **[CONFIRMADO] Restaurar es una confirmación en el mismo lugar** (un formulario bajo la versión, no un cuadro de diálogo modal): explica que se crea una versión nueva y que no se borra nada, pide un motivo opcional y devuelve el foco al botón si se cancela. Alternativa descartada: `<dialog>` modal, que obliga a atrapar el foco y complica el teclado y el lector de pantalla sin ganar nada con pocas versiones por documento.
+- **[CONFIRMADO] Los avisos de éxito viajan en el estado de la navegación** (`navigate(ruta, { state: { aviso } })`); el detalle los copia a su estado y los borra del historial (`replace`), de modo que al recargar no reaparecen. Alternativa descartada: parámetros en la URL, que se compartirían y mostrarían un aviso falso.
+- **[CONFIRMADO] Todos los mensajes de error están en `apps/web/src/api/errores.ts`** (`traducirError(error, operacion)`), con pruebas por código de estado y por operación (carga, versión, restauración). Ninguna pantalla muestra el texto del servidor tal cual; el 400 de validación se traduce campo por campo para señalar cada campo y poner el foco en el primero. Con esto se cierra lo que la sección 4 dejó abierto («se revisa cuando #24 agregue formularios largos»): se mantiene el manejo por pantalla y no se agrega una capa global de notificaciones [PROPUESTA: revisar si #25 la pide].
+- **[PROPUESTA] La fecha del documento no puede ser anterior a 1900** (`ANIO_MINIMO` en `validacion.ts`). La API solo exige una fecha de calendario real; el tope evita un año mal escrito (por ejemplo `0026`) que la API aceptaría. Si la entidad tiene documentos anteriores, se cambia esa constante.
+- **[CONFIRMADO] Validación en el navegador y en la API.** El navegador avisa antes de enviar (PDF por tipo o extensión, no vacío, hasta 20 MB, longitudes, fecha real) para no subir 20 MB y esperar un 413; la API valida de nuevo y es la que decide (por ejemplo, el contenido real del PDF: 415).
+- **[CONFIRMADO] Envío único.** Una referencia (`enviandoAhora`) bloquea un segundo envío aunque el botón aún no se haya deshabilitado en el siguiente pintado, y la petición en curso se cancela (`AbortController`) si se sale de la pantalla.
+
+### 6.2 Consecuencias y límites nuevos
+
+- **El PDF nuevo se ve solo en otra pestaña.** Quien compara no tiene ambos documentos en la misma pantalla; el porcentaje de parecido y los datos de ambos sí están lado a lado (apilados en celular). [POR VERIFICAR] con personas de la entidad si esto basta para decidir.
+- **La interfaz no muestra qué texto cambió.** El porcentaje de parecido lo calcula la API sobre el texto extraído; un visor de diferencias queda fuera del alcance del prototipo [PROPUESTA].
+- **Restaurar crea una versión; no hay «deshacer».** Es coherente con el control de versiones para trazabilidad (la versión anterior no se borra), y el 409 `versionVigente` evita restaurar lo que ya es vigente.
+- **Los contrastes de los componentes nuevos se midieron** con la misma fórmula de WCAG 2.1 que en #23 (los pares están en el encabezado de `estilos.css`); no se revisó con lector de pantalla [POR VERIFICAR].
+
+### 6.3 Verificación
+
+El detalle está en el PR #58: pruebas de la web (Vitest y Testing Library), pruebas de mutación y un recorrido en Chromium real contra el servidor compilado a 1280 y 360 px. Las capturas de pantalla se guardan fuera del repositorio, para el manual de usuario.

@@ -4,7 +4,10 @@
  * Contrastes medidos (luminancia relativa de WCAG 2.1, mínimo AA 4,5:1 en texto y 3:1 en bordes y foco):
  * --texto 14,8:1 sobre --fondo y 16,1:1 sobre blanco; --suave 7,2:1 y 7,8:1; --acento 8,2:1 y 8,9:1; blanco sobre
  * --acento 8,9:1; avisos de error, información y éxito entre 8,0:1 y 9,4:1; marcador de posición 5,6:1; borde de los
- * campos 3,4:1; contorno de foco 5,7:1 o más. Un cambio de color debe repetir la medición.
+ * campos 3,4:1; contorno de foco 5,7:1 o más. Pares de las pantallas de carga (#24): ayuda y contador (--suave) 7,8:1
+ * sobre blanco y 6,7:1 sobre --acento-claro; error de campo 9,2:1 sobre blanco y 7,9:1 sobre --acento-claro; borde de campo
+ * con error 9,2:1; bordes de «ya existe» y «nuevo» 8,2:1 y 9,9:1; foco sobre --acento-claro y sobre los avisos 5,3:1 o más.
+ * Un cambio de color debe repetir la medición.
  * Diseño de celular primero: lo que está fuera de @media sirve desde 360 px.
  */
 
