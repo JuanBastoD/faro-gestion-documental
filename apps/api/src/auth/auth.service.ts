@@ -24,6 +24,13 @@ export const RENOVAR_DESPUES_MS = 60 * 1000;
 /** El mismo mensaje para usuario inexistente, inactivo o clave errónea: no se revela cuál fue. */
 const MENSAJE_INGRESO_FALLIDO = 'Usuario o clave incorrectos';
 
+/**
+ * Textos del detalle de auditoría que delatan el uso de una clave temporal (ADR-011 §4). Se conservan como
+ * constantes porque una consulta de quien audita las busca: `docs/modelo-de-datos.md` §8 las documenta.
+ */
+const DETALLE_INGRESO_CON_CLAVE_TEMPORAL = 'con clave temporal';
+const DETALLE_CAMBIO_DESDE_CLAVE_TEMPORAL = 'desde clave temporal';
+
 /** Lo que se guarda en la base es la huella del token, nunca el token. */
 export function huellaDeToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
@@ -85,7 +92,13 @@ export class AuthService {
       usuarioId: fila.id,
       venceEn: new Date(ahora.getTime() + INACTIVIDAD_MS),
     });
-    await this.auditoria.registrar({ usuarioId: fila.id, accion: ACCION.INGRESO });
+    // Quien fijó la clave temporal la conoce y podría ingresar como esa persona (ADR-011 §4, H-01). La auditoría no
+    // guarda IP, así que el rastro que queda es este: el ingreso con una cuenta pendiente de cambio se marca aparte.
+    await this.auditoria.registrar({
+      usuarioId: fila.id,
+      accion: ACCION.INGRESO,
+      ...(fila.debeCambiarClave ? { detalle: DETALLE_INGRESO_CON_CLAVE_TEMPORAL } : {}),
+    });
 
     return {
       token,
@@ -160,8 +173,15 @@ export class AuthService {
         });
       }
       const cerradas = await this.sesiones.borrarDeUsuarioExcepto(tx, fila.id, conservar);
+      // `fila.debeCambiarClave` se leyó junto con el hash que se verificó, y la escritura solo prospera si ese hash
+      // sigue siendo el de la cuenta: el indicador describe la clave desde la que se cambió (ADR-011 §4, H-01).
+      const origen = fila.debeCambiarClave ? `${DETALLE_CAMBIO_DESDE_CLAVE_TEMPORAL}; ` : '';
       await this.auditoria.registrar(
-        { usuarioId: fila.id, accion: ACCION.CLAVE_CAMBIADA, detalle: `otras sesiones cerradas: ${cerradas}` },
+        {
+          usuarioId: fila.id,
+          accion: ACCION.CLAVE_CAMBIADA,
+          detalle: `${origen}otras sesiones cerradas: ${cerradas}`,
+        },
         tx,
       );
       return cerradas;

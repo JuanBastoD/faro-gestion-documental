@@ -571,6 +571,49 @@ describe('Cambio y restablecimiento de clave (contra PostgreSQL real)', () => {
       expect(otroIngreso.body.usuario.debeCambiarClave).toBe(false);
     });
 
+    it('el rastro de la suplantación posible queda completo: clave_restablecida (quien la fijó), ingreso con clave temporal y clave_cambiada desde la temporal (ADR-011 §4, H-01)', async () => {
+      // Quien fija la clave temporal la conoce: podría ingresar «como» la otra persona y quedarse con la cuenta.
+      // La auditoría no guarda IP, así que el rastro debe distinguir esos dos pasos de un ingreso y un cambio normales.
+      const cookieAdmin = await ingresar(ctx.app, 'admin');
+      await restablecer(idEditor, cookieAdmin, { clave: CLAVE_TEMPORAL }).expect(204);
+      const cookie = await ingresar(ctx.app, 'editor', CLAVE_TEMPORAL);
+      await cambiarClave(cookie, { claveActual: CLAVE_TEMPORAL, claveNueva: CLAVE_NUEVA }).expect(204);
+      // Un ingreso posterior con la clave propia ya no se marca.
+      await ingresar(ctx.app, 'editor', CLAVE_NUEVA);
+
+      const rastro = (await ctx.pool.query('select usuario_id, accion, detalle from auditoria order by id')).rows;
+      expect(rastro).toEqual([
+        { usuario_id: idAdmin, accion: 'ingreso', detalle: null },
+        {
+          usuario_id: idAdmin,
+          accion: 'clave_restablecida',
+          detalle: `usuario ${idEditor} (editor); sesiones cerradas: 0`,
+        },
+        { usuario_id: idEditor, accion: 'ingreso', detalle: 'con clave temporal' },
+        {
+          usuario_id: idEditor,
+          accion: 'clave_cambiada',
+          detalle: 'desde clave temporal; otras sesiones cerradas: 0',
+        },
+        { usuario_id: idEditor, accion: 'ingreso', detalle: null },
+      ]);
+      // Los textos son fijos: ninguna clave ni hash entra en el rastro.
+      const texto = await textoDeAuditoria();
+      for (const secreto of [CLAVE_TEMPORAL, CLAVE_NUEVA, 'argon2', (await filaDe('editor')).clave_hash]) {
+        expect(texto).not.toContain(secreto);
+      }
+    });
+
+    it('un cambio de clave normal (sin clave temporal de por medio) no lleva la marca «desde clave temporal»', async () => {
+      const cookie = await ingresar(ctx.app, 'editor');
+      await cambiarClave(cookie, { claveActual: CLAVE_DE_PRUEBA, claveNueva: CLAVE_NUEVA }).expect(204);
+      const [cambio] = await eventos(ctx.pool, 'clave_cambiada');
+      expect(cambio.detalle).toBe('otras sesiones cerradas: 0');
+      expect(await eventos(ctx.pool, 'ingreso')).toEqual([
+        { usuario_id: idEditor, accion: 'ingreso', detalle: null },
+      ]);
+    });
+
     it('si el administrador restablece mientras la persona tiene una sesión con la temporal, esa sesión también muere', async () => {
       const cookieAdmin = await ingresar(ctx.app, 'admin');
       const cookie = await conClaveTemporal('editor');

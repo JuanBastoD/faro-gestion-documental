@@ -137,6 +137,20 @@ describe('AuthService', () => {
       expect(eventos).toEqual([{ usuarioId: 7, accion: 'ingreso' }]);
     });
 
+    it('el ingreso con una cuenta pendiente de cambio de clave deja «con clave temporal» en el detalle (ADR-011 §4)', async () => {
+      const original = fila;
+      fila = { ...original!, debeCambiarClave: true };
+      try {
+        const { usuario } = await servicio.ingresar('editor', CLAVE, IP);
+        expect(usuario.debeCambiarClave).toBe(true);
+        expect(eventos).toEqual([{ usuarioId: 7, accion: 'ingreso', detalle: 'con clave temporal' }]);
+        // El detalle es un texto fijo: nunca trae la clave escrita.
+        expect(JSON.stringify(eventos)).not.toContain(CLAVE);
+      } finally {
+        fila = original;
+      }
+    });
+
     it('cada ingreso genera un token distinto', async () => {
       const a = await servicio.ingresar('editor', CLAVE, IP);
       const b = await servicio.ingresar('editor', CLAVE, IP);
@@ -277,6 +291,22 @@ describe('AuthService', () => {
       expect(transacciones).toBe(1);
       expect(eventos).toEqual([{ usuarioId: 7, accion: 'clave_cambiada', detalle: 'otras sesiones cerradas: 3' }]);
       expect(eventosEnTransaccion).toEqual([true]);
+    });
+
+    it('si la clave actual era la temporal, el evento clave_cambiada lo dice y sigue siendo uno solo, dentro de la transacción', async () => {
+      const original = fila;
+      fila = { ...original!, debeCambiarClave: true };
+      try {
+        await servicio.cambiarClave({ ...sesion, debeCambiarClave: true }, SESION_ACTUAL, CLAVE, CLAVE_NUEVA, IP);
+        expect(eventos).toEqual([
+          { usuarioId: 7, accion: 'clave_cambiada', detalle: 'desde clave temporal; otras sesiones cerradas: 3' },
+        ]);
+        expect(eventosEnTransaccion).toEqual([true]);
+        expect(JSON.stringify(eventos)).not.toContain(CLAVE);
+        expect(JSON.stringify(eventos)).not.toContain(CLAVE_NUEVA);
+      } finally {
+        fila = original;
+      }
     });
 
     it('reserva el intento con el nombre de la persona y la IP, y un cambio correcto la perdona', async () => {
