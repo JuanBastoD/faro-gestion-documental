@@ -18,7 +18,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "nest build && node dist/semilla/sembrar.js",
-    "almacen:huerfanos": "nest build && node dist/almacen/limpiar-huerfanos.js"
+    "almacen:huerfanos": "nest build && node dist/almacen/limpiar-huerfanos.js",
+    "ccd:importar": "nest build && node dist/ccd/importar/importar-cli.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1175.0",
