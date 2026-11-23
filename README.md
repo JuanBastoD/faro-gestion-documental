@@ -16,6 +16,8 @@ Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyec
 
 - Plan de mejora y arquitectura: [`docs/PLAN_MEJORA.md`](docs/PLAN_MEJORA.md)
 - Modelo de datos (diagrama entidad-relación y diccionario por tabla y campo): [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Una prueba lo compara con la base migrada, así que el CI falla si queda desactualizado
+- Quién puede hacer qué, endpoint por endpoint: [`docs/matriz-de-roles.md`](docs/matriz-de-roles.md). Una prueba la lee y la comprueba contra la API real con un usuario de cada rol; si se agrega un endpoint sin decidir sus permisos, el CI falla.
+- Diagrama de componentes y diferencias con el ADR-002: [`docs/arquitectura.md`](docs/arquitectura.md).
 - Issues e hitos `V2-M1` a `V2-M4`: pestaña Issues del repositorio
 - Tablero: <https://github.com/users/JuanBastoD/projects/2>
 
