@@ -7,6 +7,12 @@
  * campos 3,4:1; contorno de foco 5,7:1 o más. Pares de las pantallas de carga (#24): ayuda y contador (--suave) 7,8:1
  * sobre blanco y 6,7:1 sobre --acento-claro; error de campo 9,2:1 sobre blanco y 7,9:1 sobre --acento-claro; borde de campo
  * con error 9,2:1; bordes de «ya existe» y «nuevo» 8,2:1 y 9,9:1; foco sobre --acento-claro y sobre los avisos 5,3:1 o más.
+ * Pares de usuarios y auditoría (#25): etiqueta «Inactivo» (--error-texto sobre --error-fondo) 8,1:1; botón de peligro
+ * (blanco sobre --error-texto) 9,2:1 y 11,8:1 al pasar el puntero (#6e1414); «Actualizar» como enlace (--acento) 8,2:1
+ * sobre --fondo y 8,9:1 sobre blanco, 11,2:1 con el puntero; tarjeta inactiva (#f6f8f9): --texto 15,1:1 y --suave 7,4:1;
+ * fecha de la tarjeta (--suave) 7,8:1 sobre blanco. El contorno de foco (--foco, 3 px y 2 px de separación) queda fuera
+ * del botón, sobre la tarjeta: 6,2:1 sobre blanco. El borde punteado de la tarjeta inactiva (1,5:1) solo decora: lo que
+ * la distingue es el texto «Inactivo», no el borde.
  * Un cambio de color debe repetir la medición.
  * Diseño de celular primero: lo que está fuera de @media sirve desde 360 px.
  */

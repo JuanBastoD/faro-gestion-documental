@@ -196,7 +196,7 @@ export function Usuarios() {
                             type="button"
                             id={`boton-rol-${u.id}`}
                             className="boton boton--secundario"
-                            aria-label={`Cambiar el rol de ${u.nombre}`}
+                            aria-label={`Cambiar rol de ${u.nombre}`}
                             aria-expanded={abierto === 'rol'}
                             onClick={() => abrir({ tipo: 'rol', id: u.id })}
                           >
@@ -217,7 +217,7 @@ export function Usuarios() {
                             <button
                               type="button"
                               className="boton boton--secundario"
-                              aria-label={`Reactivar a ${u.nombre}`}
+                              aria-label={`${reactivando === u.id ? 'Reactivando' : 'Reactivar'} a ${u.nombre}`}
                               disabled={reactivando !== null}
                               onClick={() => void reactivar(u)}
                             >
@@ -273,7 +273,7 @@ export function Usuarios() {
                 })}
               </ul>
             )}
-            <p className="nota">
+            <p className="nota resultados__linea">
               <button type="button" className="enlace-boton" onClick={reintentar}>
                 Actualizar la lista
               </button>{' '}

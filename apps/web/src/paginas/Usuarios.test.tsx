@@ -82,6 +82,19 @@ describe('lista de usuarios', () => {
     expect(within(tarjeta('Editor Demo')).getByRole('button', { name: 'Desactivar a Editor Demo' })).toBeInTheDocument();
   });
 
+  it('el nombre accesible de cada botón de la tarjeta contiene su texto visible (WCAG 2.5.3, lo marcó axe en el navegador)', async () => {
+    montar();
+    await esperarLista();
+    const lista = document.querySelector<HTMLElement>('.lista-usuarios');
+    if (!lista) throw new Error('No hay lista de usuarios');
+    const botones = within(lista).getAllByRole('button');
+    expect(botones.length).toBeGreaterThanOrEqual(7);
+    for (const b of botones) {
+      const visible = (b.textContent ?? '').trim().toLowerCase();
+      expect(b.getAttribute('aria-label')?.toLowerCase() ?? visible, `botón «${visible}»`).toContain(visible);
+    }
+  });
+
   it('con un error del servidor muestra el aviso y deja reintentar', async () => {
     const usuario = userEvent.setup();
     let falla = true;
@@ -361,7 +374,7 @@ describe('cambiar el rol', () => {
     const usuario = userEvent.setup();
     const api = montar();
     await esperarLista();
-    await usuario.click(boton('Cambiar el rol de Editor Demo'));
+    await usuario.click(boton('Cambiar rol de Editor Demo'));
     const panel = screen.getByRole('form', { name: 'Cambiar el rol de Editor Demo' });
     expect(within(panel).getByRole('heading', { name: 'Cambiar el rol de Editor Demo' })).toHaveFocus();
     expect(within(panel).getByText(/rige/)).toHaveTextContent('al instante');
@@ -377,7 +390,7 @@ describe('cambiar el rol', () => {
     const usuario = userEvent.setup();
     const api = montar();
     await esperarLista();
-    await usuario.click(boton('Cambiar el rol de Editor Demo'));
+    await usuario.click(boton('Cambiar rol de Editor Demo'));
     const panel = screen.getByRole('form', { name: 'Cambiar el rol de Editor Demo' });
     await usuario.click(within(panel).getByRole('radio', { name: /^Consulta/ }));
     await usuario.click(within(panel).getByRole('button', { name: 'Sí, cambiar el rol' }));
@@ -398,7 +411,7 @@ describe('cambiar el rol', () => {
       },
     });
     await esperarLista();
-    await usuario.click(boton('Cambiar el rol de Admin Demo'));
+    await usuario.click(boton('Cambiar rol de Admin Demo'));
     const panel = screen.getByRole('form', { name: 'Cambiar el rol de Admin Demo' });
     expect(within(panel).getByText(/Es tu propia cuenta/)).toBeInTheDocument();
     await usuario.click(within(panel).getByRole('radio', { name: /^Editor/ }));
@@ -416,10 +429,10 @@ describe('cambiar el rol', () => {
     const usuario = userEvent.setup();
     const api = montar();
     await esperarLista();
-    await usuario.click(boton('Cambiar el rol de Editor Demo'));
+    await usuario.click(boton('Cambiar rol de Editor Demo'));
     await usuario.click(within(screen.getByRole('form', { name: /Cambiar el rol/ })).getByRole('button', { name: 'Cancelar' }));
     expect(screen.queryByRole('form', { name: /Cambiar el rol/ })).not.toBeInTheDocument();
-    await waitFor(() => expect(boton('Cambiar el rol de Editor Demo')).toHaveFocus());
+    await waitFor(() => expect(boton('Cambiar rol de Editor Demo')).toHaveFocus());
     expect(api.a('PATCH', '/usuarios/2')).toHaveLength(0);
   });
 
@@ -437,7 +450,7 @@ describe('cambiar el rol', () => {
       },
     });
     await esperarLista();
-    await usuario.click(boton('Cambiar el rol de Admin Demo'));
+    await usuario.click(boton('Cambiar rol de Admin Demo'));
     const panel = screen.getByRole('form', { name: 'Cambiar el rol de Admin Demo' });
     await usuario.click(within(panel).getByRole('radio', { name: /^Editor/ }));
     await usuario.click(within(panel).getByRole('button', { name: 'Sí, cambiar el rol' }));
