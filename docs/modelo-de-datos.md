@@ -116,7 +116,7 @@ Quienes pueden ingresar. Se desactivan, no se borran, para conservar la autoría
 | `nombre` | text | No | — | Nombre para mostrar. |
 | `rol` | rol_usuario | No | — | `administrador`, `editor` o `consulta` (ADR-003). |
 | `clave_hash` | text | No | — | Hash argon2id de la clave. Nunca sale por la API ni se escribe en la auditoría. |
-| `activo` | boolean | No | — | Por defecto `true`. Un usuario inactivo no ingresa (la gestión de usuarios llega con #17). |
+| `activo` | boolean | No | — | Por defecto `true`. Un usuario inactivo no ingresa y sus sesiones se cierran al desactivarlo (ADR-008). Nunca se borra a nadie. |
 | `creado_en` | timestamptz | No | — | Por defecto `now()`. |
 
 ### `series_ccd`
@@ -242,6 +242,10 @@ El catálogo está en `apps/api/src/auditoria/acciones.ts`. La columna es `text`
 | `version` | Se agrega una versión con contenido nuevo. |
 | `restauracion` | Se restaura una versión anterior como versión nueva. |
 | `decision_duplicado` | Quien carga decide ante un aviso de duplicado probable (nueva versión de un documento o documento distinto), con su justificación. |
+| `usuario_creado` | Un administrador crea un usuario. El detalle dice quién es y su rol, nunca la clave. |
+| `usuario_rol_cambiado` | Un administrador cambia el rol de un usuario. El detalle trae el rol anterior y el nuevo. |
+| `usuario_desactivado` | Un administrador desactiva a un usuario; se cierran sus sesiones y el detalle dice cuántas. |
+| `usuario_reactivado` | Un administrador reactiva a un usuario inactivo. |
 
 ## 9. Historial de migraciones
 
