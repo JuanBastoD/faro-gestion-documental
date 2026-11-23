@@ -30,6 +30,8 @@ describe('API contra PostgreSQL real', () => {
 
   it('GET /health responde 200 con la API y la base en ok', async () => {
     const respuesta = await request(app.getHttpServer()).get('/health').expect(200);
+    const intentos: number = 'tres'; // MUTACION A2: error de tipos a proposito (se revierte)
+    expect(intentos).toBe('tres');
     expect(respuesta.body.estado).toBe('ok');
     expect(respuesta.body.api).toMatchObject({ estado: 'ok' });
     expect(respuesta.body.api.version).toMatch(/^\d+\.\d+\.\d+/);
