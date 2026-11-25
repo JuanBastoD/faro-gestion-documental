@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import helmet from 'helmet';
 import type { Entorno } from '../config/entorno.js';
+import { sinCacheEnLaApi } from './sin-cache.js';
 
 /**
  * Lo que no se puede declarar en un módulo de Nest porque es del servidor Express: cabeceras de seguridad y
@@ -13,12 +14,15 @@ import type { Entorno } from '../config/entorno.js';
  *   Ver el ADR-012; `apps/web/src/indice.test.ts` protege esa compatibilidad.
  * - `trust proxy`: de cuántos saltos se fía Express para leer la IP del cliente en `X-Forwarded-For`. Con 0
  *   ignora ese encabezado. Determina la IP del límite de intentos de ingreso (ADR-009).
+ * - `sinCacheEnLaApi`: `Cache-Control: no-store` en todo lo que no sea la interfaz web bajo `/app/` (H-07 de la
+ *   revisión C3). Va después de helmet y antes de las rutas.
  */
 export function configurarSeguridad(
   app: INestApplication,
   entorno: Pick<Entorno, 'CONFIAR_EN_PROXY'>,
 ): void {
   app.use(helmet());
+  app.use(sinCacheEnLaApi);
   const express = app.getHttpAdapter().getInstance() as { set(clave: string, valor: unknown): void };
   express.set('trust proxy', entorno.CONFIAR_EN_PROXY);
 }

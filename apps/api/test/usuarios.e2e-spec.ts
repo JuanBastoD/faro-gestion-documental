@@ -370,7 +370,11 @@ describe('Administración de usuarios (contra PostgreSQL real)', () => {
           cambiar(b, { rol: 'consulta' }, cookieA),
           cambiar(a, { activo: false }, cookieB),
         ]);
-        expect([deAaB.status, deBaA.status].sort((x, y) => x - y), `vuelta ${vuelta}`).toEqual([200, 409]);
+        // Solo uno lo logra. El otro recibe 409 si su petición llegó a la transacción antes de que el primero confirmara, o 403
+        // (ya es de consulta) o 401 (ya está inactivo) si llegó después: las tres son respuestas correctas de una carrera real.
+        const estados = [deAaB.status, deBaA.status];
+        expect(estados.filter((s) => s === 200), `vuelta ${vuelta}: ${estados.join(', ')}`).toHaveLength(1);
+        expect(estados.filter((s) => [401, 403, 409].includes(s)), `vuelta ${vuelta}: ${estados.join(', ')}`).toHaveLength(1);
         const { rows } = await ctx.pool.query(
           `select count(*)::int as n from usuarios where rol = 'administrador' and activo`,
         );

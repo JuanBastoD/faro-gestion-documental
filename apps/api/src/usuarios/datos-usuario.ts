@@ -1,10 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
+import { esquemaClave, leer } from '../auth/datos-clave.js';
 import { ROLES, type Rol } from '../auth/roles.js';
-
-/** Largo mínimo de la clave que fija un administrador. El máximo evita hacer trabajar al hash con cuerpos enormes. */
-export const CLAVE_MINIMA = 12;
-export const CLAVE_MAXIMA = 256;
 
 const MENSAJE_USUARIO =
   'de 3 a 64 caracteres: minúsculas, números, punto, guion y guion bajo, empezando con letra o número';
@@ -21,11 +17,7 @@ const esquemaNuevoUsuario = z.strictObject({
     .min(1, { error: 'es obligatorio' })
     .max(120, { error: 'no puede pasar de 120 caracteres' }),
   rol: z.enum(ROLES, { error: `debe ser uno de: ${ROLES.join(', ')}` }),
-  clave: z
-    .string({ error: 'es obligatoria' })
-    .min(CLAVE_MINIMA, { error: `debe tener al menos ${CLAVE_MINIMA} caracteres` })
-    .max(CLAVE_MAXIMA, { error: `no puede pasar de ${CLAVE_MAXIMA} caracteres` })
-    .refine((clave) => clave.trim() !== '', { error: 'no puede ser solo espacios' }),
+  clave: esquemaClave,
 });
 
 const esquemaCambio = z
@@ -47,18 +39,6 @@ export interface NuevoUsuario {
 export interface CambioDeUsuario {
   rol?: Rol;
   activo?: boolean;
-}
-
-function leer<T>(esquema: z.ZodType<T>, cuerpo: unknown): T {
-  const resultado = esquema.safeParse(cuerpo ?? {});
-  if (resultado.success) return resultado.data;
-  // Los mensajes salen del esquema y nunca incluyen lo que se escribió (puede ser una clave).
-  const problemas = resultado.error.issues.map((p) => {
-    const campo = p.path.join('.');
-    const texto = p.code === 'unrecognized_keys' ? `campos no admitidos: ${p.keys.join(', ')}` : p.message;
-    return campo ? `${campo}: ${texto}` : texto;
-  });
-  throw new BadRequestException({ message: `Datos inválidos: ${problemas.join('; ')}`, problemas });
 }
 
 export const leerNuevoUsuario = (cuerpo: unknown): NuevoUsuario => leer(esquemaNuevoUsuario, cuerpo);

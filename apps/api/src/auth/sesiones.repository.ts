@@ -1,8 +1,9 @@
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, ne } from 'drizzle-orm';
 import { Inject, Injectable } from '@nestjs/common';
 import { DB, type BaseDatos } from '../base-datos/base-datos.module.js';
 import { sesiones, usuarios } from '../base-datos/esquema.js';
 import type { UsuarioSesion } from './roles.js';
+import type { Transaccion } from './usuarios.repository.js';
 
 export interface SesionVigente {
   usuario: UsuarioSesion;
@@ -32,6 +33,7 @@ export class SesionesRepository {
         usuario: usuarios.usuario,
         nombre: usuarios.nombre,
         rol: usuarios.rol,
+        debeCambiarClave: usuarios.debeCambiarClave,
         ultimoUso: sesiones.ultimoUso,
       })
       .from(sesiones)
@@ -56,6 +58,22 @@ export class SesionesRepository {
 
   async borrar(id: string): Promise<void> {
     await this.db.delete(sesiones).where(eq(sesiones.id, id));
+  }
+
+  /**
+   * Cierra todas las sesiones de la persona menos una (la que está cambiando su clave) y dice cuántas cerró.
+   * Va dentro de la misma transacción que el cambio de clave: o cambian las dos cosas o ninguna.
+   */
+  async borrarDeUsuarioExcepto(
+    tx: Transaccion,
+    usuarioId: number,
+    conservarId: string,
+  ): Promise<number> {
+    const borradas = await tx
+      .delete(sesiones)
+      .where(and(eq(sesiones.usuarioId, usuarioId), ne(sesiones.id, conservarId)))
+      .returning({ id: sesiones.id });
+    return borradas.length;
   }
 
   /** Limpieza al ingresar: las sesiones vencidas de ese usuario ya no sirven para nada. */
