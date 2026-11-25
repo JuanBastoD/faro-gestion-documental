@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Rol } from '../auth/roles.js';
 import { DB, type BaseDatos } from '../base-datos/base-datos.module.js';
@@ -17,6 +17,20 @@ export interface UsuarioAdministrado {
   creadoEn: Date;
 }
 
+/** Nombre del candado consultivo que pone en fila los cambios que pueden quitar administradores. */
+const CANDADO_ADMINISTRADORES = 'faro.usuarios.administradores';
+
+/** Códigos de PostgreSQL por los que se repite la transacción entera: abrazo mortal (deadlock) y fallo de serialización. */
+const REPETIBLES = new Set(['40P01', '40001']);
+/** Intentos en total: el primero y dos repeticiones. */
+export const INTENTOS_DE_TRANSACCION = 3;
+
+function esRepetible(error: unknown): boolean {
+  // Drizzle envuelve el error de pg: el código puede estar en el error o en su causa.
+  const e = error as { code?: string; cause?: { code?: string } } | null;
+  return REPETIBLES.has(e?.code ?? '') || REPETIBLES.has(e?.cause?.code ?? '');
+}
+
 const columnas = {
   id: usuarios.id,
   usuario: usuarios.usuario,
@@ -30,8 +44,21 @@ const columnas = {
 export class UsuariosAdminRepository {
   constructor(@Inject(DB) private readonly db: BaseDatos) {}
 
-  enTransaccion<T>(trabajo: (tx: Transaccion) => Promise<T>): Promise<T> {
-    return this.db.transaction(trabajo);
+  /**
+   * Abre una transacción. Si PostgreSQL la aborta por un abrazo mortal o un fallo de serialización (40P01, 40001), ya se deshizo
+   * entera y se repite desde el principio, hasta 3 intentos en total. `trabajo` solo debe tocar la base (nada de archivos, correo
+   * ni contadores en memoria), así que repetirlo es seguro. Cualquier otro error sale tal cual, sin repetir.
+   */
+  async enTransaccion<T>(trabajo: (tx: Transaccion) => Promise<T>): Promise<T> {
+    for (let intento = 1; ; intento++) {
+      try {
+        return await this.db.transaction(trabajo);
+      } catch (error) {
+        if (intento >= INTENTOS_DE_TRANSACCION || !esRepetible(error)) throw error;
+        // Una pausa corta y distinta en cada repetición, para que no vuelvan a chocar en el mismo instante.
+        await new Promise((seguir) => setTimeout(seguir, 20 * intento + Math.random() * 30));
+      }
+    }
   }
 
   listar(): Promise<UsuarioAdministrado[]> {
@@ -56,8 +83,15 @@ export class UsuariosAdminRepository {
    * Bloquea a todos los administradores activos y devuelve sus ids. Dos cambios que podrían quitar
    * administradores (desactivar o degradar) se ponen en fila aquí, así cada uno cuenta a los que
    * quedan después del anterior y el sistema no puede quedarse sin ninguno.
+   *
+   * Lo primero es un candado consultivo de transacción que serializa por completo estos cambios (son raros). El orden de los
+   * bloqueos de fila no alcanza: en READ COMMITTED, si otra transacción cambió una fila mientras esta esperaba, el bloqueo queda
+   * puesto aunque la fila ya no cumpla el filtro, y la auditoría pide al final, por la clave foránea, un bloqueo sobre la fila de
+   * quien actúa (que puede no estar entre los administradores). Dos transacciones se podían esperar mutuamente (ADR-008, nota
+   * del 23 de noviembre de 2026). Todo código que cambie rol o estado debe llamar a este método antes de bloquear nada más.
    */
   async bloquearAdministradoresActivos(tx: Transaccion): Promise<number[]> {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${CANDADO_ADMINISTRADORES}, 0))`);
     const filas = await tx
       .select({ id: usuarios.id })
       .from(usuarios)
@@ -74,6 +108,11 @@ export class UsuariosAdminRepository {
   ): Promise<UsuarioAdministrado> {
     const [fila] = await tx.update(usuarios).set(cambios).where(eq(usuarios.id, id)).returning(columnas);
     return fila;
+  }
+
+  /** Guarda una clave temporal y marca que la persona debe cambiarla (ADR-011). */
+  async fijarClaveTemporal(tx: Transaccion, id: number, claveHash: string): Promise<void> {
+    await tx.update(usuarios).set({ claveHash, debeCambiarClave: true }).where(eq(usuarios.id, id));
   }
 
   /** Borra las sesiones del usuario y dice cuántas había. */

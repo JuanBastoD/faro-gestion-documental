@@ -129,6 +129,7 @@ cp .env.example .env
 npm run infra:up      # PostgreSQL y almacén S3 en Docker
 npm ci
 npm run lint
+npm run typecheck     # tsc --noEmit sobre src/ y test/
 npm test              # unitarias
 npm run test:e2e      # integración, requiere infra:up
 npm run build
