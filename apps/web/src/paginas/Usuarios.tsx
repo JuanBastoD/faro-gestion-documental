@@ -1,17 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { traducirErrorDeUsuarios } from '../api/errores-administracion';
 import { cambiarUsuario, listarUsuarios, type UsuarioAdministrado } from '../api/usuarios';
 import { CambiarRolDeUsuario } from '../componentes/CambiarRolDeUsuario';
+import { ClaveTemporal } from '../componentes/ClaveTemporal';
 import { CrearUsuario } from '../componentes/CrearUsuario';
 import { DesactivarUsuario } from '../componentes/DesactivarUsuario';
+import { RestablecerClave } from '../componentes/RestablecerClave';
 import { useSesion } from '../sesion/contexto';
+import { RUTA_DE_CAMBIO_DE_CLAVE } from '../sesion/rutas';
 import { formatearFechaHora } from '../utilidades/formato';
 import { ETIQUETA_DE_ROL } from '../utilidades/roles';
 import { useCarga } from '../utilidades/useCarga';
 import { useTitulo } from '../utilidades/useTitulo';
 
 /** Lo que está abierto bajo la lista: el formulario de alta, o el panel de una acción sobre un usuario. */
-type Panel = { tipo: 'crear' } | { tipo: 'rol'; id: number } | { tipo: 'desactivar'; id: number } | null;
+type Panel =
+  | { tipo: 'crear' }
+  | { tipo: 'rol'; id: number }
+  | { tipo: 'desactivar'; id: number }
+  | { tipo: 'clave'; id: number }
+  | null;
+
+/** La clave temporal recién fijada, que se muestra una sola vez (#51). Solo vive en el estado de esta pantalla. */
+interface ClaveRecienFijada {
+  usuario: UsuarioAdministrado;
+  clave: string;
+}
 
 /** Devuelve el foco a un botón que ya existe (el que abrió el panel que se cerró). */
 function enfocarBoton(id: string) {
@@ -48,6 +63,7 @@ export function Usuarios() {
   const [aviso, setAviso] = useState<{ texto: string; numero: number } | null>(null);
   const [errorDeAccion, setErrorDeAccion] = useState<string | null>(null);
   const [reactivando, setReactivando] = useState<number | null>(null);
+  const [claveFijada, setClaveFijada] = useState<ClaveRecienFijada | null>(null);
   const salidaDelAviso = useRef<HTMLOutputElement>(null);
 
   // El aviso de éxito recibe el foco para que se note con teclado y lector de pantalla.
@@ -98,6 +114,18 @@ export function Usuarios() {
     if (actualizado.id === yo) void salir();
   }
 
+  function alRestablecer(usuario: UsuarioAdministrado, clave: string) {
+    setPanel(null);
+    setAviso(null);
+    setClaveFijada({ usuario, clave });
+  }
+
+  function cerrarClaveFijada() {
+    const id = claveFijada?.usuario.id;
+    setClaveFijada(null);
+    if (id !== undefined) enfocarBoton(`boton-clave-${id}`);
+  }
+
   async function reactivar(usuario: UsuarioAdministrado) {
     if (reactivando !== null) return;
     setReactivando(usuario.id);
@@ -141,6 +169,8 @@ export function Usuarios() {
           <p>{errorDeAccion}</p>
         </div>
       )}
+
+      {claveFijada && <ClaveTemporal usuario={claveFijada.usuario} clave={claveFijada.clave} alCerrar={cerrarClaveFijada} />}
 
       {panel?.tipo === 'crear' ? (
         <CrearUsuario
@@ -224,6 +254,23 @@ export function Usuarios() {
                               {reactivando === u.id ? 'Reactivando…' : 'Reactivar'}
                             </button>
                           )}
+                          {esYo ? (
+                            <Link to={RUTA_DE_CAMBIO_DE_CLAVE} className="boton boton--secundario">
+                              Cambiar mi clave
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              id={`boton-clave-${u.id}`}
+                              className="boton boton--secundario"
+                              aria-label={`Restablecer clave de ${u.nombre}`}
+                              aria-expanded={abierto === 'clave'}
+                              disabled={claveFijada !== null}
+                              onClick={() => abrir({ tipo: 'clave', id: u.id })}
+                            >
+                              Restablecer clave
+                            </button>
+                          )}
                         </div>
                       </div>
                       <dl className="datos">
@@ -252,6 +299,17 @@ export function Usuarios() {
                           alCancelar={() => {
                             setPanel(null);
                             enfocarBoton(`boton-rol-${u.id}`);
+                          }}
+                          alFallar={alFallar}
+                        />
+                      )}
+                      {abierto === 'clave' && !esYo && (
+                        <RestablecerClave
+                          usuario={u}
+                          alRestablecer={alRestablecer}
+                          alCancelar={() => {
+                            setPanel(null);
+                            enfocarBoton(`boton-clave-${u.id}`);
                           }}
                           alFallar={alFallar}
                         />

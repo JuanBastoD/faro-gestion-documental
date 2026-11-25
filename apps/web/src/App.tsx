@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { Plantilla } from './componentes/Plantilla';
 import { Auditoria } from './paginas/Auditoria';
+import { CambiarClave } from './paginas/CambiarClave';
 import { CargarDocumento } from './paginas/CargarDocumento';
 import { DocumentoDetalle } from './paginas/DocumentoDetalle';
 import { Documentos } from './paginas/Documentos';
@@ -9,6 +10,7 @@ import { NoEncontrada } from './paginas/NoEncontrada';
 import { NuevaVersion } from './paginas/NuevaVersion';
 import { Usuarios } from './paginas/Usuarios';
 import { RutaProtegida } from './sesion/RutaProtegida';
+import { RUTA_DE_CAMBIO_DE_CLAVE } from './sesion/rutas';
 
 /**
  * Las rutas de la interfaz. Viven bajo `/app/` (el `basename` del enrutador, ADR-012), así que `/documentos/12` aquí
@@ -27,6 +29,7 @@ export function App() {
           <Route index element={<Navigate to="/documentos" replace />} />
           <Route path="/documentos" element={<Documentos />} />
           <Route path="/documentos/:id" element={<DocumentoDetalle />} />
+          <Route path={RUTA_DE_CAMBIO_DE_CLAVE} element={<CambiarClave />} />
 
           <Route element={<RutaProtegida roles={['administrador', 'editor']} />}>
             <Route path="/documentos/nuevo" element={<CargarDocumento />} />

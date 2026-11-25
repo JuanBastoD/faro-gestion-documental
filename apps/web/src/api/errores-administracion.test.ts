@@ -103,6 +103,13 @@ describe('traducirErrorDeUsuarios', () => {
       expect(traducido.mensaje).toMatch(/desde un sitio que el servidor no reconoce/);
       expect(traducido.rolDesactualizado).toBe(false);
     });
+
+    it('con la clave temporal (cambio_de_clave_requerido): no es de rol y no pide volver a leer la sesión', () => {
+      const traducido = traducirErrorDeUsuarios(error(403, { codigo: 'cambio_de_clave_requerido' }), 'cambio');
+      expect(traducido.mensaje).toMatch(/Tu clave es temporal/);
+      expect(traducido.mensaje).not.toMatch(/administradores/);
+      expect(traducido.rolDesactualizado).toBe(false);
+    });
   });
 
   it('404 al cambiar: el usuario ya no existe', () => {

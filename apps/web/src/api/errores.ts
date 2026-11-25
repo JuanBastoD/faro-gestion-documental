@@ -210,6 +210,9 @@ export function traducirError(error: unknown, operacion: Operacion): ErrorTraduc
     case 401:
       return sinCampos('Tu sesión terminó. Ingresa de nuevo para continuar.');
     case 403:
+      if (error.codigo === 'cambio_de_clave_requerido') {
+        return sinCampos('Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.');
+      }
       return sinCampos(
         error.codigo === 'origen_no_permitido'
           ? 'La petición se hizo desde un sitio que el servidor no reconoce. Abre Faro desde su dirección habitual e inténtalo de nuevo.'

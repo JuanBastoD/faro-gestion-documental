@@ -1,14 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { useSesion } from '../sesion/contexto';
+import { destinoSeguro } from '../utilidades/destino';
 import { mensajeDeError } from '../utilidades/mensajes';
 import { useTitulo } from '../utilidades/useTitulo';
-
-/** A dónde volver tras ingresar: solo rutas internas (empiezan con una sola barra). */
-function destinoSeguro(estado: unknown): string {
-  const desde = typeof estado === 'object' && estado !== null && 'desde' in estado ? estado.desde : undefined;
-  return typeof desde === 'string' && desde.startsWith('/') && !desde.startsWith('//') ? desde : '/documentos';
-}
 
 export function Ingreso() {
   useTitulo('Ingreso');

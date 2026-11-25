@@ -57,17 +57,20 @@ export function simularApi(manejadores: Record<string, Manejador>) {
   };
 }
 
-export function usuarioDePrueba(rol: Rol): UsuarioSesion {
+export function usuarioDePrueba(rol: Rol, extra: Partial<UsuarioSesion> = {}): UsuarioSesion {
   const nombres: Record<Rol, string> = { administrador: 'Admin Demo', editor: 'Editor Demo', consulta: 'Consulta Demo' };
-  return { id: 1, usuario: `${rol}.demo`, nombre: nombres[rol], rol };
+  return { id: 1, usuario: `${rol}.demo`, nombre: nombres[rol], rol, ...extra };
 }
 
-/** Manejadores de una sesión abierta (`GET /auth/yo`) o ninguna (401, como responde la API real). */
-export function manejadoresDeSesion(rol: Rol | null): Record<string, Manejador> {
+/**
+ * Manejadores de una sesión abierta (`GET /auth/yo`) o ninguna (401, como responde la API real). `extra` completa al usuario
+ * de la sesión (por ejemplo `{ debeCambiarClave: true }`).
+ */
+export function manejadoresDeSesion(rol: Rol | null, extra: Partial<UsuarioSesion> = {}): Record<string, Manejador> {
   return {
     'GET /auth/yo': () =>
       rol
-        ? respuestaJson({ usuario: usuarioDePrueba(rol) })
+        ? respuestaJson({ usuario: usuarioDePrueba(rol, extra) })
         : respuestaJson({ statusCode: 401, message: 'Se requiere iniciar sesión', error: 'Unauthorized' }, 401),
     'POST /auth/logout': () => new Response(null, { status: 204 }),
   };

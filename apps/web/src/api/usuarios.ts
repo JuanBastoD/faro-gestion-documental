@@ -48,6 +48,16 @@ export function crearUsuario(datos: NuevoUsuario, senal?: AbortSignal): Promise<
 }
 
 /**
+ * `POST /usuarios/:id/clave` (administrador, #57). Fija una clave temporal (12 a 256 caracteres): 204 sin cuerpo, cierra todas las
+ * sesiones de esa persona y la obliga a cambiarla al ingresar. La clave no vuelve a salir de la API, así que quien la fija es quien
+ * debe entregarla por otro medio. 409 `restablecer_clave_propia` si el id es el de quien pide (para su cuenta, `cambiarClave`);
+ * 404 si no existe.
+ */
+export async function restablecerClave(id: number, clave: string, senal?: AbortSignal): Promise<void> {
+  await pedir<void>(`/usuarios/${id}/clave`, { metodo: 'POST', cuerpo: { clave }, senal });
+}
+
+/**
  * `PATCH /usuarios/:id` (administrador). Responde 200 con el usuario ya cambiado; si no cambia nada, 200 igual y sin evento en
  * la auditoría. 409 `ultimo_administrador` si dejaría al sistema sin administradores. Desactivar cierra las sesiones de
  * esa persona al instante (ADR-008).

@@ -72,6 +72,23 @@ export function alExpirarLaSesion(manejador: () => void): () => void {
   };
 }
 
+/** `codigo` del 403 que da la API a toda ruta (salvo cambiar la clave, ver quién soy y salir) mientras la clave sea temporal (#57). */
+export const CODIGO_CAMBIO_DE_CLAVE_REQUERIDO = 'cambio_de_clave_requerido';
+
+let manejadorDeCambioDeClave: (() => void) | undefined;
+
+/**
+ * Registra qué hacer cuando la API responde 403 `cambio_de_clave_requerido`: la persona tiene una clave temporal y no puede hacer
+ * nada más hasta cambiarla. La sesión lo marca y la guarda de rutas lleva a la pantalla de cambio de clave, venga la petición
+ * de donde venga. Devuelve cómo quitarlo.
+ */
+export function alRequerirCambioDeClave(manejador: () => void): () => void {
+  manejadorDeCambioDeClave = manejador;
+  return () => {
+    if (manejadorDeCambioDeClave === manejador) manejadorDeCambioDeClave = undefined;
+  };
+}
+
 const MENSAJE_POR_ESTADO: Record<number, string> = {
   0: 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.',
   400: 'Los datos enviados no son válidos.',
@@ -181,6 +198,7 @@ export async function pedir<T>(ruta: string, opciones: OpcionesDePeticion = {}):
   if (!respuesta.ok) {
     const error = await leerError(respuesta);
     if (error.estado === 401 && !ignorar401) manejadorDeSesionExpirada?.();
+    if (error.estado === 403 && error.codigo === CODIGO_CAMBIO_DE_CLAVE_REQUERIDO) manejadorDeCambioDeClave?.();
     throw error;
   }
 
