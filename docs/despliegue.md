@@ -62,7 +62,7 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com secret
 
 ## 4. Base de datos en Neon [POR VERIFICAR]
 
-1. Crea un proyecto en Neon. Región: la más cercana a `us-central1` que ofrezca (por ejemplo AWS us-east-2) [SUPUESTO: la latencia entre nubes es aceptable para un prototipo; no está medida].
+1. Crea un proyecto en Neon. Región: la más cercana a `us-central1` que ofrezca (por ejemplo AWS us-east-2) [SUPUESTO: la latencia entre nubes es aceptable para un prototipo; no está medida]. **Versión de PostgreSQL: elige la 17**, la misma del Compose y del CI. [POR VERIFICAR] La documentación pública de Neon (leída el 22 de noviembre de 2026, sin cuenta) dice que los proyectos nuevos usan la 18 por omisión y que la versión mayor de un proyecto no se cambia después; la copia de seguridad (`docs/respaldo.md`) necesita que `pg_dump` sea de la misma versión mayor que el servidor o más nuevo.
 2. Copia la **cadena de conexión directa** (la que **no** dice `-pooler`), con `sslmode=require`: `postgresql://usuario:clave@host/base?sslmode=require`. La directa es la correcta para las migraciones.
 3. [POR VERIFICAR] **El plan gratuito de Neon limita el almacenamiento** (consulta el límite vigente en su página de precios). La tabla `versiones` guarda el texto normalizado de cada PDF para la búsqueda y los duplicados (ADR-006 y ADR-007): con muchos documentos largos puede crecer rápido. Para el prototipo con datos ficticios no debería importar.
 4. [POR VERIFICAR] Neon **suspende el cómputo sin uso** y el primer acceso después de un rato tarda más. La API espera hasta 3 segundos por una conexión (`base-datos.module.ts`); si ves errores en la primera petición, ese valor es lo primero que se revisa.
@@ -155,7 +155,7 @@ En GitHub: **Settings → Secrets and variables → Actions → pestaña Variabl
 | `GCP_RUNTIME_SA` | el valor de `$SA_EJECUCION` |
 | `GCS_BUCKET` | el valor de `$BUCKET` |
 
-No hay ningún secreto de GitHub que crear: los secretos de la aplicación viven en Secret Manager.
+No hay ningún secreto de GitHub que crear para el despliegue: los secretos de la aplicación viven en Secret Manager. Solo la **copia de seguridad programada** (opcional, [`docs/respaldo.md`](respaldo.md), sección 8) necesita un secreto de GitHub, `RESPALDO_DATABASE_URL`, y dos variables más (`GCP_RESPALDO_SA` y `GCS_RESPALDO_BUCKET`).
 
 ## 9. Primer despliegue
 
@@ -179,7 +179,36 @@ Con todo lo anterior (y los PR de #8 a #20 fusionados a `main`, porque el despli
    ```
 
    Después ingresa con ese usuario y crea a los demás con `POST /usuarios`. [PENDIENTE] Hoy nadie puede cambiar su clave (ADR-008, sección 4): usa una clave que estés dispuesto a conservar, o desactiva la cuenta y crea otra.
-4. **[PENDIENTE #19] El cuadro de clasificación llega vacío** y sin él no se puede cargar ningún documento (cada documento va en una subserie). La importación por CSV (#19) todavía no existe. Mientras tanto, para una demostración, el cuadro ficticio de `apps/api/src/semilla/ccd-demo.ts` se puede cargar con SQL directo contra Neon; **no uses `db:seed`: crea usuarios de demostración con una clave conocida**.
+4. **Cargar el cuadro de clasificación** (#19, [ADR-010](adr/0010-importacion-del-cuadro-por-comando.md)). **El cuadro llega vacío** y sin él no se puede cargar ningún documento (cada documento va en una subserie). Se carga con un comando de la misma imagen, `importar-cli`, a partir de un CSV (formato y opciones en el README, sección «Cuadro de clasificación desde un CSV»; ejemplo ficticio en `docs/ejemplos/cuadro-ejemplo.csv`). **No uses `db:seed`: crea usuarios de demostración con una clave conocida.** Sin `--aplicar` el comando solo muestra lo que haría; ejecútalo siempre así primero. Es seguro repetirlo y nunca mueve ni elimina lo que ya tiene documentos. Con datos reales, solo el cuadro que la encargada del archivo haya validado [POR VERIFICAR cuándo]; para una demostración, el ejemplo ficticio.
+
+   El comando necesita `DATABASE_URL` y el archivo. Dos caminos [POR VERIFICAR: ninguno se ha probado en la nube; el comando sí se probó compilado y dentro de la imagen contra el PostgreSQL local, sección 11]:
+
+   **A. Desde tu equipo contra Neon** (lo más simple; necesitas Node y el repositorio):
+
+   ```bash
+   read -rs DATABASE_URL && export DATABASE_URL        # pega la cadena DIRECTA de Neon (sección 4); no queda en el historial
+   npm ci
+   npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv            # simulación: no escribe nada
+   npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar  # escribe
+   ```
+
+   **B. Como trabajo de Cloud Run, con la misma imagen** (el archivo entra como un secreto montado como archivo: el cuadro no es secreto, pero así llega al contenedor sin meterlo en la imagen ni en el repositorio; el límite de un secreto es de 64 KiB, de sobra para un cuadro):
+
+   ```bash
+   gcloud secrets create faro-cuadro-csv --data-file=docs/ejemplos/cuadro-ejemplo.csv   # o el archivo validado
+   gcloud secrets add-iam-policy-binding faro-cuadro-csv \
+     --member="serviceAccount:$SA_EJECUCION" --role="roles/secretmanager.secretAccessor"
+   IMAGEN="$(gcloud run services describe faro-api --region "$REGION" --format 'value(spec.template.spec.containers[0].image)')"
+   gcloud run jobs deploy faro-cuadro --image "$IMAGEN" --region "$REGION" --service-account "$SA_EJECUCION" \
+     --command node --args apps/api/dist/ccd/importar/importar-cli.js,/cuadro/cuadro.csv \
+     --set-secrets "DATABASE_URL=faro-database-url:latest,/cuadro/cuadro.csv=faro-cuadro-csv:latest" \
+     --max-retries 0
+   gcloud run jobs execute faro-cuadro --region "$REGION" --wait     # simulación: el resultado queda en los registros del trabajo
+   gcloud run jobs execute faro-cuadro --region "$REGION" --wait \
+     --args apps/api/dist/ccd/importar/importar-cli.js,/cuadro/cuadro.csv,--aplicar
+   ```
+
+   [POR VERIFICAR] Que `--set-secrets` con una ruta de archivo monte el secreto como `/cuadro/cuadro.csv` (es lo que documenta Cloud Run para montar un secreto como archivo), y que `--args` en `jobs execute` sustituya los argumentos del trabajo. Para cambiar el cuadro después: nueva versión del secreto (`gcloud secrets versions add`) y repetir los dos `execute`. Comprueba el resultado con `curl -b cookies.txt "$URL/series"` tras ingresar.
 
 ## 10. Comprobar
 
@@ -198,6 +227,7 @@ La imagen se construyó y se probó el 22 de noviembre de 2026 contra el Postgre
 - `docker build -f apps/api/Dockerfile -t faro-api .` (contexto: la raíz del repositorio). Imagen de 403 MB, tres etapas, proceso como usuario `node` (uid 1000), sin pruebas, sin fuentes, sin `.env`, sin `drizzle-kit`.
 - Migrar con el comando de la imagen (`node apps/api/dist/base-datos/migrar-cli.js`); repetirlo es inocuo.
 - Crear el primer administrador (`node apps/api/dist/semilla/crear-administrador.js`); una clave corta se rechaza sin repetirla, y repetir el comando no cambia nada.
+- Importar el cuadro de clasificación (#19) con el comando de la imagen, el CSV montado en solo lectura (`docker run --rm -v <carpeta>:/cuadro:ro -e DATABASE_URL ... faro-api node apps/api/dist/ccd/importar/importar-cli.js /cuadro/cuadro-ejemplo.csv`): sin `--aplicar` no escribe, con `--aplicar` crea lo que falta (6 series y subseries sobre un cuadro sembrado de 9) y repetirlo responde «no hay nada que cambiar». La API compilada muestra el cuadro en `GET /series` y el evento `ccd_importado`, sin usuario, en `GET /auditoria`.
 - Arrancar la API con `ALMACEN_TIPO=s3`: `/health` responde con la base en `ok`, sin sesión `/documentos` es 401.
 - Ingresar, **cargar un PDF, descargarlo byte por byte idéntico, buscarlo por texto**, y **reiniciar el contenedor**: la sesión, el documento y el archivo siguen.
 - El `HEALTHCHECK` de Docker pasa a `healthy`; cero líneas `ERROR` en el registro.
@@ -209,14 +239,14 @@ Lo que **no** se probó: Cloud Run, Neon, Cloud Storage, Secret Manager, Artifac
 
 ```bash
 gcloud run services delete faro-api --region "$REGION"
-gcloud run jobs delete faro-migrar --region "$REGION"; gcloud run jobs delete faro-admin --region "$REGION"
+gcloud run jobs delete faro-migrar --region "$REGION"; gcloud run jobs delete faro-admin --region "$REGION"; gcloud run jobs delete faro-cuadro --region "$REGION"
 gcloud storage rm -r "gs://$BUCKET"
 gcloud artifacts repositories delete faro --location="$REGION"
 # o, lo más simple: borrar el proyecto entero y con él todo lo anterior
 gcloud projects delete "$PROYECTO"
 ```
 
-En Neon: borra el proyecto desde su consola. Desvincular la facturación del proyecto también detiene los cargos.
+En Neon: borra el proyecto desde su consola. Desvincular la facturación del proyecto también detiene los cargos. Si activaste la copia de seguridad, el bucket de respaldos (`gs://$BUCKET_RESPALDO`, [`docs/respaldo.md`](respaldo.md)) también se borra con el proyecto; antes de borrarlo, baja la copia que quieras conservar.
 
 ## 13. Decisiones y límites de este despliegue
 

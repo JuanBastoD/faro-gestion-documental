@@ -18,6 +18,7 @@ Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyec
 - Modelo de datos (diagrama entidad-relación y diccionario por tabla y campo): [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Una prueba lo compara con la base migrada, así que el CI falla si queda desactualizado
 - Quién puede hacer qué, endpoint por endpoint: [`docs/matriz-de-roles.md`](docs/matriz-de-roles.md). Una prueba la lee y la comprueba contra la API real con un usuario de cada rol; si se agrega un endpoint sin decidir sus permisos, el CI falla.
 - Diagrama de componentes y diferencias con el ADR-002: [`docs/arquitectura.md`](docs/arquitectura.md).
+- Copia de seguridad de la base y guía de restauración (probada): [`docs/respaldo.md`](docs/respaldo.md).
 - Issues e hitos `V2-M1` a `V2-M4`: pestaña Issues del repositorio
 - Tablero: <https://github.com/users/JuanBastoD/projects/2>
 
@@ -68,8 +69,9 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 | Ruta | Quién | Qué hace |
 |---|---|---|
 | `POST /auth/login` | Cualquiera | Recibe `{ usuario, clave }` y pone la cookie `faro_sesion`. Con demasiados intentos responde 429 y `Retry-After` |
-| `GET /auth/yo` | Con sesión | Devuelve quién tiene la sesión |
+| `GET /auth/yo` | Con sesión | Devuelve quién tiene la sesión: `{ usuario: { id, usuario, nombre, rol, debeCambiarClave } }` |
 | `POST /auth/logout` | Con sesión | Cierra la sesión |
+| `POST /auth/clave` | Con sesión | Cambia la clave propia: `{ claveActual, claveNueva }` (la nueva, de 12 a 256 caracteres y distinta de la actual). Responde 204; cierra las demás sesiones de la persona y deja la actual. **400 `clave_actual_incorrecta`** (nunca 401) si la actual no es correcta, y esos fallos cuentan en el límite de ingreso (429 con `Retry-After`) |
 | `GET /series` | Con sesión | Cuadro de clasificación como árbol de dos niveles (series y subseries). Solo las subseries admiten documentos; lo impone el servicio y la base de datos |
 | `POST /documentos` | Administrador y editor | Carga un PDF (formulario multipart: archivo en `archivo`, más `titulo`, `expediente`, `serieId` de una subserie, `fechaDocumento` AAAA-MM-DD y `motivo` opcional; con un aviso de duplicado, también `decision`, `documentoId` y `justificacion`). Solo PDF por su contenido, máx. 20 MB. 415 si no es PDF, 413 si pasa de 20 MB, 400 si faltan datos, 422 si la serie no es una subserie, **409 si ya existe un archivo idéntico (`duplicado_exacto`) o uno muy parecido (`duplicado_probable`)** |
 | `GET /documentos` | Con sesión | Listado y búsqueda. Sin parámetros, el más reciente primero. `q` busca en título, expediente y texto del PDF (todas las palabras, sin tildes ni mayúsculas, por relevancia); `serieId` filtra por serie o subserie (con sus subseries); `pagina` y `tamano` (máx. 50). Responde `{ items, total, pagina, tamano }` |
@@ -81,7 +83,10 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 | `GET /usuarios` | Administrador | Todos los usuarios, activos e inactivos, por orden de creación (sin la clave) |
 | `POST /usuarios` | Administrador | Crea un usuario: `{ usuario, nombre, rol, clave }`. `usuario` en minúsculas (3 a 64: letras, números, `.`, `-`, `_`), `clave` de 12 a 256 caracteres. 409 si el nombre ya existe |
 | `PATCH /usuarios/:id` | Administrador | Cambia `rol` y/o `activo`. Nunca se borra a nadie; desactivar cierra sus sesiones. 409 `ultimo_administrador` si dejaría al sistema sin administradores activos |
+| `POST /usuarios/:id/clave` | Administrador | Fija una **clave temporal** a otro usuario: `{ clave }` (12 a 256 caracteres). Responde 204 sin cuerpo; cierra todas sus sesiones y le exige cambiarla al ingresar. 409 `restablecer_clave_propia` si es la cuenta del propio administrador (para eso está `POST /auth/clave`); 404 si no existe |
 | `GET /auditoria` | Administrador | Eventos de auditoría, los más recientes primero. Filtros: `usuarioId`, `accion`, `documentoId`, `desde`, `hasta`; paginación: `pagina` y `tamano` (máx. 100). Solo lectura: los eventos no se editan ni se borran, ni por la API ni por SQL |
+
+**Claves** ([ADR-011](docs/adr/0011-cambio-y-restablecimiento-de-clave.md)): cada persona cambia la suya con `POST /auth/clave`, dando la actual aunque tenga sesión. Quien la olvida no la recupera solo (no hay correo): un administrador le fija una **clave temporal** con `POST /usuarios/:id/clave` y se la entrega por otro medio. Con una clave temporal, la persona puede ingresar, pero hasta que la cambie la API solo le responde `GET /auth/yo`, `POST /auth/logout` y `POST /auth/clave`; todo lo demás es **403 `cambio_de_clave_requerido`**, y `usuario.debeCambiarClave` de `GET /auth/yo` (y del ingreso) lo avisa para que la interfaz la lleve a cambiarla. Las claves nunca salen por la API ni se escriben en la auditoría (solo quién cambió o restableció la clave de quién, cuántas sesiones se cerraron y si el ingreso o el cambio se hizo con una clave temporal). Antes de usarlo en una base existente: `npm run db:migrate -w apps/api` (migración 0008).
 
 **Versiones** ([ADR-005](docs/adr/0005-versionado-y-restauracion.md)): el historial solo crece. Restaurar crea una versión nueva que apunta al mismo archivo, y dos personas versionando a la vez reciben números consecutivos porque la transacción bloquea el documento. Si actualizas desde una versión anterior, aplica antes `npm run db:migrate -w apps/api` (migración 0004).
 
@@ -91,11 +96,37 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 
 **Dónde se guardan los PDF** ([ADR-004](docs/adr/0004-almacen-de-archivos-y-carga.md)): `ALMACEN_TIPO=disco` (por defecto, la carpeta `apps/api/almacen-local`, sin Docker) o `ALMACEN_TIPO=s3` (el almacén de `npm run infra:up`, y en la nube Cloud Storage; exige las variables `S3_*`). La carga guarda el archivo y después el registro en una transacción; si algo falla no queda ninguno de los dos. `npm run almacen:huerfanos -w apps/api` lista los archivos que ninguna versión usa y, con `-- --borrar`, borra los de más de una hora.
 
+**Cuadro de clasificación desde un CSV** ([ADR-010](docs/adr/0010-importacion-del-cuadro-por-comando.md)): es un comando, no un endpoint (nadie lo cambia por la API). Valida **todo** el archivo antes de escribir y, sin `--aplicar`, **solo muestra lo que haría**: no cambia ni el cuadro ni la auditoría.
+
+```
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv                       # solo muestra (simulación)
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar             # escribe, en una transacción
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar --eliminar-ausentes
+```
+
+| Opción | Qué hace |
+|---|---|
+| (ninguna) | Simulación: lista las series y subseries que se crearían, los nombres que cambiarían, las que se moverían y las que el archivo no menciona. Sale con 0, o con 1 si lo pedido chocaría con documentos |
+| `--aplicar` | Escribe todo en **una sola transacción**: o queda el cuadro completo o no cambia nada. Registra un evento `ccd_importado` (sin usuario) con el nombre y la huella SHA-256 del archivo. Repetir el mismo archivo no cambia nada |
+| `--eliminar-ausentes` | Además elimina lo que está en la base y no en el archivo, **salvo lo que tenga documentos** (esas se conservan y se informan). Sin esta opción, lo ausente solo se informa |
+
+**Formato del CSV** (UTF-8, coma o punto y coma; un ejemplo ficticio en [`docs/ejemplos/cuadro-ejemplo.csv`](docs/ejemplos/cuadro-ejemplo.csv)): columnas `codigo`, `nombre` y `codigo_padre`. Padre vacío = serie; con padre = subserie de esa serie (el cuadro tiene dos niveles). Cada padre debe tener su propia fila en el mismo archivo.
+
+```
+codigo,nombre,codigo_padre
+100,Gestión contractual,
+100.1,Contratos de obra,100
+100.2,Interventoría,100
+```
+
+Excel guarda por defecto en ANSI y se pierden las tildes: guárdalo como **«CSV UTF-8 (delimitado por comas)»**; el comando rechaza otra codificación con ese mismo aviso. Los códigos admiten letras, números y `.` `-` `_` entre ellos (máximo 32 caracteres; `100`, `100.1` o `GC-01`). Se compara por **código**: uno nuevo se crea, uno existente solo cambia de nombre, y **nunca se mueve ni se elimina una subserie que ya tiene documentos** (mover una con documentos, o cambiar un código de serie a subserie, se niega y no se escribe nada). Errores del archivo: salen todos juntos, cada uno con su línea, y no se escribe nada. Salida: 0 correcto; 1 archivo inválido o en conflicto; 2 uso incorrecto. En un contenedor: `node apps/api/dist/ccd/importar/importar-cli.js /ruta/cuadro.csv`; ver [`docs/despliegue.md`](docs/despliegue.md), sección 9.
+
 La configuración sale de variables de entorno que se validan al arrancar (`apps/api/src/config/entorno.ts`). Si falta o es inválida alguna, la API no arranca y dice cuál corregir, sin mostrar sus valores. En local se leen del `.env` de la raíz.
 
 | Comando (desde la raíz) | Qué hace |
 |---|---|
 | `npm run lint` | Oxlint con tipos |
+| `npm run typecheck` | `tsc --noEmit` sobre `src/` **y** `test/` de la API (el build solo compila `src/` y Vitest no revisa tipos) |
 | `npm test` | Pruebas unitarias (no necesitan base de datos) |
 | `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`). Usan una base aparte, `faro_test`, que se crea sola: nunca tocan la de desarrollo |
 | `npm run build` | Compila a `apps/api/dist` |
@@ -148,17 +179,18 @@ Si existe `apps/web/dist`, la API la sirve en `/app/` con respaldo a `index.html
 
 ## Integración continua
 
-`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con cinco trabajos:
+`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con seis trabajos:
 
 | Trabajo | Qué comprueba |
 |---|---|
-| `api` | `npm ci`, lint, pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
+| `api` | `npm ci`, lint, revisión de tipos (`tsc --noEmit` sobre `src/` y `test/`), pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
 | `legacy` | Las 7 pruebas del prototipo v1 |
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
 | `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
 | `secretos` | gitleaks sobre **todo el historial** (el repositorio es público); lo permitido está en `.gitleaks.toml`, cada excepción con su justificación |
+| `respaldo` | shellcheck de `infra/respaldo/*.sh`, pruebas del analizador de la cadena de conexión (la clave no viaja como argumento; imagen fijada por huella), y un respaldo y una restauración de ida y vuelta sobre una base migrada y sembrada (conteos por tabla y negativas del script) |
 
-Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` y `secretos` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen`, `secretos` y `respaldo` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
 
 ## Despliegue en la nube y contenedor
 
@@ -171,6 +203,19 @@ docker run --rm -e DATABASE_URL=... -e ADMIN_USUARIO=... -e ADMIN_CLAVE=... faro
 ```
 
 Fuera de un contenedor, los mismos comandos son `node dist/base-datos/migrar-cli.js` y `node dist/semilla/crear-administrador.js` (tras `npm run build`). `db:seed` crea usuarios de demostración con una clave conocida y **se niega a correr con `NODE_ENV=production`**.
+
+## Copia de seguridad
+
+`pg_dump` en formato personalizado con la imagen `postgres:17-alpine` fijada por huella (solo hace falta Docker; la clave va por el entorno, no como argumento) y una restauración que **solo crea una base nueva**: se niega con `faro`, `postgres`, cualquier `*_test`, la base de origen y cualquier base que ya exista. Guía completa, qué se respalda y qué no, la prueba de restauración y lo que le toca al usuario para activar la copia programada: [`docs/respaldo.md`](docs/respaldo.md).
+
+```
+export RESPALDO_DATABASE_URL='postgresql://usuario:clave@host:puerto/base'   # un secreto: nunca en el repositorio
+infra/respaldo/respaldar.sh                                                  # deja respaldos/faro-AAAAMMDD-HHMMSS.dump (en .gitignore)
+export PGHOST=host.docker.internal PGPORT=5433 PGUSER=usuario PGPASSWORD='clave'
+infra/respaldo/restaurar.sh respaldos/faro-AAAAMMDD-HHMMSS.dump faro_copia   # base nueva; muestra las filas por tabla
+```
+
+La copia programada en la nube (`.github/workflows/respaldo.yml`, a un bucket **privado**, nunca como artefacto de Actions) está inactiva hasta que existan sus variables y su secreto.
 
 ## Prototipo v1
 

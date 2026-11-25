@@ -10,3 +10,7 @@ coverage/
 iniciar-demo.bat
 *.tsbuildinfo
 almacen-local/
+
+# Copias de seguridad de la base (infra/respaldo/respaldar.sh): contienen toda la base, nunca van a git
+respaldos/
+*.dump
