@@ -18,6 +18,7 @@ Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyec
 - Modelo de datos (diagrama entidad-relación y diccionario por tabla y campo): [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md). Una prueba lo compara con la base migrada, así que el CI falla si queda desactualizado
 - Quién puede hacer qué, endpoint por endpoint: [`docs/matriz-de-roles.md`](docs/matriz-de-roles.md). Una prueba la lee y la comprueba contra la API real con un usuario de cada rol; si se agrega un endpoint sin decidir sus permisos, el CI falla.
 - Diagrama de componentes y diferencias con el ADR-002: [`docs/arquitectura.md`](docs/arquitectura.md).
+- Copia de seguridad de la base y guía de restauración (probada): [`docs/respaldo.md`](docs/respaldo.md).
 - Issues e hitos `V2-M1` a `V2-M4`: pestaña Issues del repositorio
 - Tablero: <https://github.com/users/JuanBastoD/projects/2>
 
@@ -121,6 +122,7 @@ La configuración sale de variables de entorno que se validan al arrancar (`apps
 | Comando (desde la raíz) | Qué hace |
 |---|---|
 | `npm run lint` | Oxlint con tipos |
+| `npm run typecheck` | `tsc --noEmit` sobre `src/` **y** `test/` de la API (el build solo compila `src/` y Vitest no revisa tipos) |
 | `npm test` | Pruebas unitarias (no necesitan base de datos) |
 | `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`). Usan una base aparte, `faro_test`, que se crea sola: nunca tocan la de desarrollo |
 | `npm run build` | Compila a `apps/api/dist` |
@@ -132,17 +134,18 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 
 ## Integración continua
 
-`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con cinco trabajos:
+`.github/workflows/ci.yml` corre en cada PR y en cada cambio de `main`, con seis trabajos:
 
 | Trabajo | Qué comprueba |
 |---|---|
-| `api` | `npm ci`, lint, pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
+| `api` | `npm ci`, lint, revisión de tipos (`tsc --noEmit` sobre `src/` y `test/`), pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
 | `legacy` | Las 7 pruebas del prototipo v1 |
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
 | `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
 | `secretos` | gitleaks sobre **todo el historial** (el repositorio es público); lo permitido está en `.gitleaks.toml`, cada excepción con su justificación |
+| `respaldo` | shellcheck de `infra/respaldo/*.sh`, pruebas del analizador de la cadena de conexión (la clave no viaja como argumento; imagen fijada por huella), y un respaldo y una restauración de ida y vuelta sobre una base migrada y sembrada (conteos por tabla y negativas del script) |
 
-Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` y `secretos` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen`, `secretos` y `respaldo` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
 
 ## Despliegue en la nube y contenedor
 
@@ -155,6 +158,19 @@ docker run --rm -e DATABASE_URL=... -e ADMIN_USUARIO=... -e ADMIN_CLAVE=... faro
 ```
 
 Fuera de un contenedor, los mismos comandos son `node dist/base-datos/migrar-cli.js` y `node dist/semilla/crear-administrador.js` (tras `npm run build`). `db:seed` crea usuarios de demostración con una clave conocida y **se niega a correr con `NODE_ENV=production`**.
+
+## Copia de seguridad
+
+`pg_dump` en formato personalizado con la imagen `postgres:17-alpine` fijada por huella (solo hace falta Docker; la clave va por el entorno, no como argumento) y una restauración que **solo crea una base nueva**: se niega con `faro`, `postgres`, cualquier `*_test`, la base de origen y cualquier base que ya exista. Guía completa, qué se respalda y qué no, la prueba de restauración y lo que le toca al usuario para activar la copia programada: [`docs/respaldo.md`](docs/respaldo.md).
+
+```
+export RESPALDO_DATABASE_URL='postgresql://usuario:clave@host:puerto/base'   # un secreto: nunca en el repositorio
+infra/respaldo/respaldar.sh                                                  # deja respaldos/faro-AAAAMMDD-HHMMSS.dump (en .gitignore)
+export PGHOST=host.docker.internal PGPORT=5433 PGUSER=usuario PGPASSWORD='clave'
+infra/respaldo/restaurar.sh respaldos/faro-AAAAMMDD-HHMMSS.dump faro_copia   # base nueva; muestra las filas por tabla
+```
+
+La copia programada en la nube (`.github/workflows/respaldo.yml`, a un bucket **privado**, nunca como artefacto de Actions) está inactiva hasta que existan sus variables y su secreto.
 
 ## Prototipo v1
 
