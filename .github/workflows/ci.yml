@@ -50,6 +50,10 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      # tsc --noEmit sobre src/ Y test/: el build solo compila src/ y Vitest no revisa tipos,
+      # así que un error de tipos en una prueba no lo vería nada más.
+      - name: Revisión de tipos (tsc --noEmit)
+        run: npm run typecheck
       - name: Pruebas unitarias
         run: npm test
       - name: Build
@@ -126,10 +130,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Buscar secretos en el historial completo (gitleaks v8.30.1)
+      # `--log-opts=HEAD`: se escanea todo el historial alcanzable desde esta confirmación (el del PR y el de su base),
+      # no el de las demás ramas. Sin esto gitleaks usa `--all` y, con `fetch-depth: 0`, un hallazgo en la rama sin
+      # fusionar de OTRO PR ponía en rojo a todos los demás (observado el 23 de noviembre de 2026; ADR-009 §2.4).
+      - name: Buscar secretos en el historial alcanzable (gitleaks v8.30.1)
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
-            git /repo --config /repo/.gitleaks.toml --redact --no-banner
+            git /repo --config /repo/.gitleaks.toml --redact --no-banner --log-opts="HEAD"
 
   # Que la copia de seguridad (infra/respaldo, docs/respaldo.md) siga funcionando con el esquema real: sin esto
   # una migración nueva podría romper la restauración sin que nadie lo note hasta el día del desastre. Revisa los

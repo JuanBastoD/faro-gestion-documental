@@ -97,6 +97,7 @@ La configuración sale de variables de entorno que se validan al arrancar (`apps
 | Comando (desde la raíz) | Qué hace |
 |---|---|
 | `npm run lint` | Oxlint con tipos |
+| `npm run typecheck` | `tsc --noEmit` sobre `src/` **y** `test/` de la API (el build solo compila `src/` y Vitest no revisa tipos) |
 | `npm test` | Pruebas unitarias (no necesitan base de datos) |
 | `npm run test:e2e` | Pruebas de integración contra PostgreSQL real (requieren `npm run infra:up`). Usan una base aparte, `faro_test`, que se crea sola: nunca tocan la de desarrollo |
 | `npm run build` | Compila a `apps/api/dist` |
@@ -112,7 +113,7 @@ Las migraciones están en `apps/api/drizzle/`. Se versionan en git y no se edita
 
 | Trabajo | Qué comprueba |
 |---|---|
-| `api` | `npm ci`, lint, pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
+| `api` | `npm ci`, lint, revisión de tipos (`tsc --noEmit` sobre `src/` y `test/`), pruebas unitarias, build, migraciones sobre una base vacía y pruebas de integración contra PostgreSQL |
 | `legacy` | Las 7 pruebas del prototipo v1 |
 | `infra` | Que `infra/docker-compose.yml` sea válido con las variables de ejemplo |
 | `imagen` | Que el `Dockerfile` de la API compile y la imagen no corra como administrador ni traiga pruebas, fuentes ni `.env` |
