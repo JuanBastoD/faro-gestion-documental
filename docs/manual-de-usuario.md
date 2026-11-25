@@ -2,10 +2,10 @@
 
 > **BORRADOR. No es la versión final.** Lo revisan **César** (parte académica) y **Juan** (parte técnica). [POR VERIFICAR] quién redacta la versión final: este texto es un punto de partida, no un documento aprobado.
 >
-> - **Estado:** borrador del issue #27, 23 de noviembre de 2026. Describe **solo lo que existe en el código**, leído de las ramas de los PR abiertos. Lo que no se pudo confirmar va marcado.
-> - **Etiquetas de certeza:** [CONFIRMADO] comprobado con una captura, un PR o un documento del repositorio; [POR VERIFICAR] falta comprobarlo con la pantalla real o con una persona; [SUPUESTO] razonable pero sin medir; [PROPUESTA] sugerencia de uso, no una regla del sistema.
+> - **Estado:** borrador del issue #27, 23 de noviembre de 2026; secciones 10 y 11 actualizadas el 24 de noviembre. Describe **solo lo que existe en el código**, leído de las ramas de los PR abiertos. Lo que no se pudo confirmar va marcado.
+> - **Etiquetas de certeza:** [CONFIRMADO] comprobado con una captura, un PR o un documento del repositorio; [POR VERIFICAR] falta comprobarlo con la pantalla real o con una persona; [SUPUESTO] razonable pero sin medir; [PROPUESTA] sugerencia de uso, no una regla del sistema; [PENDIENTE] falta algo por hacer (por ejemplo, una captura que aún no existe).
 > - **Datos de demostración:** todo lo que se ve en las capturas es **ficticio** (usuarios `*.demo`, documentos inventados). El sistema es un prototipo de clase: **no cargues documentos reales de la entidad** hasta que la entidad lo autorice por escrito.
-> - **Qué pantallas están listas hoy.** La interfaz está en construcción y vive en PR que aún no se fusionan en `main`: ingreso, listado y detalle (PR #54, con capturas) y carga, versión nueva, comparación de duplicado y restaurar (PR #58, *en revisión*, con capturas de datos ficticios). Faltan por construir las pantallas de administración de usuarios y de auditoría (issue #25), que **no existen aún** (hoy esas funciones se usan por la API), y las de cambio de clave (rama `feat/51-web-clave`, **no existe aún**). Cada sección dice en cuál de estos casos está.
+> - **Qué pantallas están listas hoy.** La interfaz está en construcción y vive en PR que aún no se fusionan en `main`: ingreso, listado y detalle (PR #54, con capturas); carga, versión nueva, comparación de duplicado y restaurar (PR #58, *en revisión*, con capturas de datos ficticios); y administración de usuarios y auditoría (PR #62, *en revisión*, con capturas de datos ficticios). Las pantallas de cambio y restablecimiento de clave están escritas en la rama `feat/51-web-clave`, que **todavía no tiene PR** y de la que **aún no hay capturas** [PENDIENTE]. Cada sección dice en cuál de estos casos está.
 > - Para quien instala o prueba el sistema, no para quien lo usa: [`README.md`](../README.md).
 
 ## 1. Qué es Faro
@@ -64,13 +64,17 @@ Lo que **no** es: no reemplaza al archivo de la entidad, no trae las tablas de r
 
 - «**Tu sesión terminó. Ingresa de nuevo para continuar.**»: aparece si tu sesión venció. Una sesión vence a las **8 horas sin usarla** y, aunque la uses sin parar, a los **7 días** (ADR-0003). Al ingresar, el sistema intenta llevarte a la pantalla a la que querías ir [POR VERIFICAR] en el caso de una sesión que vence a mitad de uso.
 
+  ![Pantalla de ingreso con el aviso «Tu sesión terminó. Ingresa de nuevo para continuar.» sobre los campos Usuario y Clave](manual/capturas/04-sesion-terminada.png)
+
+  *Captura 4. Aviso de sesión terminada (rama del PR #62, 1280 px). El aviso se ve entero gracias al arreglo `87ba312`, que está en esa rama y en la de `feat/51-web-clave`, pero no en `main` ni en las ramas de los PR #54 y #58: sin el arreglo, el aviso se partía por renglones y se salía de la tarjeta de ingreso (mensaje del commit). [CONFIRMADO]*
+
 Para **salir**, pulsa **Cerrar sesión**, arriba a la derecha. Hazlo siempre que uses un computador compartido.
 
 **Tu usuario lo crea el administrador** (ver la sección 10). Mientras se prueba el sistema existen tres usuarios de demostración: `admin.demo`, `editor.demo` y `consulta.demo`; su clave la define quien instala el sistema.
 
 ### Si te dieron una clave temporal
 
-Cuando un administrador restablece tu clave, la clave que te da es **temporal** y tendrás que cambiarla (ADR-0011, PR #57, en revisión). Sobre la pantalla para hacerlo, ver la sección 11: [POR VERIFICAR: pantalla en el PR de la rama `feat/51-web-clave`, aún no existe].
+Cuando un administrador restablece tu clave, la clave que te da es **temporal** y tendrás que cambiarla (ADR-0011, PR #57, en revisión). Según la pantalla escrita en la rama `feat/51-web-clave` (sin PR todavía), al ingresar con la clave temporal el sistema te lleva a «Cambiar mi clave» y **no te deja abrir nada más** hasta que elijas una propia. Los pasos están en la sección 11 [PENDIENTE: captura; el texto puede cambiar antes de fusionarse].
 
 ## 3. Los tres roles: quién puede hacer qué
 
@@ -83,10 +87,10 @@ Tu **rol** lo ves arriba a la derecha, debajo de tu nombre. El menú de la parte
 | Cargar un documento nuevo | No | Sí | Sí |
 | Subir una versión nueva | No | Sí | Sí |
 | Restaurar una versión anterior | No | Sí | Sí |
-| Cambiar tu propia clave (PR #57, en revisión; sin pantalla todavía, sección 11) | Sí | Sí | Sí |
-| Ver la auditoría | No | No | Sí |
-| Crear usuarios, cambiar roles y desactivar (hoy por la API) | No | No | Sí |
-| Restablecer la clave de otra persona (PR #57, en revisión; sin pantalla todavía, secciones 10 y 11) | No | No | Sí |
+| Cambiar tu propia clave (API en el PR #57, en revisión; pantalla en la rama `feat/51-web-clave`, sección 11) | Sí | Sí | Sí |
+| Ver la auditoría (pantalla Auditoría, PR #62, sección 10.2) | No | No | Sí |
+| Crear usuarios, cambiar roles, desactivar y reactivar (pantalla Usuarios, PR #62, sección 10.1) | No | No | Sí |
+| Restablecer la clave de otra persona (API en el PR #57, en revisión; pantalla en la rama `feat/51-web-clave`, sección 11) | No | No | Sí |
 
 **Menú que ves:**
 
@@ -98,7 +102,7 @@ Tu **rol** lo ves arriba a la derecha, debajo de tu nombre. El menú de la parte
 
 ![Listado de documentos con el menú de un usuario de consulta: solo aparece Documentos](manual/capturas/05-listado-consulta.png)
 
-*Captura 4. Rol de consulta: el menú solo tiene «Documentos». [CONFIRMADO]*
+*Captura 5. Rol de consulta: el menú solo tiene «Documentos». [CONFIRMADO]*
 
 Si abres una pantalla que tu rol no admite, verás «**No tienes permiso para ver esta pantalla**. Tu rol no incluye esta función. Si la necesitas, pídesela a quien administra el sistema.»
 
@@ -108,9 +112,9 @@ Si abres una pantalla que tu rol no admite, verás «**No tienes permiso para ve
 
 Al ingresar llegas a **Documentos**. Arriba hay dos controles: **Buscar** y **Serie**.
 
-![Listado de documentos con el cuadro de búsqueda, el filtro de serie, diez documentos y la paginación](manual/capturas/04-listado-administrador.png)
+![Listado de documentos con el cuadro de búsqueda, el filtro de serie, diez documentos y la paginación](manual/capturas/06-listado-administrador.png)
 
-*Captura 5. Listado de documentos (rol de administrador). Abajo: «Página 1 de 3». [CONFIRMADO]*
+*Captura 6. Listado de documentos (rol de administrador). Abajo: «Página 1 de 3». [CONFIRMADO]*
 
 **Buscar.** Escribe palabras del título, del expediente o del **texto del PDF** y pulsa **Buscar** (o Enter).
 
@@ -122,19 +126,19 @@ Al ingresar llegas a **Documentos**. Arriba hay dos controles: **Buscar** y **Se
 - El texto del PDF solo se busca en documentos con **capa de texto**. Si el PDF es una imagen, se encuentra por el título y el expediente, no por su contenido. El detalle de cada versión avisa cuando no la tiene (sección 5).
 - Se indexan los primeros 300 000 caracteres de cada documento (unas 100 páginas) [POR VERIFICAR] con PDF reales (ADR-0007).
 
-![Búsqueda de «interventoria»: seis documentos para «interventoria»](manual/capturas/06-busqueda-interventoria.png)
+![Búsqueda de «interventoria»: seis documentos para «interventoria»](manual/capturas/07-busqueda-interventoria.png)
 
-*Captura 6. Buscar «interventoria» da «6 documentos para «interventoria»». [CONFIRMADO]*
+*Captura 7. Buscar «interventoria» da «6 documentos para «interventoria»». [CONFIRMADO]*
 
 **Filtrar por serie.** El menú **Serie** muestra el cuadro de clasificación. Elige «Toda la serie 100» para ver todos los documentos de esa serie y sus subseries, o una subserie concreta (por ejemplo, «100.2 · Interventoría»). Puedes combinar la búsqueda con la serie.
 
-![Filtro por serie: «Toda la serie 100» con 12 documentos y dos páginas](manual/capturas/07-filtro-por-serie.png)
+![Filtro por serie: «Toda la serie 100» con 12 documentos y dos páginas](manual/capturas/08-filtro-por-serie.png)
 
-*Captura 7. Filtro «Toda la serie 100»: 12 documentos. [CONFIRMADO]*
+*Captura 8. Filtro «Toda la serie 100»: 12 documentos. [CONFIRMADO]*
 
 **Quitar los filtros.** Pulsa **Quitar filtros** para volver a ver todo.
 
-**Pasar de página.** Se muestran 10 documentos por página: usa **Anterior** y **Siguiente**. Cuando no hay búsqueda, salen primero los cargados más recientemente; según se ve en la captura 5, no se ordenan por la fecha que figura en el documento.
+**Pasar de página.** Se muestran 10 documentos por página: usa **Anterior** y **Siguiente**. Cuando no hay búsqueda, salen primero los cargados más recientemente; según se ve en la captura 6, no se ordenan por la fecha que figura en el documento.
 
 **Compartir lo que ves.** La búsqueda, la serie y la página quedan en la dirección del navegador: puedes copiarla y mandársela a otra persona, o volver atrás sin perder lo que habías buscado.
 
@@ -142,9 +146,9 @@ Al ingresar llegas a **Documentos**. Arriba hay dos controles: **Buscar** y **Se
 
 **En el celular.** La interfaz se adapta desde 360 px de ancho: el menú pasa a varias líneas y los datos de cada documento se acomodan en dos columnas.
 
-![Búsqueda en pantalla de celular de 360 píxeles de ancho](manual/capturas/10-busqueda-en-celular.png)
+![Búsqueda en pantalla de celular de 360 píxeles de ancho](manual/capturas/09-busqueda-en-celular.png)
 
-*Captura 8. La misma búsqueda en un celular (360 px). [CONFIRMADO]*
+*Captura 9. La misma búsqueda en un celular (360 px). [CONFIRMADO]*
 
 ## 5. Ver un documento y su historial de versiones
 
@@ -159,17 +163,17 @@ En el listado, pulsa el título de un documento. Verás:
   - el botón **Descargar** de esa versión;
   - si el PDF no tiene capa de texto: «Sin capa de texto: no se puede buscar por su contenido y solo se verifica por huella exacta.»
 
-![Detalle de un documento con cuatro versiones: la versión 4 vigente restaura la versión 1](manual/capturas/08-detalle-con-historial.png)
+![Detalle de un documento con cuatro versiones: la versión 4 vigente restaura la versión 1](manual/capturas/10-detalle-con-historial.png)
 
-*Captura 9. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar», que llega con el PR #58 (se ve en las capturas 27 y 31, secciones 8 y 9). [CONFIRMADO]*
+*Captura 10. Detalle de «Contrato de obra 001» con cuatro versiones; la 4 es la vigente y restaura la 1. Esta captura es del PR #54: todavía no muestra el botón «Restaurar», que llega con el PR #58 (se ve en las capturas 28 y 32, secciones 8 y 9). [CONFIRMADO]*
 
 **Leer el historial.** «La más reciente primero. El historial solo crece: nada se edita ni se borra.» Si una versión se subió por error, no se borra: se corrige con una versión nueva o restaurando otra, y el error queda en el historial.
 
 **Si el documento no existe** (una dirección mal escrita, por ejemplo), verás «El documento no existe» y un enlace para volver al listado.
 
-![Mensaje: El documento no existe, con un enlace para volver a los documentos](manual/capturas/09-documento-no-existe.png)
+![Mensaje: El documento no existe, con un enlace para volver a los documentos](manual/capturas/11-documento-no-existe.png)
 
-*Captura 10. Documento que no existe. [CONFIRMADO]*
+*Captura 11. Documento que no existe. [CONFIRMADO]*
 
 ## 6. Descargar un documento
 
@@ -180,15 +184,15 @@ Todos los roles pueden descargar. **Cada descarga queda registrada en la auditor
 
 ## 7. Cargar un documento nuevo
 
-> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`; las capturas 18 a 20, tomadas tras el arreglo de diseño `cac8cfe`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
+> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`; las capturas 19 a 21, tomadas tras el arreglo de diseño `cac8cfe`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
 
 **Quién:** editor y administrador. **Dónde:** menú **Cargar documento** (también el enlace «Cargar el primer documento» cuando el sistema no tiene ningún documento).
 
 La pantalla «**Cargar un documento**» explica que, antes de guardar, el sistema revisa si ese mismo archivo, o uno muy parecido (por ejemplo, un reescaneo), ya existe. Pide:
 
-![Formulario «Cargar un documento» vacío, con los campos Archivo PDF, Título, Expediente, Subserie, Fecha del documento y Motivo de la carga](manual/capturas/11-carga-formulario.png)
+![Formulario «Cargar un documento» vacío, con los campos Archivo PDF, Título, Expediente, Subserie, Fecha del documento y Motivo de la carga](manual/capturas/12-carga-formulario.png)
 
-*Captura 11. Formulario de carga, vacío (PR #58, 1280 px). [CONFIRMADO]*
+*Captura 12. Formulario de carga, vacío (PR #58, 1280 px). [CONFIRMADO]*
 
 | Campo | Qué escribir | Obligatorio |
 |---|---|---|
@@ -201,9 +205,9 @@ La pantalla «**Cargar un documento**» explica que, antes de guardar, el sistem
 
 Pulsa **Cargar documento**. Mientras sube, el botón dice «Subiendo el documento…», el formulario queda deshabilitado y no se puede enviar dos veces. Si todo está bien, te lleva al documento con un aviso verde.
 
-![Detalle del documento recién cargado, con el aviso «Documento «Contrato de obra de la vía Tibú-Convención» cargado: quedó como la versión 1» y el historial con la versión 1 vigente](manual/capturas/12-carga-correcta.png)
+![Detalle del documento recién cargado, con el aviso «Documento «Contrato de obra de la vía Tibú-Convención» cargado: quedó como la versión 1» y el historial con la versión 1 vigente](manual/capturas/13-carga-correcta.png)
 
-*Captura 12. Carga correcta: «Documento «…» cargado: quedó como la versión 1.» [CONFIRMADO]*
+*Captura 13. Carga correcta: «Documento «…» cargado: quedó como la versión 1.» [CONFIRMADO]*
 
 **Cancelar** vuelve al listado.
 
@@ -211,21 +215,21 @@ Pulsa **Cargar documento**. Mientras sube, el botón dice «Subiendo el document
 
 Antes de enviar, el navegador revisa lo que puede. Cada campo con problema se marca en rojo con una frase que dice qué corregir, y el cursor va al primero.
 
-![Formulario con los cinco campos obligatorios vacíos, cada uno con su mensaje en rojo](manual/capturas/13-carga-errores-de-campo.png)
+![Formulario con los cinco campos obligatorios vacíos, cada uno con su mensaje en rojo](manual/capturas/14-carga-errores-de-campo.png)
 
-*Captura 13. Se pulsó «Cargar documento» con todo vacío: «Elige el archivo PDF que quieres subir.», «Escribe el título del documento.», «Escribe el número o código del expediente.», «Elige la subserie donde se clasifica el documento.» e «Indica la fecha que figura en el documento.» [CONFIRMADO]*
+*Captura 14. Se pulsó «Cargar documento» con todo vacío: «Elige el archivo PDF que quieres subir.», «Escribe el título del documento.», «Escribe el número o código del expediente.», «Elige la subserie donde se clasifica el documento.» e «Indica la fecha que figura en el documento.» [CONFIRMADO]*
 
 - **PDF de más de 20 MB.** La pantalla avisa **antes de subir** y no gasta tiempo en enviarlo: «Pasa de 20 MB: este archivo pesa 21,0 MB. Reduce su tamaño o divídelo.» [CONFIRMADO]
 
-  ![Campo Archivo PDF con el mensaje «Pasa de 20 MB: este archivo pesa 21,0 MB. Reduce su tamaño o divídelo.»](manual/capturas/14-carga-archivo-muy-grande.png)
+  ![Campo Archivo PDF con el mensaje «Pasa de 20 MB: este archivo pesa 21,0 MB. Reduce su tamaño o divídelo.»](manual/capturas/15-carga-archivo-muy-grande.png)
 
-  *Captura 14. Archivo demasiado grande.*
+  *Captura 15. Archivo demasiado grande.*
 
 - **Un archivo que se llama `.pdf` pero no es un PDF.** El navegador no lo puede notar; lo rechaza el servidor y la pantalla lo explica: «El archivo no es un PDF válido. Solo se aceptan archivos PDF: revisa que no sea otro tipo de archivo con la extensión cambiada, o vuelve a guardarlo como PDF.» [CONFIRMADO]
 
-  ![Formulario con el archivo texto-con-extension-pdf.pdf, el campo marcado «No es un PDF válido.» y un aviso rojo con la explicación](manual/capturas/15-carga-archivo-no-pdf.png)
+  ![Formulario con el archivo texto-con-extension-pdf.pdf, el campo marcado «No es un PDF válido.» y un aviso rojo con la explicación](manual/capturas/16-carga-archivo-no-pdf.png)
 
-  *Captura 15. El servidor rechaza un archivo que no es un PDF.*
+  *Captura 16. El servidor rechaza un archivo que no es un PDF.*
 
 Otros mensajes que puedes encontrar **no tienen captura** en este borrador: salen del código de la interfaz de esa rama (`apps/web/src/api/errores.ts` y `apps/web/src/utilidades/validacion.ts`) [POR VERIFICAR: verlos en pantalla antes de la versión final].
 
@@ -248,15 +252,15 @@ La **verificación es doble** (ADR-0006): primero compara la huella del archivo 
 
 **a) El archivo es idéntico a uno que ya existe.** El sistema **no lo carga** y muestra, debajo del formulario, «**Este archivo ya está en el sistema**»: dice a qué versión de qué documento (título, expediente y subserie) es idéntico, ofrece un enlace para **abrir el documento que ya existe** y recuerda que, si lo que tienes es una corrección, la subas como **versión nueva** de ese documento (sección 8). Lo que escribiste en el formulario se conserva.
 
-![Formulario completo con un recuadro rojo: «Este archivo ya está en el sistema. Es idéntico, byte por byte, a la versión 1 del documento…» y el enlace «Abrir el documento…»](manual/capturas/16-duplicado-exacto.png)
+![Formulario completo con un recuadro rojo: «Este archivo ya está en el sistema. Es idéntico, byte por byte, a la versión 1 del documento…» y el enlace «Abrir el documento…»](manual/capturas/17-duplicado-exacto.png)
 
-*Captura 16. Archivo idéntico (aviso de duplicado exacto). [CONFIRMADO]*
+*Captura 17. Archivo idéntico (aviso de duplicado exacto). [CONFIRMADO]*
 
 **b) El archivo se parece mucho a uno que existe (por ejemplo, un reescaneo).** Aparece la pantalla «**Este archivo se parece a un documento que ya existe**», con los dos lados:
 
-![Pantalla de comparación: a la izquierda «Ya existe en el sistema» con 95 % de parecido; a la derecha «Lo que intentas cargar»; debajo, las tres opciones y los botones «Confirmar mi decisión» y «Volver y corregir los datos»](manual/capturas/17-duplicado-probable.png)
+![Pantalla de comparación: a la izquierda «Ya existe en el sistema» con 95 % de parecido; a la derecha «Lo que intentas cargar»; debajo, las tres opciones y los botones «Confirmar mi decisión» y «Volver y corregir los datos»](manual/capturas/18-duplicado-probable.png)
 
-*Captura 17. Comparación de un duplicado probable. Los dos documentos son ficticios. [CONFIRMADO]*
+*Captura 18. Comparación de un duplicado probable. Los dos documentos son ficticios. [CONFIRMADO]*
 
 - **Ya existe en el sistema:** título, el **porcentaje de parecido en el texto** («95 % de parecido en el texto (el aviso salta desde 80 %)»; el umbral de 80 % es provisional, ADR-0006), expediente, subserie, fecha del documento, versión parecida (por ejemplo «1 (la vigente)» o «1 (la vigente es la 2)»), quién la cargó y cuándo, y los enlaces «Ver el documento (se abre en otra pestaña)» y «Descargar la versión n (PDF)».
 - **Lo que intentas cargar** (borde punteado: «Archivo nuevo, todavía sin guardar»): nombre y tamaño del archivo y los datos que escribiste, con el enlace «Abrir el PDF nuevo (se abre en otra pestaña)». En el celular, los dos lados se apilan.
@@ -265,17 +269,17 @@ La **verificación es doble** (ADR-0006): primero compara la huella del archivo 
 
 **Si hay varios documentos parecidos**, el texto de arriba dice cuántos son («…muy parecido al de 2 documentos ya guardados») y, antes de los dos lados, aparece el grupo «**Elige con cuál quieres comparar**». Cada candidato es una **tarjeta propia, una por línea**, con un botón de opción, el título completo entre comillas, el expediente y el porcentaje de parecido (por ejemplo «…· expediente EXP-2026-031 · 95 % de parecido»). Un título largo ocupa dos o más renglones, pero se lee entero. Viene elegido el primero de la lista; al elegir otro cambia el lado «Ya existe en el sistema» (sus datos, su porcentaje y sus enlaces) y la opción «Es una versión nueva de «…»» pasa a nombrar ese documento. El lado «Lo que intentas cargar» no cambia.
 
-![Pantalla de comparación con la lista «Elige con cuál quieres comparar»: dos tarjetas con botón de opción, la primera elegida (95 % de parecido) y la segunda con un título largo que ocupa dos renglones (89 %)](manual/capturas/18-varios-candidatos-dos.png)
+![Pantalla de comparación con la lista «Elige con cuál quieres comparar»: dos tarjetas con botón de opción, la primera elegida (95 % de parecido) y la segunda con un título largo que ocupa dos renglones (89 %)](manual/capturas/19-varios-candidatos-dos.png)
 
-*Captura 18. Dos documentos parecidos: la lista de candidatos, cada uno en su tarjeta. [CONFIRMADO]*
+*Captura 19. Dos documentos parecidos: la lista de candidatos, cada uno en su tarjeta. [CONFIRMADO]*
 
-![Lista con tres candidatos (94 %, 89 % y 88 % de parecido), el primero elegido, sobre las dos tarjetas de comparación](manual/capturas/19-varios-candidatos-tres.png)
+![Lista con tres candidatos (94 %, 89 % y 88 % de parecido), el primero elegido, sobre las dos tarjetas de comparación](manual/capturas/20-varios-candidatos-tres.png)
 
-*Captura 19. Tres documentos parecidos. [CONFIRMADO]*
+*Captura 20. Tres documentos parecidos. [CONFIRMADO]*
 
-![Lista con tres candidatos en una pantalla de 360 píxeles, con el segundo elegido y su comparación debajo](manual/capturas/20-varios-candidatos-en-celular.png)
+![Lista con tres candidatos en una pantalla de 360 píxeles, con el segundo elegido y su comparación debajo](manual/capturas/21-varios-candidatos-en-celular.png)
 
-*Captura 20. Tres candidatos en el celular (360 px), con el segundo elegido: la tarjeta «Ya existe en el sistema» muestra ese documento. [CONFIRMADO]*
+*Captura 21. Tres candidatos en el celular (360 px), con el segundo elegido: la tarjeta «Ya existe en el sistema» muestra ese documento. [CONFIRMADO]*
 
 Estas tres capturas se tomaron **después de un arreglo de diseño** del PR #58 (commit `cac8cfe`): antes las tarjetas de la lista se veían encimadas unas sobre otras.
 
@@ -289,23 +293,23 @@ El sistema **solo avisa: decides tú**. Hay tres opciones, y cada una explica en
 
 Si pulsas el botón sin elegir, la pantalla dice «Elige qué quieres hacer con este archivo.» Si eliges la segunda o la tercera y dejas vacío el texto, dice «Escribe el motivo: explica qué cambió respecto a la versión que ya existe.» o «Escribe la justificación: explica por qué no es un duplicado.» **Volver y corregir los datos** te devuelve al formulario sin perder lo escrito ni el archivo elegido.
 
-![Aviso verde «No se cargó nada: el archivo ya estaba en el sistema como «Contrato de obra de la vía Tibú-Convención»» sobre el detalle del documento existente](manual/capturas/21-decision-mismo-documento-resultado.png)
+![Aviso verde «No se cargó nada: el archivo ya estaba en el sistema como «Contrato de obra de la vía Tibú-Convención»» sobre el detalle del documento existente](manual/capturas/22-decision-mismo-documento-resultado.png)
 
-*Captura 21. Resultado de «Es el mismo documento»: no se guardó nada. [CONFIRMADO]*
+*Captura 22. Resultado de «Es el mismo documento»: no se guardó nada. [CONFIRMADO]*
 
-![Opción «Es una versión nueva de…» elegida, con el campo «Motivo de la versión nueva (obligatorio)» vacío y su mensaje en rojo](manual/capturas/22-decision-version-nueva-motivo.png)
+![Opción «Es una versión nueva de…» elegida, con el campo «Motivo de la versión nueva (obligatorio)» vacío y su mensaje en rojo](manual/capturas/23-decision-version-nueva-motivo.png)
 
-*Captura 22. «Es una versión nueva»: el motivo es obligatorio. [CONFIRMADO]*
+*Captura 23. «Es una versión nueva»: el motivo es obligatorio. [CONFIRMADO]*
 
-![Detalle del documento con el aviso «Se agregó el archivo como la versión 2 del documento…» y dos versiones en el historial](manual/capturas/23-decision-version-nueva-resultado.png)
+![Detalle del documento con el aviso «Se agregó el archivo como la versión 2 del documento…» y dos versiones en el historial](manual/capturas/24-decision-version-nueva-resultado.png)
 
-*Captura 23. Resultado de «Es una versión nueva»: el archivo quedó como la versión 2. [CONFIRMADO]*
+*Captura 24. Resultado de «Es una versión nueva»: el archivo quedó como la versión 2. [CONFIRMADO]*
 
-![Opción «Es otro documento: cargarlo de todos modos» elegida, con el campo «Justificación (obligatorio)» vacío y su mensaje en rojo](manual/capturas/24-decision-otro-documento-justificacion.png)
+![Opción «Es otro documento: cargarlo de todos modos» elegida, con el campo «Justificación (obligatorio)» vacío y su mensaje en rojo](manual/capturas/25-decision-otro-documento-justificacion.png)
 
-*Captura 24. «Es otro documento»: la justificación es obligatoria. [CONFIRMADO]*
+*Captura 25. «Es otro documento»: la justificación es obligatoria. [CONFIRMADO]*
 
-El resultado de «Es otro documento» es un documento nuevo, con el mismo aspecto que la captura 12 y con el título y el expediente que escribiste. No tiene captura propia en este borrador.
+El resultado de «Es otro documento» es un documento nuevo, con el mismo aspecto que la captura 13 y con el título y el expediente que escribiste. No tiene captura propia en este borrador.
 
 **Cómo decidir** [PROPUESTA, no es una regla del sistema]:
 
@@ -318,9 +322,9 @@ El resultado de «Es otro documento» es un documento nuevo, con el mismo aspect
 
 **En el celular.** El formulario se adapta desde 360 px de ancho: los campos ocupan todo el ancho de la pantalla y se leen uno debajo del otro.
 
-![Formulario de carga en una pantalla de 360 píxeles de ancho](manual/capturas/25-carga-en-celular.png)
+![Formulario de carga en una pantalla de 360 píxeles de ancho](manual/capturas/26-carga-en-celular.png)
 
-*Captura 25. Formulario de carga en celular (360 px). [CONFIRMADO]*
+*Captura 26. Formulario de carga en celular (360 px). [CONFIRMADO]*
 
 ## 8. Subir una versión nueva
 
@@ -328,32 +332,32 @@ El resultado de «Es otro documento» es un documento nuevo, con el mismo aspect
 
 La pantalla muestra el enlace «← título del documento» para volver y recuerda el documento, su expediente y su versión vigente, y avisa: «No se borra nada: la versión actual queda en el historial y la que subas pasa a ser la vigente.» Pide:
 
-![Pantalla «Subir una versión nueva» con los campos Archivo PDF y Motivo del cambio](manual/capturas/26-version-nueva-formulario.png)
+![Pantalla «Subir una versión nueva» con los campos Archivo PDF y Motivo del cambio](manual/capturas/27-version-nueva-formulario.png)
 
-*Captura 26. Formulario de versión nueva. [CONFIRMADO]*
+*Captura 27. Formulario de versión nueva. [CONFIRMADO]*
 
 - **Archivo PDF** (obligatorio, hasta 20 MB; las mismas reglas que en la carga).
 - **Motivo del cambio** (obligatorio, hasta 300 caracteres, con contador): explica qué cambió, por ejemplo «Se corrigió el valor de la cláusula 4». Queda en el historial y es lo que le explica el cambio a un auditor.
 
-Si dejas algo vacío, la pantalla dice «Elige el archivo PDF que quieres subir.» o «Escribe el motivo: explica qué cambió en esta versión.» (misma forma que la captura 13).
+Si dejas algo vacío, la pantalla dice «Elige el archivo PDF que quieres subir.» o «Escribe el motivo: explica qué cambió en esta versión.» (misma forma que la captura 14).
 
 Pulsa **Subir versión nueva** (mientras sube dice «Subiendo la versión…»). Te lleva al detalle con el aviso «Se agregó la versión n de «…». Las versiones anteriores siguen en el historial.» y la versión nueva arriba, como vigente.
 
-![Detalle del documento con el aviso «Se agregó la versión 3 de «…». Las versiones anteriores siguen en el historial.» y tres versiones en el historial](manual/capturas/27-version-nueva-resultado.png)
+![Detalle del documento con el aviso «Se agregó la versión 3 de «…». Las versiones anteriores siguen en el historial.» y tres versiones en el historial](manual/capturas/28-version-nueva-resultado.png)
 
-*Captura 27. Resultado de subir una versión nueva: la versión 3 es la vigente. [CONFIRMADO]*
+*Captura 28. Resultado de subir una versión nueva: la versión 3 es la vigente. [CONFIRMADO]*
 
 **Si el archivo ya está en una versión de ese documento**, el sistema lo rechaza y no crea nada: «Este archivo tiene el mismo contenido que la versión n del documento, así que no se creó ninguna versión nueva. Si hiciste cambios, guarda el archivo corregido y súbelo de nuevo.» (ADR-0005).
 
-![Formulario de versión nueva con un aviso rojo: «Este archivo tiene el mismo contenido que la versión 3 del documento, así que no se creó ninguna versión nueva…»](manual/capturas/28-version-nueva-contenido-repetido.png)
+![Formulario de versión nueva con un aviso rojo: «Este archivo tiene el mismo contenido que la versión 3 del documento, así que no se creó ninguna versión nueva…»](manual/capturas/29-version-nueva-contenido-repetido.png)
 
-*Captura 28. Se intentó subir el mismo contenido que la versión vigente. [CONFIRMADO]*
+*Captura 29. Se intentó subir el mismo contenido que la versión vigente. [CONFIRMADO]*
 
 Si dos personas suben una versión del mismo documento a la vez, cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
-![Pantalla «Subir una versión nueva» en 360 píxeles de ancho](manual/capturas/29-version-nueva-en-celular.png)
+![Pantalla «Subir una versión nueva» en 360 píxeles de ancho](manual/capturas/30-version-nueva-en-celular.png)
 
-*Captura 29. Versión nueva en celular (360 px). [CONFIRMADO]*
+*Captura 30. Versión nueva en celular (360 px). [CONFIRMADO]*
 
 ## 9. Restaurar una versión anterior
 
@@ -361,15 +365,15 @@ Si dos personas suben una versión del mismo documento a la vez, cada una recibe
 
 Restaurar **no borra ni edita nada**. Al pulsar **Restaurar** se abre, bajo esa versión, un panel «**¿Restaurar la versión n?**» que lo explica: «Se creará una **versión nueva** (la siguiente) con el mismo contenido que la versión n, y pasará a ser la vigente. **No se borra nada**: las versiones que ya existen, incluida la vigente, siguen en el historial.» Puedes escribir un **motivo** (opcional, hasta 300 caracteres; si lo dejas vacío se guarda como «Restaura la versión n»). Confirma con **Sí, restaurar la versión n** (mientras trabaja dice «Restaurando…») o con **Cancelar**.
 
-![Historial con el panel «¿Restaurar la versión 1?» abierto bajo la versión 1, con el campo de motivo opcional y los botones «Sí, restaurar la versión 1» y «Cancelar»](manual/capturas/30-restaurar-confirmacion.png)
+![Historial con el panel «¿Restaurar la versión 1?» abierto bajo la versión 1, con el campo de motivo opcional y los botones «Sí, restaurar la versión 1» y «Cancelar»](manual/capturas/31-restaurar-confirmacion.png)
 
-*Captura 30. Confirmación para restaurar la versión 1. [CONFIRMADO]*
+*Captura 31. Confirmación para restaurar la versión 1. [CONFIRMADO]*
 
 Verás el aviso «Se creó la versión N con el contenido de la versión n. Las versiones anteriores siguen en el historial.» y la versión nueva aparece como vigente, con la etiqueta «Restaura la versión n».
 
-![Detalle con el aviso «Se creó la versión 4 con el contenido de la versión 1» y la versión 4 con las etiquetas «Vigente» y «Restaura la versión 1»](manual/capturas/31-restaurar-resultado.png)
+![Detalle con el aviso «Se creó la versión 4 con el contenido de la versión 1» y la versión 4 con las etiquetas «Vigente» y «Restaura la versión 1»](manual/capturas/32-restaurar-resultado.png)
 
-*Captura 31. Resultado de restaurar: la versión 4 repite el contenido de la versión 1 y el historial conserva las anteriores. [CONFIRMADO]*
+*Captura 32. Resultado de restaurar: la versión 4 repite el contenido de la versión 1 y el historial conserva las anteriores. [CONFIRMADO]*
 
 Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y lo explica: «La versión vigente (n) ya tiene el mismo contenido que la versión que quieres restaurar, así que no se creó ninguna versión nueva.» (ADR-0005). Este mensaje no tiene captura en este borrador; sale del código de la interfaz [POR VERIFICAR: verlo en pantalla]. Se puede restaurar una restauración: el historial solo crece.
 
@@ -377,33 +381,122 @@ Si la versión vigente ya tiene ese mismo contenido, el sistema no crea nada y l
 
 El rol de consulta **no ve** los botones «Subir una versión nueva» ni «Restaurar», ni el enlace «Cargar documento» del menú. Si abre a mano la dirección de una pantalla de carga, ve el aviso de falta de permiso. La API también rechaza la acción con un 403, aunque alguien llegue por otro camino.
 
-![Detalle de un documento visto con el usuario de consulta: solo el botón «Descargar la versión vigente (PDF)» y, en cada versión, «Descargar»](manual/capturas/32-consulta-detalle-sin-acciones.png)
+![Detalle de un documento visto con el usuario de consulta: solo el botón «Descargar la versión vigente (PDF)» y, en cada versión, «Descargar»](manual/capturas/33-consulta-detalle-sin-acciones.png)
 
-*Captura 32. El detalle visto como consulta: sin «Subir una versión nueva» ni «Restaurar». [CONFIRMADO]*
+*Captura 33. El detalle visto como consulta: sin «Subir una versión nueva» ni «Restaurar». [CONFIRMADO]*
 
-![Pantalla «No tienes permiso para ver esta pantalla», con el texto «Tu rol no incluye esta función» y el enlace «Volver a los documentos»](manual/capturas/33-consulta-sin-permiso.png)
+![Pantalla «No tienes permiso para ver esta pantalla», con el texto «Tu rol no incluye esta función» y el enlace «Volver a los documentos»](manual/capturas/34-consulta-sin-permiso.png)
 
-*Captura 33. Un usuario de consulta abre la pantalla de carga: «No tienes permiso para ver esta pantalla». [CONFIRMADO]*
+*Captura 34. Un usuario de consulta abre la pantalla de carga: «No tienes permiso para ver esta pantalla». [CONFIRMADO]*
 
 ## 10. Administración de usuarios y auditoría (administrador)
 
-> **[POR VERIFICAR: sin captura]** Las pantallas **Usuarios** y **Auditoría** (issue #25) **no existen todavía**: hoy el menú del administrador muestra esas opciones, pero la pantalla es un aviso provisional que dice que se construye en el issue #25. Lo que sigue describe lo que el sistema **sí hace por la API** (README, ADR-0008 y ADR-0011); cuando exista la pantalla habrá que reescribir esta sección con sus textos.
+> **Estado:** pantallas del PR #62 (issue #25), *en revisión, todavía no fusionado en `main`*, apilado sobre el PR #58. Las capturas de esta sección son de esa rama (punta `f999713` al escribir esto; las tomó el carril W el 23 de noviembre), con datos ficticios [CONFIRMADO]. Solo las ve el rol **administrador**: aparecen en el menú como **Usuarios** y **Auditoría** (direcciones `/app/usuarios` y `/app/auditoria`). Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
 
 ### 10.1 Usuarios
 
-El administrador puede:
+La pantalla **Usuarios** dice «Quién puede ingresar y con qué rol. Los usuarios no se borran: desactivar a alguien cierra sus sesiones y conserva el registro de lo que hizo.» Muestra el resumen («6 usuarios · 4 activos») y una tarjeta por persona con su nombre, su usuario, su **rol**, su **estado** («Activo» o «Inactivo: no puede ingresar») y cuándo se creó. Tu propia tarjeta lleva la etiqueta **Tú**; las de personas desactivadas, la etiqueta **Inactivo** y un borde punteado. Cada tarjeta tiene los botones **Cambiar rol** y **Desactivar** (o **Reactivar**, si la persona está inactiva). Debajo de la lista, «**Actualizar la lista** por si otro administrador hizo cambios».
 
-- **Ver la lista de usuarios**, activos e inactivos.
-- **Crear un usuario** con nombre de usuario, nombre, rol y clave inicial. El nombre de usuario va **en minúsculas** (3 a 64 caracteres: letras, números, punto, guion y guion bajo); «Ana» y «ana» no pueden ser dos cuentas. La clave tiene de **12 a 256 caracteres**. Entrégale la clave a la persona por un medio seguro, en persona o por llamada; no por un grupo de mensajes.
-- **Cambiar el rol** de un usuario (administrador, editor o consulta). Rige desde la siguiente petición de esa persona, aunque tenga la sesión abierta.
-- **Desactivar** o reactivar a un usuario. **Nunca se borra a nadie**, para no perder quién hizo qué. Al desactivar, sus sesiones se cierran al instante y no puede ingresar.
-- **Restablecer la clave de otra persona** (clave temporal). Ver la sección 11.
+![Pantalla Usuarios con el botón «Crear usuario» y seis tarjetas: tres activas y tres inactivas, una de ellas con la etiqueta «Tú»](manual/capturas/35-usuarios-lista.png)
 
-**Reglas que el sistema impone:** el **último administrador activo no puede desactivarse ni dejar de ser administrador** («ultimo_administrador»); no se puede cambiar el nombre ni el nombre de usuario después de crear la cuenta; un administrador **no restablece su propia clave** (para eso existe el cambio de clave propio; PR #57, en revisión).
+*Captura 35. Lista de usuarios (rol de administrador; PR #62, 1280 px). [CONFIRMADO]*
+
+**Crear un usuario.** Pulsa **Crear usuario**: debajo se abre el formulario «Crear un usuario», que dice «La persona ingresará con el nombre de usuario y la clave inicial que escribas aquí». Tiene cuatro datos:
+
+- **Nombre completo** (obligatorio, hasta 120 caracteres; hay un contador): cómo se mostrará en el sistema.
+- **Nombre de usuario** (obligatorio): con él ingresa la persona. De 3 a 64 caracteres: minúsculas sin tilde, números, punto, guion y guion bajo. **No se puede cambiar después.**
+- **Rol**: Administrador, Editor o Consulta, cada uno con lo que puede hacer (la misma descripción de la matriz de roles). Viene marcado **Consulta**, el de menos permisos [PROPUESTA] (ADR-0012, sección 7).
+- **Clave inicial** (obligatoria): de 12 a 256 caracteres. La **escribe el administrador** [PROPUESTA] (ADR-0012, sección 7): «Escríbela tú y entrégasela a la persona por otro medio, no en el mismo mensaje donde le das su usuario. El sistema no vuelve a mostrarla.» La casilla **Mostrar la clave mientras la escribo** deja verla para no equivocarse.
+
+Los botones son **Crear usuario** y **Cancelar**.
+
+![Formulario «Crear un usuario» vacío, con el rol Consulta marcado y la lista de usuarios debajo](manual/capturas/36-usuarios-crear-formulario.png)
+
+*Captura 36. El formulario de alta, vacío. [CONFIRMADO]*
+
+Si algo falta o está mal, cada campo lo dice en rojo y el cursor va al primero con error:
+
+![Formulario «Crear un usuario» con tres errores en rojo: «Escribe el nombre completo de la persona.», «Escribe el nombre de usuario con el que ingresará la persona.» y «Escribe la clave inicial.»](manual/capturas/37-usuarios-crear-errores.png)
+
+*Captura 37. Se pulsó **Crear usuario** con todo vacío. [CONFIRMADO]*
+
+Otros mensajes del formulario salen del código de la rama y no tienen captura en este manual [POR VERIFICAR: verlos en pantalla]: «Escríbelo todo en minúsculas, por ejemplo «…»: el sistema no cambia las mayúsculas por ti.» (el sistema **no** convierte las mayúsculas por la persona); «Mínimo 12 caracteres: esta tiene 11.»; «La clave no puede ser solo espacios.»; y, si el nombre de usuario ya existe, «Ya existe un usuario llamado «…». Elige otro nombre de usuario.»
+
+Al crearlo, la pantalla avisa en verde y la persona aparece en la lista:
+
+![Aviso verde «Se creó el usuario «anaa47851.demo» (Ana Demo a47851) con el rol Editor. Entrégale su clave inicial por otro medio: el sistema no vuelve a mostrarla.» sobre la lista de usuarios](manual/capturas/38-usuarios-creado.png)
+
+*Captura 38. Usuario creado. La clave inicial no se vuelve a mostrar. [CONFIRMADO]*
+
+Entrégale la clave a la persona **en persona o por una llamada**, no por un grupo de mensajes [PROPUESTA].
+
+**Cambiar el rol.** Pulsa **Cambiar rol** en la tarjeta: se abre el panel «Cambiar el rol de …», con la advertencia «El cambio rige **al instante**, aunque la persona tenga la sesión abierta, y queda en la auditoría.» Elige el rol nuevo (el actual lleva la nota «(rol actual)») y pulsa **Sí, cambiar el rol**; o **Cancelar**. Al terminar: «Se cambió el rol de …: ahora es Consulta. Rige desde ya.»
+
+![Panel «Cambiar el rol de Ana Demo a47851» con los tres roles; Editor es el rol actual y Consulta está elegido; en rojo: «Ana Demo a47851 ya tiene el rol Editor. Elige uno distinto o cancela.»](manual/capturas/39-usuarios-cambiar-rol.png)
+
+*Captura 39. Panel para cambiar el rol. El aviso en rojo apareció al confirmar sin cambiar nada y sigue a la vista aunque después se eligió otro rol: el código lo quita solo al confirmar de nuevo. [CONFIRMADO en la captura; POR VERIFICAR si se corrige antes de fusionar el PR]*
+
+Si cambias **tu propio rol**, el panel añade «**Es tu propia cuenta.** Si dejas de ser administrador, perderás el acceso a esta pantalla en cuanto confirmes.» Y así pasa: la interfaz vuelve a leer tu rol y te muestra «No tienes permiso para ver esta pantalla» (el menú ya no tiene Usuarios ni Auditoría).
+
+![Pantalla «No tienes permiso para ver esta pantalla» vista por «Administración Demo» con rol Editor: el menú solo tiene Documentos y Cargar documento](manual/capturas/40-sin-permiso-tras-cambiar-propio-rol.png)
+
+*Captura 40. Un administrador se cambió a Editor: pierde la pantalla de usuarios. [CONFIRMADO]*
+
+**Desactivar y reactivar.** Pulsa **Desactivar**: el panel «¿Desactivar a …?» explica que la persona «**no podrá ingresar** y sus sesiones abiertas se cierran **al instante**. No se borra nada: lo que cargó y su historial siguen a su nombre, y puedes reactivarla cuando quieras. Queda en la auditoría.» El botón rojo **Sí, desactivar** lo confirma. Al terminar: «Se desactivó a …. Sus sesiones se cerraron y ya no puede ingresar.»
+
+![Panel «¿Desactivar a Ana Demo a47851?» con los botones «Sí, desactivar» (rojo) y «Cancelar»](manual/capturas/41-usuarios-desactivar.png)
+
+*Captura 41. Confirmación para desactivar a otra persona. [CONFIRMADO]*
+
+Si desactivas **tu propia cuenta**, el panel añade «**Es tu propia cuenta.** Tu sesión se cerrará ahora mismo y no podrás volver a ingresar hasta que otro administrador te reactive.» Al confirmar, la interfaz te lleva a la pantalla de ingreso (ADR-0012, sección 7.1) [POR VERIFICAR: sin captura en este manual; el texto sale del código y se comprobó en una captura de trabajo].
+
+Para devolverle el acceso a alguien, pulsa **Reactivar** en su tarjeta; no pide confirmación y avisa «Se reactivó a …. Ya puede ingresar de nuevo.» [POR VERIFICAR: sin captura en este manual]. Las sesiones que se cerraron al desactivarla no vuelven: la persona tiene que ingresar de nuevo.
+
+**El último administrador.** El sistema **no deja desactivar ni cambiar el rol del último administrador activo** (ADR-0008, «ultimo_administrador»). La pantalla lo explica en el mismo panel y lo deja abierto:
+
+![Panel «¿Desactivar a Administración Demo?» con el aviso en rojo «No se puede desactivar ni cambiar el rol del último administrador activo: el sistema se quedaría sin quien lo administre. Antes crea o reactiva a otro administrador y vuelve a intentarlo.»](manual/capturas/42-usuarios-ultimo-administrador.png)
+
+*Captura 42. Intento de desactivar al único administrador activo. [CONFIRMADO]*
+
+**Otras reglas:** no se puede cambiar el nombre ni el nombre de usuario después de crear la cuenta; nadie se borra; y cualquier cambio queda en la auditoría (sección 10.2). Si otro administrador hizo cambios mientras tenías la pantalla abierta, pulsa **Actualizar la lista**. Una persona con rol de editor o de consulta que abra `/app/usuarios` ve «No tienes permiso para ver esta pantalla» (captura 34) y la API también responde 403.
+
+Otros mensajes de error (sin conexión, sesión vencida, demasiadas peticiones) salen del código de la rama (`apps/web/src/api/errores-administracion.ts`); los de cambios dicen, por ejemplo, «No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo. Antes de repetirlo, actualiza la lista: puede que el cambio sí se haya hecho.» [POR VERIFICAR: verlos en pantalla].
 
 ### 10.2 Auditoría
 
-La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede editar ni borrar**, ni por la API ni con comandos SQL normales (un disparador de la base lo impide; README y `docs/modelo-de-datos.md`). Solo el administrador la consulta, con filtros por **usuario, acción, documento y rango de fechas**, y paginada. Registra, entre otras cosas:
+La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede editar ni borrar**, ni por la API ni con comandos SQL normales (un disparador de la base lo impide; README y `docs/modelo-de-datos.md`). La pantalla **Auditoría** es **solo de consulta**: «Lo que ha pasado en el sistema: ingresos, cargas, descargas, versiones y cambios de usuarios, del más reciente al más antiguo. Solo se consulta: ningún evento se puede editar ni borrar. Las horas son las de Colombia.»
+
+Cada evento sale en una tarjeta con:
+
+- **El nombre de la acción** («Ingreso», «Rol de usuario cambiado», «Acceso denegado»…) y, a la derecha, el **día y la hora de Colombia** (por ejemplo, 23/11/2026, 3:09:24 p. m.).
+- **Quién**: el usuario que la hizo, o «Sin identificar» (un ingreso fallido de alguien que no existe no tiene usuario).
+- **Documento**: un enlace «Documento 12» que lleva al detalle, o «—» si el evento no es de un documento.
+- **Detalle**: un texto breve (por ejemplo, «usuario 11 (anaa47851.demo); rol administrador → consulta» o «GET /auditoria; requiere administrador; tiene consulta»), o «—».
+
+Salen **20 eventos por página**; abajo están **Anterior**, «Página 1 de 9» y **Siguiente**. Arriba de la lista, «167 eventos» y el enlace **Actualizar**.
+
+![Pantalla Auditoría con los filtros arriba, 167 eventos, tarjetas de eventos y la paginación «Página 1 de 9»](manual/capturas/43-auditoria-lista.png)
+
+*Captura 43. Lista de auditoría sin filtros (rol de administrador; PR #62, 1280 px). Los eventos son de pruebas con usuarios ficticios. [CONFIRMADO]*
+
+**Filtros.** Se combinan, y se aplican al pulsar **Filtrar**:
+
+| Filtro | Qué hace |
+|---|---|
+| **Usuario** | Quién hizo la acción; el menú muestra «Nombre (usuario)» y marca a los inactivos. «Los ingresos fallidos no tienen usuario y no se pueden filtrar así.» |
+| **Acción** | Una de las 14 acciones que ofrece hoy la pantalla (ver abajo), o «Todas las acciones». |
+| **Número de documento** | El número que sale en la dirección del documento. Solo cifras: «Escribe solo el número del documento, por ejemplo 12.» |
+| **Desde** y **Hasta** | Un día completo en la hora de Colombia: «Desde» es el primer instante de ese día y «Hasta», el último [PROPUESTA] (ADR-0012, sección 7). Si «desde» es posterior a «hasta»: «La fecha «desde» no puede ser posterior a «hasta».» |
+
+Con algún filtro puesto, el total dice «3 eventos con estos filtros» y aparece **Quitar filtros**. Si nada coincide: «Ningún evento coincide con los filtros. Prueba con otro rango de fechas o quita los filtros.» Los filtros y la página quedan en la dirección del navegador, así que puedes copiarla y compartirla.
+
+![Auditoría filtrada por la acción «Usuario creado»: «3 eventos con estos filtros» y los botones «Filtrar» y «Quitar filtros»](manual/capturas/44-auditoria-filtro-accion.png)
+
+*Captura 44. Filtro por acción «Usuario creado»: tres eventos. [CONFIRMADO]*
+
+El filtro de **Acción** ofrece: Ingreso, Ingreso fallido, Ingreso bloqueado, Cierre de sesión, Acceso denegado, Carga de documento, Descarga de documento, Versión nueva, Restauración de versión, Decisión ante un duplicado, Usuario creado, Rol de usuario cambiado, Usuario desactivado y Usuario reactivado (las 14 del catálogo de esta rama). **Todavía no ofrece** «Cuadro de clasificación importado» (PR #55), «Clave cambiada» y «Clave restablecida» (PR #57): se agregarán cuando esos PR se fusionen [PENDIENTE] (ADR-0012, sección 7). Mientras tanto esos eventos se ven en la lista general con su nombre.
+
+Solo el administrador la consulta. Registra, entre otras cosas:
 
 | Qué se registra | Cuándo |
 |---|---|
@@ -418,9 +511,48 @@ La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede e
 | Clave cambiada y clave restablecida | Al cambiar o restablecer una clave (nunca se guarda la clave ni su huella) *(en revisión, PR #57)* |
 | Cuadro de clasificación importado | Al importar el cuadro desde un CSV *(en revisión, PR #55)* |
 
-## 11. Cambiar la clave
+## 11. Cambiar la clave y restablecer la de otra persona
 
-> **[POR VERIFICAR: pantalla en el PR de la rama `feat/51-web-clave`, aún no existe]**
+> **Estado:** las pantallas están escritas en la rama `feat/51-web-clave` (punta `21069b9` el 24 de noviembre), apilada sobre el PR #62 y dependiente del PR #57, que trae la API (ADR-0011). **Todavía no tiene PR y no hay capturas de estas pantallas** [PENDIENTE]. Lo que sigue se leyó del código de esa rama, no de la pantalla: los textos pueden cambiar antes de fusionarse [POR VERIFICAR: comprobarlo con capturas reales cuando se cierre el trabajo].
+
+### 11.1 Cambiar tu propia clave
+
+Cualquier rol puede hacerlo. Se entra por el enlace **Mi clave** del menú (dirección `/app/clave`) o, si eres administrador, por el botón **Cambiar mi clave** de tu tarjeta en Usuarios. La pantalla «Cambiar mi clave» dice «Elige una clave nueva. Para hacerlo tienes que escribir primero la que usas hoy. Al cambiarla, las demás sesiones abiertas con tu usuario (en otros equipos o navegadores) se cierran; esta sigue abierta.»
+
+Tiene tres campos y una casilla:
+
+- **Clave actual**: «La que usas hoy para ingresar.»
+- **Clave nueva**: «De 12 a 256 caracteres y distinta de la actual.»
+- **Repite la clave nueva**.
+- La casilla **Mostrar las claves mientras las escribo**.
+
+El botón es **Cambiar mi clave**. Si sale bien: «Tu clave cambió. Las demás sesiones abiertas con tu usuario se cerraron; esta sigue abierta.», con el botón **Volver**.
+
+[PENDIENTE: captura de «Cambiar mi clave» (formulario, error y resultado)]
+
+Mensajes que puedes ver: «Escribe tu clave actual.», «Escribe la clave nueva.», «Mínimo 12 caracteres: esta tiene 11.», «La clave nueva debe ser distinta de la actual.», «Vuelve a escribir la clave nueva para confirmarla.» y «No coincide con la clave nueva. Vuelve a escribirla.» Si la clave actual está mal: «La clave actual no es correcta. Revísala e inténtalo de nuevo.» (es un error del campo, no una sesión vencida). Tras varios intentos fallidos con la clave actual el sistema se protege como en el ingreso: «Demasiados intentos con la clave actual. Intenta de nuevo en …; mientras tanto tampoco podrás ingresar.» (comparte el límite con el ingreso, según el código de la rama).
+
+### 11.2 Si tu clave es temporal
+
+Si un administrador te restableció la clave, al ingresar con la clave temporal el sistema te lleva a «Cambiar mi clave» y **no te deja abrir nada más**: el menú desaparece hasta que elijas una clave propia. La pantalla avisa: «**Tu clave es temporal.** Un administrador la restableció. Antes de seguir tienes que elegir una clave propia: mientras no lo hagas, el sistema no te deja abrir nada más.» En «Clave actual» escribes la clave temporal («La clave temporal que te entregó el administrador.»). Al terminar, el botón dice **Continuar**.
+
+[PENDIENTE: captura de la pantalla con el aviso «Tu clave es temporal»]
+
+Si la API rechaza una acción porque tu clave sigue siendo temporal (403 «cambio_de_clave_requerido»), la interfaz lo explica con «Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.»
+
+### 11.3 Restablecer la clave de otra persona (administrador)
+
+En **Usuarios**, cada tarjeta de **otra persona** tiene el botón **Restablecer clave**. En tu propia tarjeta, en su lugar, está **Cambiar mi clave**: la clave propia no se restablece (si la API lo rechaza con un 409, la interfaz explica «La clave de tu propia cuenta no se restablece desde aquí: usa «Cambiar mi clave» para elegir una nueva.»).
+
+El panel «Restablecer la clave de …» avisa que la persona «**no podrá ingresar con su clave actual**» y que sus sesiones abiertas se cierran **al instante**; que con la clave temporal el sistema le pedirá elegir una propia antes de dejarle hacer otra cosa; y que queda en la auditoría. Pide la **Clave temporal** (de 12 a 256 caracteres): la escribes tú o pulsas **Generar una clave** [PROPUESTA: el navegador la genera al azar y la deja a la vista para anotarla]. La casilla **Mostrar la clave mientras la escribo** deja verla. Los botones son **Sí, restablecer la clave** (rojo) y **Cancelar**.
+
+[PENDIENTE: captura del panel «Restablecer la clave de …»]
+
+Al confirmar, la pantalla muestra **una sola vez** la clave temporal («Clave temporal de …»): en un campo de solo lectura, con el botón **Copiar la clave** («Clave copiada. Pégala solo donde vayas a entregarla.»; si el navegador no deja copiar: «No se pudo copiar. Selecciona la clave del campo y cópiala a mano.»). El aviso lo dice con todas las letras: «**Esta es la única vez que se muestra.** El sistema no la guarda y no puede volver a mostrarla: si la pierdes, restablece la clave otra vez. Entrégasela a … por otro medio, no en el mismo mensaje donde le dices su usuario.» El botón **Ya la copié, cerrar** la oculta.
+
+[PENDIENTE: captura de «Clave temporal de …»]
+
+Entrégala **en persona o por una llamada** [PROPUESTA]. La clave temporal solo vive en la pantalla: no va a la dirección del navegador ni a su almacenamiento (según el comentario del código de la rama).
 
 ## 12. Preguntas frecuentes
 
@@ -432,13 +564,17 @@ La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede e
 
 **¿Quién ve los documentos que subo?** Todas las personas con sesión, de cualquier rol. No hay permisos por documento.
 
-**¿Mis acciones quedan registradas?** Sí: ingreso, cargas, versiones, restauraciones, descargas, decisiones ante duplicados y accesos denegados. Solo el administrador ve la auditoría.
+**¿Mis acciones quedan registradas?** Sí: ingreso, cargas, versiones, restauraciones, descargas, decisiones ante duplicados, accesos denegados y los cambios de usuarios. Solo el administrador ve la auditoría (sección 10.2).
 
-**¿Por qué mi sesión se cerró?** Vence a las 8 horas sin usarla, o a los 7 días aunque la uses; también se cierra si un administrador te desactiva (o, con el PR #57, restablece tu clave).
+**¿Por qué mi sesión se cerró?** Vence a las 8 horas sin usarla, o a los 7 días aunque la uses; también se cierra si un administrador te desactiva (o, con el PR #57, restablece tu clave) y, según la pantalla de la rama `feat/51-web-clave`, las demás sesiones se cierran cuando cambias tu clave (sección 11).
+
+**¿Cómo le doy acceso a una persona nueva?** Un administrador la crea en **Usuarios** (sección 10.1), elige su rol y le entrega la clave inicial por otro medio.
+
+**Olvidé mi clave. ¿Qué hago?** La pantalla de ingreso no tiene un enlace de «Olvidé mi clave» (captura 1). Pídele a un administrador que te restablezca la clave: te entrega una clave temporal y el sistema te pide elegir una propia (sección 11) [PENDIENTE: la pantalla aún no está fusionada].
 
 **¿Qué pasa si dos personas suben una versión del mismo documento a la vez?** Cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
-**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (capturas 8, 25 y 29). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
+**¿Se puede usar en el celular?** Sí, desde 360 px de ancho (capturas 9, 26 y 30). [POR VERIFICAR] con personas usuarias reales y con navegadores distintos de Chromium (ADR-0012).
 
 **¿Qué es la «huella SHA-256» del historial?** Un código que identifica el contenido exacto del archivo. Si dos versiones tienen la misma huella, son el mismo archivo.
 
@@ -458,24 +594,28 @@ La auditoría es el **registro de lo que ocurre en el sistema**. **No se puede e
 | «El servidor tuvo un problema. Intenta de nuevo en unos minutos.» | Falla del servidor | Reintenta; si persiste, avisa al administrador |
 | Un botón de **Reintentar** en el listado o el detalle | Falló la carga de datos | Pulsa **Reintentar** |
 | «Ningún documento coincide con lo que buscaste…» | La búsqueda o el filtro no tiene resultados | Prueba con otras palabras o pulsa **Quitar filtros** |
-| Un error 403 de «cambio de clave requerido» (el texto exacto que muestra la pantalla es [POR VERIFICAR]) | Entraste con una clave temporal (PR #57, en revisión) | Ver la sección 11 [POR VERIFICAR: pantalla de cambio de clave pendiente] |
+| «Ya existe un usuario llamado «…». Elige otro nombre de usuario.» | Al crear un usuario, ese nombre de usuario ya está tomado | Elige otro (sección 10.1) [POR VERIFICAR: sin captura en este manual] |
+| «No se puede desactivar ni cambiar el rol del último administrador activo…» | Siempre tiene que haber un administrador activo | Crea o reactiva a otro administrador y repite (captura 42) |
+| «Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.» | Entraste con una clave temporal (PR #57, en revisión) | Elige una clave propia en «Cambiar mi clave» (sección 11) [POR VERIFICAR: texto del código de la rama `feat/51-web-clave`; PENDIENTE: captura] |
+| «La clave actual no es correcta. Revísala e inténtalo de nuevo.» | Al cambiar tu clave, la «Clave actual» está mal escrita | Escríbela de nuevo; tras varios fallos hay que esperar (sección 11.1) [POR VERIFICAR: texto del código; PENDIENTE: captura] |
 
-Los mensajes de la carga, la versión nueva y la restauración están en las secciones 7, 8 y 9. Los que no tienen captura salen del código de la interfaz y están marcados [POR VERIFICAR].
+Los mensajes de la carga, la versión nueva y la restauración están en las secciones 7, 8 y 9; los de usuarios y auditoría, en la 10; los de clave, en la 11. Los que no tienen captura salen del código de la interfaz y están marcados [POR VERIFICAR].
 
 ## 14. Pendientes de este borrador
 
 Lo que falta antes de convertirlo en la versión final:
 
-1. **Capturas que faltan:** usuarios y auditoría (issue #25, si se construye), cambio de clave (rama `feat/51-web-clave`), el mensaje de restaurar una versión que ya es la vigente (sección 9) y el resultado de «Es otro documento». Las de carga, duplicado (incluida la lista de varios candidatos, capturas 18 a 20, tomadas tras el arreglo `cac8cfe`), versión nueva y restaurar ya existen (capturas 11 a 33, datos ficticios). Todas se rehacen si el PR #58 cambia la interfaz en la revisión.
-2. **Confirmar los textos** sin captura de las secciones 7 a 9 y todo lo de la sección 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de la rama del PR #58 (commits `a6d6eb1` y `cac8cfe`); el PR sigue en revisión y puede cambiar.
-3. **La sección 11 (cambiar la clave)** queda vacía hasta que exista la pantalla en el PR de la rama `feat/51-web-clave`; entonces se escribe con sus textos y capturas.
+1. **Capturas que faltan** [PENDIENTE]: las tres pantallas de clave de la rama `feat/51-web-clave` (cambiar mi clave, clave temporal y restablecer la clave de otra persona; sección 11), el mensaje de restaurar una versión que ya es la vigente (sección 9), el resultado de «Es otro documento» y, en usuarios (sección 10.1), desactivar la propia cuenta, reactivar, el nombre de usuario repetido y el error de fechas de la auditoría (existen capturas de trabajo del carril W, no incluidas aquí por peso). Las de carga, duplicado (incluida la lista de varios candidatos, capturas 19 a 21, tomadas tras el arreglo `cac8cfe`), versión nueva y restaurar existen (capturas 12 a 34); las de usuarios y auditoría, también (capturas 4 y 35 a 44). Todas se rehacen si los PR #58 o #62 cambian la interfaz en la revisión.
+2. **Confirmar los textos** sin captura de las secciones 7 a 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de las ramas de los PR #58 (commits `a6d6eb1` y `cac8cfe`) y #62 (punta `f999713`); los dos PR siguen en revisión y pueden cambiar.
+3. **La sección 11 (clave)** es una descripción leída del código de la rama `feat/51-web-clave` (punta `21069b9`, sin PR todavía) y no tiene capturas: reescribirla con la pantalla real y capturas cuando esa rama se cierre, porque sus textos pueden cambiar.
 4. **Quién redacta la versión final** [POR VERIFICAR]: César (parte académica) o Juan (parte técnica). Los dos revisan.
 5. **Revisión con personas que usen el sistema** (ingeniería, jurídica, contabilidad, gerencia): este texto no se ha probado con nadie [SUPUESTO] que sea claro.
-6. **Capturas descartadas:** la del aviso «Tu sesión terminó» se ve con el cuadro del aviso cortado y superpuesto sobre la tarjeta de ingreso; se dejó fuera hasta que se corrija o se confirme que es un defecto de la captura.
+6. **Hallazgos de interfaz que conviene decidir antes de fusionar el PR #62** [POR VERIFICAR]: (a) en el panel de cambiar el rol, el aviso «ya tiene el rol …» se queda a la vista aunque se elija otro rol (captura 39); (b) el detalle de un «Acceso denegado» es texto técnico («GET /auditoria; requiere administrador; tiene consulta»); [SUPUESTO] es aceptable para quien administra, pero conviene decidirlo.
+7. **Capturas descartadas:** la del formulario de alta «lleno» del carril W (c25-04) se dejó fuera porque era incoherente (mostraba el aviso de las minúsculas con el nombre de usuario ya en minúsculas y otro de la clave que no correspondía a lo escrito; [SUPUESTO] son errores que quedaron de un intento anterior). Las demás capturas de trabajo del PR #62 no incluidas (por peso o por repetir otra) son: nombre de usuario repetido, usuario desactivado, desactivarse a sí mismo, sin permiso de un usuario de consulta (equivale a la captura 34), filtros por usuario y fechas, error de fechas, segunda página, ingresos fallidos, y las versiones a 360 px.
 
 ## 15. Fuentes
 
-- Capturas: `docs/manual/capturas/` (datos ficticios; 1 a 10 de la interfaz del PR #54 y 11 a 33 de la del PR #58, a 1280 px y a 360 px).
-- Código de la interfaz leído en las ramas `feat/23-web-listado` (PR #54) y `feat/24-web-carga` (PR #58).
+- Capturas: `docs/manual/capturas/` (datos ficticios; 44 en total: 1 a 3 y 5 a 11 de la interfaz del PR #54, 12 a 34 de la del PR #58, y 4 y 35 a 44 de la del PR #62; casi todas a 1280 px y algunas a 360 px). Cada archivo empieza por el número de su captura.
+- Código de la interfaz leído en las ramas `feat/23-web-listado` (PR #54), `feat/24-web-carga` (PR #58), `feat/25-web-admin` (PR #62) y `feat/51-web-clave` (sin PR; solo la sección 11).
 - [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) y, en revisión, ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54; la sección 6 de ese ADR, del PR #58, explica las decisiones de la carga).
 - [`README.md`](../README.md) y [`CHANGELOG.md`](../CHANGELOG.md).

@@ -2,7 +2,7 @@
 
 Todos los cambios notables de este proyecto se documentan en este archivo. El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/) y el versionado, [SemVer](https://semver.org/lang/es/).
 
-> **BORRADOR para el issue #27.** Este archivo describe la versión `v2.0.0`, que **todavía no se publica**: no existe el tag ni el release (los publica el usuario, ver [`docs/notas-de-version-v2.0.0.md`](docs/notas-de-version-v2.0.0.md)) y los `package.json` siguen en `0.0.0`. Redactado a partir de `git log --first-parent origin/main` (en `main` hasta el PR #49, commit `4a4a1d1`), de `docs/PLAN_EJECUCION.md` (sección 9), de los ADR 0001 a 0013 y de los PR abiertos al 23 de noviembre de 2026.
+> **BORRADOR para el issue #27.** Este archivo describe la versión `v2.0.0`, que **todavía no se publica**: no existe el tag ni el release (los publica el usuario, ver [`docs/notas-de-version-v2.0.0.md`](docs/notas-de-version-v2.0.0.md)) y los `package.json` siguen en `0.0.0`. Redactado a partir de `git log --first-parent origin/main` (en `main` hasta el PR #49, commit `4a4a1d1`), de `docs/PLAN_EJECUCION.md` (sección 9), de los ADR 0001 a 0013 y de los PR abiertos al 24 de noviembre de 2026 (#53 a #64).
 
 Cómo leerlo:
 
@@ -51,6 +51,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 
 - **Interfaz web** (React 19, Vite y TypeScript, CSS propio) servida por la propia API bajo `/app/`: ingreso y cierre de sesión, listado con búsqueda, filtro por serie y paginación (el estado queda en la dirección), detalle con historial de versiones y descarga, menú según el rol y uso desde 360 px de ancho. ADR-0012. Issue #23 *(en revisión, PR #54)*.
 - **Interfaz de carga:** formulario de carga de un documento, formulario de versión nueva, restaurar una versión anterior y pantalla que compara el documento que ya existe con el archivo que se intenta cargar cuando se avisa de un duplicado probable. Issue #24 *(en revisión, PR #58, listo para revisar, con un arreglo de diseño posterior (commit `cac8cfe`: las opciones de la lista de candidatos se montaban unas sobre otras); apilado sobre el PR #54, no puede fusionarse antes que él; ADR-0012, sección 6)*.
+- **Interfaz de administración de usuarios y de auditoría** (solo administrador): lista de usuarios; crear un usuario con una clave inicial que escribe el administrador [PROPUESTA] y el rol Consulta marcado por omisión [PROPUESTA]; cambiar el rol, desactivar y reactivar, cada cambio con un panel que explica qué pasará (avisa si es la propia cuenta y explica el rechazo del último administrador activo); y una pantalla de auditoría de solo lectura con filtros por usuario, acción, documento y fechas (cada fecha es un día entero de la hora de Colombia [PROPUESTA]) y 20 eventos por página. El filtro de acciones ofrece las 14 del catálogo de esa rama; faltan `ccd_importado`, `clave_cambiada` y `clave_restablecida` hasta que se fusionen #19 y #51 [PENDIENTE]. Incluye el arreglo del aviso «Tu sesión terminó», que se partía dentro de la tarjeta de ingreso (commit `87ba312`). Issue #25 *(en revisión, PR #62, listo para revisar; apilado sobre el PR #58, no puede fusionarse antes que él; ADR-0012, sección 7)*.
 - Este registro de cambios, las notas de la versión y el borrador del manual de usuario. Issue #27 *(en revisión, PR #61, `Refs`; el tag y el release los publica el usuario)*.
 
 ### Cambiado
@@ -83,6 +84,8 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 - Límite de intentos de ingreso que no delata qué usuarios existen y no cuesta una verificación argon2 una vez bloqueado; guarda de origen en toda petición que modifica datos; `helmet`; gitleaks sobre el historial en cada PR. ADR-0009, PR #49.
 - La interfaz no guarda tokens en `localStorage` y es compatible con la política de contenido de `helmet` (una prueba comprueba que `index.html` no tiene código ni estilos en línea ni orígenes externos). ADR-0012 *(en revisión, PR #54)*.
 - Cambio de clave que exige la clave actual y cierra las demás sesiones; la clave temporal limita al usuario a ver quién es, cerrar sesión y cambiarla; los fallos cuentan en el mismo límite de intentos; nunca se guardan claves ni hashes en la auditoría. ADR-0011 *(en revisión, PR #57)*.
+- El registro del servidor ya no lleva los valores de una consulta que falla (en `usuarios` eran hashes de clave): se escribe la clase del error, la primera línea del mensaje, los códigos y la pila, sin parámetros. La respuesta al cliente no cambia (500 genérico). Hallazgo H-02 de la revisión de seguridad del trabajo nocturno, gravedad baja, sin issue *(en revisión, PR #63, listo para revisar)*.
+- Las respuestas de la API llevan `Cache-Control: no-store` (JSON, PDF y errores), salvo la interfaz web bajo `/app`, para que un computador compartido no conserve listados, documentos ni PDF en la caché del navegador. Hallazgo H-07 de esa misma revisión, gravedad baja, sin issue *(en revisión, PR #64, listo para revisar)*.
 - Copias de seguridad que **nunca** viajan como artefacto de GitHub Actions (en un repositorio público cualquiera podría descargarlos): van a un bucket privado, con una cuenta que solo puede crear objetos. ADR-0013 *(en revisión, PR #53)*.
 
 ### Documentación
@@ -92,7 +95,7 @@ Reconstrucción completa del prototipo: de un primer incremento con Express y SQ
 - Reajuste de las fechas de V2-M1 y V2-M2 y registro de las decisiones del 22 de noviembre. Sin issue, PR #32.
 - `docs/PLAN_EJECUCION.md`: orden, protocolo de ejecución sin supervisión y estado de lo hecho. Sin issue, PR #35.
 - ADR-0003 a ADR-0009 en los PR de cada función (ver arriba), `docs/modelo-de-datos.md` (#16), `docs/matriz-de-roles.md` y `docs/arquitectura.md` (#22), `docs/despliegue.md` (#20).
-- Pendientes de fusionar *(en revisión)*: ADR-0010 (PR #55), ADR-0011 (PR #57), ADR-0012 (PR #54) y ADR-0013 junto con `docs/respaldo.md` (PR #53).
+- Pendientes de fusionar *(en revisión)*: ADR-0010 (PR #55), ADR-0011 (PR #57), ADR-0012 (PR #54; su sección 6 llega con el PR #58 y su sección 7, con el PR #62) y ADR-0013 junto con `docs/respaldo.md` (PR #53).
 
 ### Lo que NO incluye v2.0.0
 
@@ -102,8 +105,8 @@ Todo esto queda **fuera**, a propósito o por falta de tiempo. No se debe presen
 - **Datos reales:** el sistema solo se probó con datos ficticios. Usar PDF reales requiere autorización escrita de la entidad (plan, sección 6, punto 6). Por eso el **umbral de similitud 0,80 es provisional** [POR VERIFICAR contra PDF reales] y la calibración de MinHash es [CONFIRMADO en simulación, SUPUESTO sobre PDF reales] (ADR-0006).
 - **Permisos por documento, por serie o por área:** todo usuario con sesión ve todos los documentos (`docs/matriz-de-roles.md`, sección 4). Si algún documento debe ser reservado, falta un modelo de permisos.
 - **Recuperación de clave sin administrador:** no hay «olvidé mi clave» por correo ni preguntas secretas (ADR-0011, alternativas descartadas). El **único administrador que olvida su clave no tiene salida por la API** (ADR-0011, sección 4, [POR VERIFICAR] un comando de emergencia con acceso a la base).
-- **Pantalla de cambio de clave** en la interfaz: el cambio existe solo por la API (ADR-0011) y la interfaz de #23 y #24 no la trae [POR VERIFICAR].
-- **Pantallas de administración de usuarios y de auditoría** en la interfaz (issue #25, prioridad *could*): hoy esas rutas muestran un marcador; se usan por API [POR VERIFICAR el estado de #25 al publicar].
+- **Pantallas de cambio y de restablecimiento de clave** en la interfaz: están escritas en la rama `feat/51-web-clave` (apilada sobre el PR #62 y dependiente del #57), que **todavía no tiene PR**. Mientras no se fusionen, el cambio y el restablecimiento existen solo por la API (ADR-0011), y la interfaz de #23, #24 y #25 no los trae [POR VERIFICAR si entran antes de publicar].
+- **Pantallas de administración de usuarios y de auditoría** (issue #25, prioridad *could*): existen en el PR #62 *(en revisión)*. Si ese PR no se fusiona antes de publicar, esas rutas muestran un marcador y las funciones se usan por la API [POR VERIFICAR el estado de #25 al publicar].
 - **Prueba e2e con Playwright** que corra en el CI (issue #26, prioridad *could*): [POR VERIFICAR] si se hace. La interfaz se comprobó a mano con Chromium (ADR-0012), no con una prueba automática en el CI.
 - **Despliegue real en la nube** (Cloud Run, Neon, Cloud Storage): el guion y los flujos existen, pero las cuentas, la alerta de presupuesto y la federación son del usuario (issue #20, abierto). [POR VERIFICAR] cuotas gratuitas el día de desplegar y que la API funcione con la versión de PostgreSQL de Neon (ADR-0013).
 - **Respaldo de los PDF** (solo se respalda la base) y limpieza programada de archivos huérfanos (ADR-0013).
@@ -120,7 +123,7 @@ Todo esto queda **fuera**, a propósito o por falta de tiempo. No se debe presen
 **[CONFIRMADO]** (con la fuente que lo respalda):
 
 - `main` está en `4a4a1d1` y el CI de las últimas ejecuciones sobre `main` terminó en verde (`gh run list --branch main`, 23 de noviembre de 2026).
-- Los PR #53, #54, #55, #56, #57 y #60 tenían los cinco o seis trabajos del CI en verde (`gh pr view`, 23 de noviembre de 2026). Los PR #58 y #59 ya están listos para revisar y tienen en verde `api`, `legacy`, `infra` e `imagen`; su trabajo `secretos` salió en rojo porque ese trabajo escanea el historial de todas las ramas y arrastra dos falsos positivos de otra rama (56 commits revisados, 2 hallazgos), defecto que corrige el PR #60. Hasta que se fusione el #60 y se vuelvan a ejecutar, no se da por bueno su `secretos` [POR VERIFICAR].
+- Los PR #53, #54, #55, #56, #57 y #60 tenían los cinco o seis trabajos del CI en verde (`gh pr view`, 23 de noviembre de 2026). Los PR #58, #59, #61, #62, #63 y #64 ya están listos para revisar y tienen en verde `api`, `legacy`, `infra` e `imagen`; su trabajo `secretos` salió en rojo porque ese trabajo escanea el historial de todas las ramas y arrastra dos falsos positivos de otra rama (de 56 a 73 commits revisados según la ejecución, 2 hallazgos), defecto que corrige el PR #60 (`gh pr checks`, 24 de noviembre de 2026). Hasta que se fusione el #60 y se vuelvan a ejecutar, no se da por bueno su `secretos` [POR VERIFICAR].
 - Las 7 pruebas de aceptación de v1 pasan contra la API nueva (PR #44) y la matriz de roles y el modelo de datos se comprueban contra la API y la base en cada ejecución del CI (PR #45 y PR #48).
 - La interfaz del PR #54 se comprobó con Chromium 159 (Playwright 1.65.1, fuera del repositorio) a 1280 y 360 px: 60 de 60 comprobaciones, sin errores en la consola ni violaciones de la política de contenido; axe-core (WCAG 2.1 A y AA) no halló violaciones (ADR-0012, sección 2.5).
 - El restablecimiento de clave tiene 68 casos de integración (ADR-0011, sección 5).
