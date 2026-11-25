@@ -1,0 +1,16 @@
+codigo,nombre,codigo_padre
+100,Gestión contractual,
+100.1,Contratos de obra,100
+100.2,Interventoría,100
+100.3,Contratos de suministro,100
+200,Gestión jurídica,
+200.1,Conceptos jurídicos,200
+200.2,Procesos y tutelas,200
+300,Gestión financiera,
+300.1,Certificados de disponibilidad,300
+300.2,Cuentas por pagar,300
+400,Gestión administrativa,
+400.1,Actas de comité,400
+400.2,Correspondencia,400
+500,Gestión ambiental y social,
+500.1,Licencias y permisos,500

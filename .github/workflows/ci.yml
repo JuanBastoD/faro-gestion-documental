@@ -50,6 +50,10 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint
+      # tsc --noEmit sobre src/ Y test/: el build solo compila src/ y Vitest no revisa tipos,
+      # así que un error de tipos en una prueba no lo vería nada más.
+      - name: Revisión de tipos (tsc --noEmit)
+        run: npm run typecheck
       - name: Pruebas unitarias
         run: npm test
       - name: Build
@@ -60,6 +64,16 @@ jobs:
         run: npm run db:seed -w apps/api
         env:
           SEMILLA_CLAVE: clave-ci-sin-valor-real
+      - name: Importación del cuadro desde CSV (comando compilado, CSV ficticio sobre la base sembrada)
+        # Comprueba que el comando de la imagen corre en Linux, que la simulación no escribe y que repetir no cambia nada.
+        run: |
+          CCD="node apps/api/dist/ccd/importar/importar-cli.js docs/ejemplos/cuadro-ejemplo.csv"
+          $CCD | tee "$RUNNER_TEMP/ccd1.txt"
+          grep -F "SIMULACIÓN" "$RUNNER_TEMP/ccd1.txt"
+          $CCD --aplicar | tee "$RUNNER_TEMP/ccd2.txt"
+          grep -F "Importación aplicada" "$RUNNER_TEMP/ccd2.txt"
+          $CCD --aplicar | tee "$RUNNER_TEMP/ccd3.txt"
+          grep -F "no hay nada que cambiar" "$RUNNER_TEMP/ccd3.txt"
       - name: Almacén S3 (RustFS) para las pruebas del adaptador
         # Las claves son las de ejemplo de .env.example: un almacén efímero del propio trabajo.
         run: |
@@ -111,7 +125,7 @@ jobs:
           usuario="$(docker run --rm --entrypoint id faro-api:ci -u)"
           echo "uid del proceso: $usuario"
           test "$usuario" != "0"
-          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -d /app/apps/api/drizzle'
+          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -f /app/apps/api/dist/ccd/importar/importar-cli.js && test -d /app/apps/api/drizzle'
 
   # Busca secretos (claves, tokens, contraseñas) en TODO el historial del repositorio, no solo en el último
   # commit: el repositorio es público y un secreto subido por error ya está expuesto aunque se borre después.
@@ -126,12 +140,94 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Buscar secretos en el historial completo (gitleaks v8.30.1)
+      # `--log-opts=HEAD`: se escanea todo el historial alcanzable desde esta confirmación (el del PR y el de su base),
+      # no el de las demás ramas. Sin esto gitleaks usa `--all` y, con `fetch-depth: 0`, un hallazgo en la rama sin
+      # fusionar de OTRO PR ponía en rojo a todos los demás (observado el 23 de noviembre de 2026; ADR-009 §2.4).
+      - name: Buscar secretos en el historial alcanzable (gitleaks v8.30.1)
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
-            git /repo --config /repo/.gitleaks.toml --redact --no-banner
+            git /repo --config /repo/.gitleaks.toml --redact --no-banner --log-opts="HEAD"
 
-  # Prueba de punta a punta en un Chromium real (issue #26, ADR-012 §8): ingreso, carga, duplicado probable, nueva versión
+  # Que la copia de seguridad (infra/respaldo, docs/respaldo.md) siga funcionando con el esquema real: sin esto
+  # una migración nueva podría romper la restauración sin que nadie lo note hasta el día del desastre. Revisa los
+  # scripts, respalda la base migrada y sembrada del propio trabajo, la restaura en una base nueva, compara los
+  # conteos por tabla y comprueba que el script se niega a restaurar sobre una base protegida o ya existente.
+  # Todo es efímero y ficticio: no toca la nube.
+  respaldo:
+    name: respaldo
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: faro
+          POSTGRES_PASSWORD: faro-ci-no-es-secreto
+          POSTGRES_DB: faro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U faro -d faro"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@localhost:5432/faro
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Revisar los scripts (bash -n y shellcheck v0.11.0)
+        run: |
+          for script in infra/respaldo/*.sh; do bash -n "$script"; done
+          docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d \
+            -x -P SCRIPTDIR infra/respaldo/comun.sh infra/respaldo/respaldar.sh infra/respaldo/restaurar.sh \
+            infra/respaldo/contar.sh infra/respaldo/probar-conexion.sh
+      - name: Probar el analizador de la cadena de conexión (la clave no viaja como argumento; imagen fijada por huella)
+        run: infra/respaldo/probar-conexion.sh
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Migrar y sembrar la base del trabajo
+        run: |
+          npm run db:migrate -w apps/api
+          npm run db:seed -w apps/api
+        env:
+          SEMILLA_CLAVE: clave-ci-sin-valor-real
+      - name: Respaldar y restaurar en una base nueva, y comparar
+        env:
+          RESPALDO_DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@host.docker.internal:5432/faro
+          PGUSER: faro
+          PGPASSWORD: faro-ci-no-es-secreto
+          PGPORT: "5432"
+          RESTAURAR_COMPARAR_CON: faro
+        run: |
+          export RESPALDO_DIR="$RUNNER_TEMP/respaldo"
+          infra/respaldo/respaldar.sh
+          infra/respaldo/restaurar.sh "$RESPALDO_DIR"/faro-*.dump faro_restaurada
+      - name: El script se niega a restaurar sobre bases protegidas o que ya existen
+        env:
+          PGUSER: faro
+          PGPASSWORD: faro-ci-no-es-secreto
+          PGPORT: "5432"
+        run: |
+          for destino in faro postgres faro_test faro_restaurada; do
+            if salida="$(infra/respaldo/restaurar.sh "$RUNNER_TEMP"/respaldo/faro-*.dump "$destino" 2>&1)"; then
+              echo "::error::restaurar.sh debía negarse a restaurar sobre ${destino} y terminó bien"
+              exit 1
+            fi
+            # Debe ser una negativa expresa, no un fallo cualquiera (por ejemplo, de conexión).
+            case "$salida" in
+              *"ME NIEGO"*) echo "Se negó, como debía, con ${destino}: ${salida}" ;;
+              *)
+                echo "::error::restaurar.sh falló con ${destino}, pero no con una negativa expresa"
+                echo "$salida"
+                exit 1
+                ;;
+            esac
+          done
+
+  # Prueba de punta a punta en un Chromium real (issue #26, ADR-012 §9): ingreso, carga, duplicado probable, nueva versión
   # y auditoría contra la API compilada (que sirve la interfaz en /app/) y PostgreSQL real, con los usuarios de
   # demostración sembrados y PDF ficticios generados en la propia prueba. NO es un trabajo obligatorio: no está entre los
   # que exige la protección de `main`, así que un fallo suyo se ve en el PR pero no lo bloquea; el usuario decide si lo

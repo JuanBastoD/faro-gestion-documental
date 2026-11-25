@@ -23,6 +23,11 @@ export interface ValorDeSesion {
    * ya no hay sesión, pasa al ingreso con el aviso. Sin red conserva lo que había.
    */
   refrescar: () => Promise<void>;
+  /**
+   * Anota que la clave ya no es temporal (`debeCambiarClave` pasa a `false`) sin volver a preguntar a la API: se llama justo
+   * después de que `POST /auth/clave` responde 204, que es cuando la API deja de exigir el cambio.
+   */
+  claveCambiada: () => void;
 }
 
 export const ContextoSesion = createContext<ValorDeSesion | null>(null);

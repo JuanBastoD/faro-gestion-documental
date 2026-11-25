@@ -70,10 +70,10 @@ flowchart TB
 
 | Componente | Responsabilidad | Pieza principal |
 |---|---|---|
-| Guardas globales | Otro origen en una petición que modifica → 403 (`OrigenGuard`, módulo `seguridad`); sin sesión → 401; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
-| `auth` | Ingreso, cierre de sesión, sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id`, y el límite de intentos de ingreso por usuario e IP (ADR-009) | `auth.service.ts`, `sesiones.repository.ts` |
-| `usuarios` | Crear, listar, cambiar rol y desactivar; protege al último administrador (ADR-008) | `usuarios.service.ts` |
-| `ccd` | Cuadro de clasificación provisional: árbol de series y subseries | `series.service.ts` |
+| Guardas globales | Otro origen en una petición que modifica → 403 (`OrigenGuard`, módulo `seguridad`); sin sesión → 401; **con clave temporal sin cambiar → 403 `cambio_de_clave_requerido` en todo salvo las rutas marcadas `@PermitidoConClaveTemporal()` (la decide `AuthGuard`, antes que el rol, [ADR-011](adr/0011-cambio-y-restablecimiento-de-clave.md))**; rol insuficiente → 403 y evento de auditoría. La regla por endpoint está en [`docs/matriz-de-roles.md`](matriz-de-roles.md), verificada por una prueba | `auth/auth.guard.ts`, `auth/roles.guard.ts` |
+| `auth` | Ingreso, cierre de sesión, **cambio de la clave propia** (ADR-011), sesiones en PostgreSQL con cookie `HttpOnly` (ADR-003), `argon2id`, y el límite de intentos de ingreso por usuario e IP (ADR-009), que el cambio de clave comparte | `auth.service.ts`, `sesiones.repository.ts` |
+| `usuarios` | Crear, listar, cambiar rol y desactivar; protege al último administrador (ADR-008); fija claves temporales a otras personas (ADR-011) | `usuarios.service.ts` |
+| `ccd` | Cuadro de clasificación provisional: árbol de series y subseries. Se carga fuera de la API con `npm run ccd:importar` (CSV) | `series.service.ts`, `importar/` |
 | `documentos` | Cargar, versionar, restaurar, descargar, verificar duplicados (ADR-006) y buscar (ADR-007) | `documentos.service.ts`, `versiones.service.ts`, `duplicados.service.ts` |
 | `auditoria` | Eventos inmutables (disparador en la base) y su consulta, solo para el administrador | `auditoria.service.ts` |
 | `similitud` | Normalización de texto, extracción de texto de PDF y firmas MinHash. Sin dependencias de Nest ni de la base | `similitud/*.ts` |
@@ -81,7 +81,7 @@ flowchart TB
 | `seguridad` | Guarda global de origen contra CSRF y `configurarSeguridad` (helmet y proxies de confianza), que usan `main.ts` y las pruebas (ADR-009) | `origen.guard.ts`, `configurar.ts` |
 | `config`, `base-datos` | Variables de entorno validadas al arrancar; conexión, esquema y migraciones | `entorno.ts`, `esquema.ts` |
 
-Fuera de la API, con la misma imagen (ver [`docs/despliegue.md`](despliegue.md)): `migrar-cli` (migrar), `crear-administrador` (primer administrador), `sembrar` (datos de demostración, solo desarrollo) y `limpiar-huerfanos` (archivos sin versión). Los dos primeros no dependen de la API; todos usan el esquema directamente porque corren fuera de Nest.
+Fuera de la API, con la misma imagen (ver [`docs/despliegue.md`](despliegue.md)): `migrar-cli` (migrar), `crear-administrador` (primer administrador), `sembrar` (datos de demostración, solo desarrollo), `limpiar-huerfanos` (archivos sin versión) e `importar-cli` (carga el cuadro de clasificación desde un CSV, `ccd/importar/`; **no es un endpoint a propósito**, [ADR-010](adr/0010-importacion-del-cuadro-por-comando.md)). Los dos primeros no dependen de la API; todos usan el esquema directamente porque corren fuera de Nest. `importar-cli` y sus piezas (lector de CSV, validación, plan y escritura en una transacción) viven en la carpeta del módulo `ccd` pero no forman parte de su módulo de Nest: no pasan por las guardas ni por la matriz de roles.
 
 ## 3. Capas dentro de un módulo (ADR-002) [CONFIRMADO]
 

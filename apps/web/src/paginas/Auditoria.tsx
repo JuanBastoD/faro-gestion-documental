@@ -7,7 +7,7 @@ import { listarUsuarios } from '../api/usuarios';
 import { Campo } from '../componentes/Campo';
 import { Paginacion, totalDePaginas } from '../componentes/Paginacion';
 import { useSesion } from '../sesion/contexto';
-import { ACCIONES_FILTRABLES, etiquetaDeAccion, finDelDia, inicioDelDia } from '../utilidades/auditoria';
+import { ACCIONES_FILTRABLES, detalleVisible, etiquetaDeAccion, finDelDia, inicioDelDia } from '../utilidades/auditoria';
 import { formatearMomento } from '../utilidades/formato';
 import { useCarga } from '../utilidades/useCarga';
 import { useEnfocarPrimerError } from '../utilidades/useEnfocarPrimerError';
@@ -349,7 +349,7 @@ export function Auditoria() {
                       </div>
                       <div className="datos__ancho">
                         <dt>Detalle</dt>
-                        <dd>{evento.detalle ?? '—'}</dd>
+                        <dd>{detalleVisible(evento.accion, evento.detalle) ?? '—'}</dd>
                       </div>
                     </dl>
                   </li>

@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Pruebas de navegador (issue #26, ADR-012 §8). Playwright con Chromium contra la API COMPILADA, que sirve la interfaz
+ * Pruebas de navegador (issue #26, ADR-012 §9). Playwright con Chromium contra la API COMPILADA, que sirve la interfaz
  * en `/app/` (el mismo camino que usa producción), con PostgreSQL real y los usuarios de demostración ya sembrados.
  *
  * Antes de correrlas: `npm run build` (API y web), migrar y sembrar la base de `DATABASE_URL` y exportar `SEMILLA_CLAVE`

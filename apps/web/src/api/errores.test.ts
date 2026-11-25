@@ -95,6 +95,12 @@ describe('traducción de errores por código de estado', () => {
     expect(traducido.mensaje).not.toMatch(/permiso/);
   });
 
+  it.each(operaciones)('403 cambio_de_clave_requerido (%s): la clave es temporal, no es un problema de permisos', (operacion) => {
+    const traducido = traducirError(error(403, { message: 'x', codigo: 'cambio_de_clave_requerido' }), operacion);
+    expect(traducido.mensaje).toMatch(/Tu clave es temporal/);
+    expect(traducido.mensaje).not.toMatch(/permiso|administradores/);
+  });
+
   it('404 cambia según lo que se hacía', () => {
     expect(traducirError(error(404), 'carga').mensaje).toMatch(/subserie o el documento elegido/);
     expect(traducirError(error(404), 'version').mensaje).toMatch(/El documento ya no existe/);

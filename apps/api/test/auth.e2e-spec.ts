@@ -71,7 +71,15 @@ describe('Ingreso, sesiones y roles (contra PostgreSQL real)', () => {
         .send({ usuario: 'editor', clave: CLAVE_DE_PRUEBA })
         .expect(200);
       expect(respuesta.body.usuario).toMatchObject({ usuario: 'editor', rol: 'editor' });
-      expect(JSON.stringify(respuesta.body)).not.toMatch(/clave|hash/i);
+      // Lista cerrada de campos: ninguno es la clave ni su hash («debeCambiarClave» es solo un aviso, ADR-011).
+      expect(Object.keys(respuesta.body.usuario as object).sort()).toEqual([
+        'debeCambiarClave',
+        'id',
+        'nombre',
+        'rol',
+        'usuario',
+      ]);
+      expect(JSON.stringify(respuesta.body)).not.toMatch(/hash|argon2|"clave"/i);
       const cookie = (respuesta.headers['set-cookie'] as unknown as string[])[0];
       expect(cookie).toMatch(/^faro_sesion=[0-9a-f]{64};/);
       expect(cookie).toMatch(/HttpOnly/);
