@@ -46,6 +46,10 @@ Si no pasa, **403** con `codigo: origen_no_permitido`, antes de que se ejecute n
 
 Un trabajo de CI (`secretos`) corre **gitleaks sobre todo el historial** (el repositorio es público: un secreto subido por error ya está expuesto aunque después se borre). Usa la imagen oficial fijada por huella, no la acción, que pide licencia a las organizaciones. La primera ejecución local halló **un falso positivo** (`infra/docker-compose.yml`, línea de `curl --user` que usa variables de entorno, no un secreto literal); se permite en `.gitleaks.toml` limitado a ese archivo y esa regla, con su justificación, y se comprobó que la misma línea con credenciales literales en cualquier otro archivo **sí** se detecta. También se comprobó con un token falso que el escáner detecta secretos. Además, la regla de siempre: las claves reales viven en Secret Manager y `.env` no se sube.
 
+**Nota del 23 de noviembre de 2026 (alcance del escaneo) [CONFIRMADO]:** «todo el historial» significa todo lo alcanzable desde la confirmación que se prueba (`--log-opts=HEAD`), no el de todas las ramas. Con el valor por defecto de gitleaks (`--all`) y `fetch-depth: 0`, un hallazgo en la rama sin fusionar de un PR hacía fallar el trabajo `secretos` de todos los demás PR, aunque sus propias ramas estuvieran limpias (reproducido en local: una rama limpia daba 0 hallazgos con `HEAD` y 2 con `--all` al existir la otra rama como referencia remota; la rama con el hallazgo seguía marcándolo con `HEAD`). La decisión del apartado no cambia: el historial que se va a fusionar se escanea entero.
+
+**Limitación de la nota anterior [CONFIRMADO]:** con `--log-opts=HEAD` dejan de escanearse las ramas que no tienen PR (en un repositorio público también están expuestas). [PROPUESTA] Un flujo programado aparte, solo informativo y con el valor por defecto `--all`, cubriría ese hueco sin poner en rojo los PR; no se agrega aquí. Detectado en la revisión de seguridad del 23 de noviembre de 2026.
+
 ### 2.5 Auditoría
 
 Se agrega `ingreso_bloqueado` y se registra **una sola vez**, en el intento fallido que agota el límite; los rechazados después no se auditan (insistir no llena `auditoria`). El detalle no incluye el nombre escrito. Los rechazos de la guarda de origen **no** se auditan: son ruido sin valor documental y cada uno sería una escritura que cualquiera puede provocar.
@@ -67,3 +71,10 @@ Se agrega `ingreso_bloqueado` y se registra **una sola vez**, en el intento fall
 - **Límites y ventana son constantes en el código** (`limite-ingreso.ts`), no variables de entorno, para que no se puedan aflojar por error en un despliegue.
 - **Sigue sin haber cambio de clave ni restablecimiento** (ADR-008, sección 4). Es un límite del sistema, no de este ADR.
 - **Fuera de alcance:** autenticación de dos factores, detección de contraseñas filtradas, y cualquier cosa de infraestructura (cortafuegos, WAF), que corresponde a un proyecto distinto.
+
+## Nota posterior (22 de noviembre de 2026, issue #23)
+
+Esta nota no cambia ninguna decisión de este ADR; solo registra lo observado cuando existió la interfaz. Detalle en el [ADR-012](0012-interfaz-web-bajo-app-servida-por-la-api.md).
+
+- **Guarda de origen [CONFIRMADO en #23, solo Chromium]:** con la interfaz en Vite (`localhost:5173`) reenviando a la API, el ingreso, el listado, la descarga y el cierre de sesión funcionan sin 403, **siempre que el proxy no reescriba `Host`** (`changeOrigin: false` en `vite.config.ts`); con el `Host` reescrito la guarda rechazaría el ingreso. Servida por la propia API en `/app/` (mismo origen) la guarda no interviene. [POR VERIFICAR] Firefox y Safari.
+- **Política de contenido de `helmet()` con la interfaz real [CONFIRMADO en #23, solo Chromium]:** no bloquea nada de la interfaz; no hizo falta cambiarla. Un control negativo (un `<script>` en línea insertado a propósito) sí quedó bloqueado y visible en la consola. `apps/web/src/indice.test.ts` protege la compatibilidad. [POR VERIFICAR] el efecto de `upgrade-insecure-requests` sobre `http://localhost` fuera de Chromium.

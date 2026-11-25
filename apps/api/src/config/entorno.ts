@@ -34,6 +34,13 @@ const esquema = z.object({
     .min(0.5, { error: 'debe ser un número entre 0,5 y 1' })
     .max(1, { error: 'debe ser un número entre 0,5 y 1' })
     .default(0.8),
+  // Carpeta con la interfaz web compilada (la que genera «npm run build -w apps/web»). Opcional: sin ella se usa
+  // apps/web/dist, y si esa carpeta no tiene un index.html la API arranca igual, sin interfaz (ADR-012). Una
+  // ruta relativa se cuenta desde el directorio donde se ejecuta la API. Vacía cuenta como no definida.
+  INTERFAZ_RUTA: z
+    .string()
+    .optional()
+    .transform((valor) => (valor?.trim() ? valor.trim() : undefined)),
   // Cuántos proxies hay delante de la API (0 si se accede directo). Cloud Run: 1. De esto depende qué IP ve la API
   // y, con ella, el límite de intentos de ingreso por IP: con un valor mal puesto, todos parecen venir de la misma IP
   // o cualquiera puede escribir la suya en X-Forwarded-For. Ver ADR-009.

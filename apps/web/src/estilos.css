@@ -1,0 +1,1122 @@
+/*
+ * Estilos de Faro. CSS propio, sin biblioteca de componentes ni fuentes externas (ADR-012): la política de contenido
+ * de la API solo admite recursos del mismo origen y la pila tipográfica es la del sistema.
+ * Contrastes medidos (luminancia relativa de WCAG 2.1, mínimo AA 4,5:1 en texto y 3:1 en bordes y foco):
+ * --texto 14,8:1 sobre --fondo y 16,1:1 sobre blanco; --suave 7,2:1 y 7,8:1; --acento 8,2:1 y 8,9:1; blanco sobre
+ * --acento 8,9:1; avisos de error, información y éxito entre 8,0:1 y 9,4:1; marcador de posición 5,6:1; borde de los
+ * campos 3,4:1; contorno de foco 5,7:1 o más. Pares de las pantallas de carga (#24): ayuda y contador (--suave) 7,8:1
+ * sobre blanco y 6,7:1 sobre --acento-claro; error de campo 9,2:1 sobre blanco y 7,9:1 sobre --acento-claro; borde de campo
+ * con error 9,2:1; bordes de «ya existe» y «nuevo» 8,2:1 y 9,9:1; foco sobre --acento-claro y sobre los avisos 5,3:1 o más.
+ * Pares de usuarios y auditoría (#25): etiqueta «Inactivo» (--error-texto sobre --error-fondo) 8,1:1; botón de peligro
+ * (blanco sobre --error-texto) 9,2:1 y 11,8:1 al pasar el puntero (#6e1414); «Actualizar» como enlace (--acento) 8,2:1
+ * sobre --fondo y 8,9:1 sobre blanco, 11,2:1 con el puntero; tarjeta inactiva (#f6f8f9): --texto 15,1:1 y --suave 7,4:1;
+ * fecha de la tarjeta (--suave) 7,8:1 sobre blanco. El contorno de foco (--foco, 3 px y 2 px de separación) queda fuera
+ * del botón, sobre la tarjeta: 6,2:1 sobre blanco. El borde punteado de la tarjeta inactiva (1,5:1) solo decora: lo que
+ * la distingue es el texto «Inactivo», no el borde.
+ * Pares de claves (#51): recuadro de la clave temporal, --texto 13,8:1 sobre --acento-claro y --acento 7,7:1 sobre
+ * --acento-claro; su borde de 2 px (--acento) 8,3:1 sobre --fondo; la clave va en un campo blanco con --texto (16,1:1).
+ * Un cambio de color debe repetir la medición.
+ * Diseño de celular primero: lo que está fuera de @media sirve desde 360 px.
+ */
+
+:root {
+  --fondo: #f3f6f8;
+  --superficie: #ffffff;
+  --texto: #14232c;
+  --suave: #44545f;
+  --borde: #c3cfd7;
+  --acento: #0b4f6c;
+  --acento-oscuro: #083a50;
+  --acento-claro: #e3f0f6;
+  --foco: #1a56db;
+  --error-fondo: #fdecec;
+  --error-texto: #8c1a1a;
+  --info-fondo: #e8f1fb;
+  --info-texto: #123e73;
+  --ok-fondo: #e4f4e8;
+  --ok-texto: #14532d;
+  --radio: 8px;
+  --sombra: 0 1px 2px rgb(20 35 44 / 0.08), 0 1px 3px rgb(20 35 44 / 0.06);
+  --tipografia: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--tipografia);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin: 0 0 0.75rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: var(--acento);
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--acento-oscuro);
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Foco visible para quien navega con teclado: nunca se quita sin reemplazo. */
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+main:focus {
+  outline: none;
+}
+
+.saltar {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 10;
+  padding: 0.6rem 1rem;
+  background: var(--acento);
+  color: #fff;
+  border-radius: var(--radio);
+}
+
+.saltar:focus {
+  top: 0.5rem;
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Marco ----------------------------------------------------------------------------------------------- */
+
+.plantilla {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera {
+  background: var(--acento);
+  color: #fff;
+}
+
+.cabecera__interior {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.marca {
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  text-decoration: none;
+  line-height: 1.15;
+  margin-right: auto;
+}
+
+.marca:hover {
+  color: #fff;
+}
+
+.marca__nombre {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.marca__lema {
+  font-size: 0.8rem;
+  opacity: 0.92;
+}
+
+.cabecera :focus-visible {
+  outline-color: #fff;
+}
+
+.menu {
+  order: 3;
+  width: 100%;
+}
+
+.menu ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.menu a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  color: #fff;
+  text-decoration: none;
+  border-radius: var(--radio);
+}
+
+.menu a:hover {
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+}
+
+.menu a[aria-current='page'] {
+  background: #fff;
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.sesion {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sesion__persona {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  font-size: 0.9rem;
+}
+
+.sesion__rol {
+  font-size: 0.78rem;
+  opacity: 0.92;
+}
+
+.contenido {
+  flex: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2rem;
+}
+
+.contenido--centrado {
+  max-width: 36rem;
+  text-align: center;
+  padding-top: 3rem;
+}
+
+.pie {
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+
+/* --- Botones, campos y avisos --------------------------------------------------------------------------- */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border: 2px solid transparent;
+  border-radius: var(--radio);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton--primario {
+  background: var(--acento);
+  color: #fff;
+}
+
+.boton--primario:hover {
+  background: var(--acento-oscuro);
+  color: #fff;
+}
+
+.boton--secundario {
+  background: var(--superficie);
+  color: var(--acento);
+  border-color: var(--acento);
+}
+
+.boton--secundario:hover {
+  background: var(--acento-claro);
+  color: var(--acento-oscuro);
+}
+
+.boton--ancho {
+  width: 100%;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  background: #e4e9ed;
+  color: #55646f;
+  border-color: #c3cfd7;
+}
+
+.cabecera .boton--secundario {
+  background: transparent;
+  color: #fff;
+  border-color: #fff;
+}
+
+.cabecera .boton--secundario:hover {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.campo label {
+  font-weight: 600;
+}
+
+.campo input,
+.campo select {
+  min-height: 44px;
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #7b8d99;
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--texto);
+  font: inherit;
+}
+
+.campo input::placeholder {
+  color: #596a75;
+}
+
+/* `display: block` a propósito: varios avisos son `<output>`, que es un elemento en línea, y con relleno y borde
+   un aviso en línea se parte por renglones y se sale de su tarjeta (se veía cortado en el ingreso). */
+.aviso {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio);
+  border: 1px solid transparent;
+}
+
+.aviso p:last-child {
+  margin-bottom: 0;
+}
+
+.aviso--error {
+  background: var(--error-fondo);
+  color: var(--error-texto);
+  border-color: #e7b4b4;
+}
+
+.aviso--info {
+  background: var(--info-fondo);
+  color: var(--info-texto);
+  border-color: #b5cdea;
+}
+
+.estado-carga {
+  color: var(--suave);
+  padding: 1rem 0;
+}
+
+/* --- Ingreso ------------------------------------------------------------------------------------------- */
+
+.ingreso {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ingreso__tarjeta {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.5rem 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+}
+
+.ingreso__marca {
+  margin: 0 0 0.25rem;
+  color: var(--acento);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ingreso__lema {
+  color: var(--suave);
+  font-size: 0.95rem;
+}
+
+.ingreso__nota {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--suave);
+  text-align: center;
+}
+
+.ingreso .aviso {
+  margin-bottom: 1rem;
+}
+
+/* --- Listado ------------------------------------------------------------------------------------------- */
+
+.filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.filtros__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filtros__acciones .boton {
+  flex: 1 1 auto;
+}
+
+.resultados__total {
+  margin: 0 0 0.75rem;
+  color: var(--suave);
+  font-weight: 600;
+}
+
+.lista-documentos,
+.lista-versiones {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tarjeta {
+  padding: 0.9rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tarjeta__cabecera .tarjeta__titulo {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tarjeta__motivo {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--acento-claro);
+  color: var(--acento-oscuro);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.etiqueta--vigente {
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+.datos > div {
+  min-width: 0;
+}
+
+.datos dt {
+  font-size: 0.8rem;
+  color: var(--suave);
+  font-weight: 600;
+}
+
+.datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.datos--detalle {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.huella {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.nota {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--suave);
+}
+
+.vacio {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: var(--superficie);
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.paginacion__estado {
+  margin: 0;
+  color: var(--suave);
+  text-align: center;
+}
+
+/* --- Detalle ------------------------------------------------------------------------------------------- */
+
+.migas {
+  margin-bottom: 0.5rem;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.historial__nota {
+  color: var(--suave);
+}
+
+/* --- Formularios de carga, versión nueva y restauración (issue #24) ------------------------------------- */
+
+.campo textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #7b8d99;
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--texto);
+  font: inherit;
+  resize: vertical;
+}
+
+.campo input[type='file'] {
+  padding: 0.5rem 0.6rem;
+}
+
+.campo__marca {
+  font-weight: 400;
+  color: var(--suave);
+}
+
+.campo__ayuda,
+.campo__contador {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--suave);
+}
+
+.campo__contador {
+  text-align: right;
+}
+
+.campo__contador--excedido {
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+.campo__error {
+  margin: 0;
+  color: var(--error-texto);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* El error no se marca solo con color: lleva texto y un borde más grueso. */
+.campo--con-error input,
+.campo--con-error select,
+.campo--con-error textarea {
+  border: 2px solid var(--error-texto);
+}
+
+.campo-archivo__elegido {
+  display: block;
+  margin: -0.4rem 0 1rem;
+  font-size: 0.92rem;
+  color: var(--suave);
+  overflow-wrap: anywhere;
+}
+
+.pagina-formulario .introduccion {
+  color: var(--suave);
+}
+
+.formulario {
+  max-width: 40rem;
+}
+
+.formulario__interior {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.grupo {
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+.grupo legend {
+  padding: 0 0.4rem;
+  font-weight: 600;
+}
+
+.acciones--formulario {
+  margin: 1rem 0 0;
+}
+
+.acciones--formulario .boton {
+  flex: 1 1 auto;
+}
+
+.aviso--ok {
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+  border-color: #a9d3b5;
+}
+
+.aviso--bloque {
+  display: block;
+  margin: 0 0 1rem;
+}
+
+.aviso--exacto h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.aviso:focus {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.tarjeta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.restaurar {
+  margin-top: 0.9rem;
+  padding: 1rem;
+  border: 2px solid var(--acento);
+  border-radius: var(--radio);
+  background: var(--acento-claro);
+}
+
+.restaurar__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.restaurar__campos {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.restaurar .campo input {
+  background: #fff;
+}
+
+/* --- Aviso de duplicado probable: los dos documentos y la decisión ----------------------------------------- */
+
+.duplicado h2 {
+  scroll-margin-top: 1rem;
+}
+
+.comparacion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.comparacion__lado {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-top-width: 5px;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.comparacion__lado--existe {
+  border-top-color: var(--acento);
+}
+
+.comparacion__lado--nuevo {
+  border-top-color: var(--info-texto);
+  border-top-style: dashed;
+}
+
+.comparacion__rotulo {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+.comparacion__titulo {
+  margin: 0 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.comparacion__similitud {
+  margin: 0 0 0.75rem;
+}
+
+.comparacion__umbral {
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+
+.datos--apilados {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.comparacion__enlaces {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.75rem 0 0;
+}
+
+.comparacion__enlaces a {
+  display: inline-block;
+  padding: 0.35rem 0;
+  overflow-wrap: anywhere;
+}
+
+.decision {
+  max-width: 48rem;
+}
+
+.opcion {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.85rem 0.75rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+.opcion--activa {
+  border: 2px solid var(--acento);
+  padding: calc(0.6rem - 1px) calc(0.85rem - 1px) calc(0.75rem - 1px);
+  background: var(--acento-claro);
+}
+
+.opcion label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0.3rem 0;
+  cursor: pointer;
+}
+
+.opcion input[type='radio'] {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--acento);
+}
+
+.opcion__titulo {
+  font-weight: 600;
+}
+
+.opcion__efecto {
+  margin: 0 0 0.6rem 1.95rem;
+  font-size: 0.93rem;
+  color: var(--suave);
+}
+
+.opcion--activa .opcion__efecto {
+  color: var(--texto);
+}
+
+.opcion--activa .campo {
+  margin: 0.75rem 0 0 1.95rem;
+}
+
+/*
+ * Fila de la lista «Elige con cuál quieres comparar»: un recuadro en bloque por candidato, una por línea a cualquier
+ * ancho. El relleno lo lleva la etiqueta (no el recuadro) para que toda la fila sea área de clic, y el texto baja de
+ * línea en vez de cortarse. El borde mide 2 px siempre para que al elegir una fila no se mueva nada.
+ */
+.opcion--simple,
+.opcion--simple.opcion--activa {
+  padding: 0;
+  border-width: 2px;
+}
+
+.opcion--simple label {
+  min-height: 44px;
+  padding: 0.6rem 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.opcion__texto {
+  min-width: 0;
+}
+
+/* El foco del teclado se ve en la fila entera (el radio solo es pequeño); sin :has() queda el contorno del radio. */
+@supports selector(:has(*)) {
+  .opcion--simple:has(input:focus-visible) {
+    outline: 3px solid var(--foco);
+    outline-offset: 2px;
+  }
+
+  .opcion--simple input:focus-visible {
+    outline: none;
+  }
+}
+
+/* --- Pantallas más anchas ------------------------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .comparacion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 40rem) {
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .cabecera__interior {
+    padding: 0.75rem 1.5rem;
+  }
+
+  .menu {
+    order: 0;
+    width: auto;
+  }
+
+  .contenido {
+    padding: 1.75rem 1.5rem 2.5rem;
+  }
+
+  .filtros {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0 1rem;
+  }
+
+  .filtros .campo--crece {
+    flex: 1 1 16rem;
+  }
+
+  .filtros__acciones {
+    margin-bottom: 1rem;
+  }
+
+  .filtros__acciones .boton {
+    flex: 0 0 auto;
+  }
+
+  .ingreso__tarjeta {
+    padding: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* --- Usuarios y auditoría (issue #25). Bloque propio al final para no chocar con los de otras pantallas. ----------- */
+
+.lista-usuarios,
+.lista-eventos {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tarjeta--inactiva {
+  background: #f6f8f9;
+  border-style: dashed;
+}
+
+.etiqueta--inactiva {
+  background: var(--error-fondo);
+  color: var(--error-texto);
+}
+
+/* Acción con consecuencias (desactivar): blanco sobre --error-texto, mismo par de color que el error de campo. */
+.boton--peligro {
+  background: var(--error-texto);
+  color: #fff;
+}
+
+.boton--peligro:hover:not(:disabled) {
+  background: #6e1414;
+  color: #fff;
+}
+
+/* Un botón que se lee como enlace («Actualizar la lista»), con el área táctil de 44 px. */
+.enlace-boton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--acento);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  color: var(--acento-oscuro);
+}
+
+.campo-verclave {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  margin: -0.4rem 0 1rem;
+}
+
+.campo-verclave input {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0;
+  accent-color: var(--acento);
+}
+
+.formulario--panel {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.tarjeta__fecha {
+  color: var(--suave);
+  font-size: 0.92rem;
+}
+
+.datos__ancho {
+  grid-column: 1 / -1;
+}
+
+.resultados__linea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.resultados__linea .resultados__total {
+  margin: 0;
+}
+
+/* Filtros de la auditoría: cinco campos en una rejilla que baja a una columna en celular. */
+.filtros--auditoria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0 1rem;
+  align-items: start;
+}
+
+.filtros--auditoria .filtros__acciones {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+/* --- Claves (issue #51). Bloque propio al final, como el de arriba. --------------------------------------------------- */
+
+/* «Generar una clave» y «Mostrar la clave» bajo el campo de la clave temporal: en una fila si caben, apilados en celular. */
+.clave-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+  margin: -0.4rem 0 0.5rem;
+}
+
+.clave-acciones .campo-verclave {
+  margin: 0;
+}
+
+/* La clave temporal recién fijada: un recuadro que se nota, con la clave en letra monoespaciada y grande para leerla o dictarla. */
+.clave-temporal {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border: 2px solid var(--acento);
+  border-radius: var(--radio);
+  background: var(--acento-claro);
+}
+
+.clave-temporal h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.clave-temporal__etiqueta {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.clave-temporal__valor {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #7b8d99;
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--texto);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.clave-temporal__estado {
+  display: block;
+  min-height: 1.5rem;
+  margin: 0.5rem 0;
+}

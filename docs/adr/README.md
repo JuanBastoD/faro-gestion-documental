@@ -13,6 +13,10 @@ Cada decisión importante de diseño queda registrada aquí con su fecha, su mot
 | [0007](0007-busqueda-por-texto-completo.md) | Búsqueda por texto completo sobre texto normalizado en la aplicación | Aceptada | 22 de noviembre de 2026 |
 | [0008](0008-administracion-de-usuarios.md) | Administración de usuarios: desactivar en vez de borrar y protección del último administrador | Aceptada | 22 de noviembre de 2026 |
 | [0009](0009-seguridad-minima-para-exponer-la-api.md) | Seguridad mínima para exponer la API: CSRF por origen, límite de intentos de ingreso, cabeceras y secretos | Aceptada | 22 de noviembre de 2026 |
+| [0010](0010-importacion-del-cuadro-por-comando.md) | Importación del cuadro de clasificación por línea de comandos: simulación por defecto, todo o nada y sin tocar lo que tiene documentos | Aceptada | 22 de noviembre de 2026 |
+| [0011](0011-cambio-y-restablecimiento-de-clave.md) | Cambio y restablecimiento de clave: clave actual obligatoria, clave temporal del administrador y acceso restringido hasta cambiarla | Aceptada | 23 de noviembre de 2026 |
+| [0012](0012-interfaz-web-bajo-app-servida-por-la-api.md) | Interfaz web bajo `/app/`, servida por la propia API | Aceptada | 22 de noviembre de 2026 |
+| [0013](0013-copia-de-seguridad-y-restauracion.md) | Copia de seguridad con pg_dump hacia un bucket privado y restauración solo a una base nueva | Aceptada | 22 de noviembre de 2026 |
 
 ## Formato
 
