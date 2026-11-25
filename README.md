@@ -92,6 +92,31 @@ La clave de esos usuarios es `SEMILLA_CLAVE` de tu `.env`. La siembra se niega a
 
 **Dónde se guardan los PDF** ([ADR-004](docs/adr/0004-almacen-de-archivos-y-carga.md)): `ALMACEN_TIPO=disco` (por defecto, la carpeta `apps/api/almacen-local`, sin Docker) o `ALMACEN_TIPO=s3` (el almacén de `npm run infra:up`, y en la nube Cloud Storage; exige las variables `S3_*`). La carga guarda el archivo y después el registro en una transacción; si algo falla no queda ninguno de los dos. `npm run almacen:huerfanos -w apps/api` lista los archivos que ninguna versión usa y, con `-- --borrar`, borra los de más de una hora.
 
+**Cuadro de clasificación desde un CSV** ([ADR-010](docs/adr/0010-importacion-del-cuadro-por-comando.md)): es un comando, no un endpoint (nadie lo cambia por la API). Valida **todo** el archivo antes de escribir y, sin `--aplicar`, **solo muestra lo que haría**: no cambia ni el cuadro ni la auditoría.
+
+```
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv                       # solo muestra (simulación)
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar             # escribe, en una transacción
+npm run ccd:importar -w apps/api -- docs/ejemplos/cuadro-ejemplo.csv --aplicar --eliminar-ausentes
+```
+
+| Opción | Qué hace |
+|---|---|
+| (ninguna) | Simulación: lista las series y subseries que se crearían, los nombres que cambiarían, las que se moverían y las que el archivo no menciona. Sale con 0, o con 1 si lo pedido chocaría con documentos |
+| `--aplicar` | Escribe todo en **una sola transacción**: o queda el cuadro completo o no cambia nada. Registra un evento `ccd_importado` (sin usuario) con el nombre y la huella SHA-256 del archivo. Repetir el mismo archivo no cambia nada |
+| `--eliminar-ausentes` | Además elimina lo que está en la base y no en el archivo, **salvo lo que tenga documentos** (esas se conservan y se informan). Sin esta opción, lo ausente solo se informa |
+
+**Formato del CSV** (UTF-8, coma o punto y coma; un ejemplo ficticio en [`docs/ejemplos/cuadro-ejemplo.csv`](docs/ejemplos/cuadro-ejemplo.csv)): columnas `codigo`, `nombre` y `codigo_padre`. Padre vacío = serie; con padre = subserie de esa serie (el cuadro tiene dos niveles). Cada padre debe tener su propia fila en el mismo archivo.
+
+```
+codigo,nombre,codigo_padre
+100,Gestión contractual,
+100.1,Contratos de obra,100
+100.2,Interventoría,100
+```
+
+Excel guarda por defecto en ANSI y se pierden las tildes: guárdalo como **«CSV UTF-8 (delimitado por comas)»**; el comando rechaza otra codificación con ese mismo aviso. Los códigos admiten letras, números y `.` `-` `_` entre ellos (máximo 32 caracteres; `100`, `100.1` o `GC-01`). Se compara por **código**: uno nuevo se crea, uno existente solo cambia de nombre, y **nunca se mueve ni se elimina una subserie que ya tiene documentos** (mover una con documentos, o cambiar un código de serie a subserie, se niega y no se escribe nada). Errores del archivo: salen todos juntos, cada uno con su línea, y no se escribe nada. Salida: 0 correcto; 1 archivo inválido o en conflicto; 2 uso incorrecto. En un contenedor: `node apps/api/dist/ccd/importar/importar-cli.js /ruta/cuadro.csv`; ver [`docs/despliegue.md`](docs/despliegue.md), sección 9.
+
 La configuración sale de variables de entorno que se validan al arrancar (`apps/api/src/config/entorno.ts`). Si falta o es inválida alguna, la API no arranca y dice cuál corregir, sin mostrar sus valores. En local se leen del `.env` de la raíz.
 
 | Comando (desde la raíz) | Qué hace |

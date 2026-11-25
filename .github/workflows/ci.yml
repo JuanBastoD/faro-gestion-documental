@@ -64,6 +64,16 @@ jobs:
         run: npm run db:seed -w apps/api
         env:
           SEMILLA_CLAVE: clave-ci-sin-valor-real
+      - name: Importación del cuadro desde CSV (comando compilado, CSV ficticio sobre la base sembrada)
+        # Comprueba que el comando de la imagen corre en Linux, que la simulación no escribe y que repetir no cambia nada.
+        run: |
+          CCD="node apps/api/dist/ccd/importar/importar-cli.js docs/ejemplos/cuadro-ejemplo.csv"
+          $CCD | tee "$RUNNER_TEMP/ccd1.txt"
+          grep -F "SIMULACIÓN" "$RUNNER_TEMP/ccd1.txt"
+          $CCD --aplicar | tee "$RUNNER_TEMP/ccd2.txt"
+          grep -F "Importación aplicada" "$RUNNER_TEMP/ccd2.txt"
+          $CCD --aplicar | tee "$RUNNER_TEMP/ccd3.txt"
+          grep -F "no hay nada que cambiar" "$RUNNER_TEMP/ccd3.txt"
       - name: Almacén S3 (RustFS) para las pruebas del adaptador
         # Las claves son las de ejemplo de .env.example: un almacén efímero del propio trabajo.
         run: |
@@ -115,7 +125,7 @@ jobs:
           usuario="$(docker run --rm --entrypoint id faro-api:ci -u)"
           echo "uid del proceso: $usuario"
           test "$usuario" != "0"
-          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -d /app/apps/api/drizzle'
+          docker run --rm --entrypoint sh faro-api:ci -c '! test -e /app/apps/api/test && ! test -e /app/apps/api/src && ! test -e /app/.env && test -f /app/apps/api/dist/main.js && test -f /app/apps/api/dist/base-datos/migrar-cli.js && test -f /app/apps/api/dist/ccd/importar/importar-cli.js && test -d /app/apps/api/drizzle'
 
   # Busca secretos (claves, tokens, contraseñas) en TODO el historial del repositorio, no solo en el último
   # commit: el repositorio es público y un secreto subido por error ya está expuesto aunque se borre después.

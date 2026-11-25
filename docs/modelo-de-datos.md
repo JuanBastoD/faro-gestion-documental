@@ -266,6 +266,7 @@ El catálogo está en `apps/api/src/auditoria/acciones.ts`. La columna es `text`
 | `usuario_rol_cambiado` | Un administrador cambia el rol de un usuario. El detalle trae el rol anterior y el nuevo. |
 | `usuario_desactivado` | Un administrador desactiva a un usuario; se cierran sus sesiones y el detalle dice cuántas. |
 | `usuario_reactivado` | Un administrador reactiva a un usuario inactivo. |
+| `ccd_importado` | Se importa el cuadro de clasificación desde un CSV con `npm run ccd:importar` (ADR-010). **Sin usuario** (`usuario_id` vacío): es un comando que corre con acceso a la base, no una petición con sesión. El detalle trae el nombre del archivo y su SHA-256, cuántas series se crearon, renombraron, movieron y eliminaron (con los códigos de las movidas y las eliminadas) y cuántas ausentes se conservaron. Solo se registra si hubo algún cambio: repetir el mismo archivo no deja evento. |
 
 ## 9. Historial de migraciones
 

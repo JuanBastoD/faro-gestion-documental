@@ -18,6 +18,7 @@ export const ACCION = {
   USUARIO_ROL_CAMBIADO: 'usuario_rol_cambiado',
   USUARIO_DESACTIVADO: 'usuario_desactivado',
   USUARIO_REACTIVADO: 'usuario_reactivado',
+  CCD_IMPORTADO: 'ccd_importado',
 } as const;
 
 export type Accion = (typeof ACCION)[keyof typeof ACCION];
