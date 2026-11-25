@@ -55,6 +55,24 @@ export function etiquetaDeAccion(accion: string): string {
   return ETIQUETA_DE_ACCION[accion] ?? accion;
 }
 
+/** Lo que la guarda de roles de la API escribe: `GET /auditoria; requiere administrador; tiene consulta` (`roles.guard.ts`). */
+const DETALLE_TECNICO_DE_ACCESO_DENEGADO = /^[A-Z]+ [^;]+; requiere [^;]+; tiene [^;]+$/;
+
+export const TEXTO_DE_ACCESO_DENEGADO = 'Intentó hacer algo que su rol no permite; no se le concedió el acceso.';
+
+/**
+ * El detalle de un evento tal como lo ve la persona. El de `acceso_denegado` es texto de la guarda de roles (método y ruta de
+ * la API, y el rol que hacía falta con el rol interno que tenía): sirve a quien depura la API, no a quien lee la auditoría, así
+ * que aquí se dice con palabras. La API lo sigue guardando completo (ADR-003) y no se modifica. Un detalle de `acceso_denegado`
+ * con otro formato, y el de cualquier otra acción, se muestran sin tocar: nunca se oculta lo que no se reconoce.
+ */
+export function detalleVisible(accion: string, detalle: string | null): string | null {
+  if (accion === 'acceso_denegado' && detalle !== null && DETALLE_TECNICO_DE_ACCESO_DENEGADO.test(detalle)) {
+    return TEXTO_DE_ACCESO_DENEGADO;
+  }
+  return detalle;
+}
+
 /**
  * Hora de Colombia (UTC-5, sin horario de verano): los eventos se muestran en esa hora (`formato.ts`), así que «el 22 de
  * noviembre» de quien filtra es de las 00:00 a las 23:59:59,999 de esa hora, no de las del servidor.
