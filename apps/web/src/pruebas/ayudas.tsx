@@ -19,7 +19,10 @@ export interface Llamada {
   metodo: string;
   ruta: string;
   consulta: URLSearchParams;
+  /** El cuerpo JSON, si la petición lo trae. */
   cuerpo: unknown;
+  /** El formulario multipart (carga de PDF), si la petición lo trae. */
+  formulario: FormData | undefined;
 }
 
 export type Manejador = (llamada: Llamada) => Response | Promise<Response>;
@@ -38,6 +41,7 @@ export function simularApi(manejadores: Record<string, Manejador>) {
       ruta: url.pathname,
       consulta: url.searchParams,
       cuerpo: typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
+      formulario: init?.body instanceof FormData ? init.body : undefined,
     };
     llamadas.push(llamada);
     const manejador = manejadores[`${metodo} ${url.pathname}`];
@@ -97,14 +101,31 @@ export function documentoDePrueba(id: number, cambios: Partial<ResumenDocumento>
   };
 }
 
+/**
+ * Un PDF de mentira para elegirlo en un campo de archivo. Con `tamano` declara ese tamaño sin reservar la memoria
+ * (para probar el límite de 20 MB sin crear un archivo de 21 MB).
+ */
+export function archivoPdf(nombre = 'acta.pdf', tamano?: number): File {
+  const archivo = new File(['%PDF-1.4\n% contenido ficticio\n'], nombre, { type: 'application/pdf' });
+  if (tamano !== undefined) Object.defineProperty(archivo, 'size', { value: tamano });
+  return archivo;
+}
+
 /** Muestra dónde está el enrutador, para que las pruebas comprueben adónde navegó la interfaz. */
 function UbicacionActual() {
   const ubicacion = useLocation();
-  return <output data-testid="ubicacion">{ubicacion.pathname + ubicacion.search}</output>;
+  return (
+    <output data-testid="ubicacion" data-estado={JSON.stringify(ubicacion.state ?? null)}>
+      {ubicacion.pathname + ubicacion.search}
+    </output>
+  );
 }
 
-/** Monta la aplicación completa (sesión, guarda y rutas) en una ruta. Las pantallas piden a la API simulada. */
-export function renderizarApp(ruta: string) {
+/**
+ * Monta la aplicación completa (sesión, guarda y rutas) en una ruta. Las pantallas piden a la API simulada. La ruta puede
+ * traer un `state` de navegación (así llega a una pantalla, por ejemplo, el aviso que deja la anterior).
+ */
+export function renderizarApp(ruta: string | { pathname: string; state: unknown }) {
   return render(
     <MemoryRouter initialEntries={[ruta]}>
       <ProveedorSesion>

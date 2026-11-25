@@ -4,7 +4,10 @@
  * Contrastes medidos (luminancia relativa de WCAG 2.1, mínimo AA 4,5:1 en texto y 3:1 en bordes y foco):
  * --texto 14,8:1 sobre --fondo y 16,1:1 sobre blanco; --suave 7,2:1 y 7,8:1; --acento 8,2:1 y 8,9:1; blanco sobre
  * --acento 8,9:1; avisos de error, información y éxito entre 8,0:1 y 9,4:1; marcador de posición 5,6:1; borde de los
- * campos 3,4:1; contorno de foco 5,7:1 o más. Un cambio de color debe repetir la medición.
+ * campos 3,4:1; contorno de foco 5,7:1 o más. Pares de las pantallas de carga (#24): ayuda y contador (--suave) 7,8:1
+ * sobre blanco y 6,7:1 sobre --acento-claro; error de campo 9,2:1 sobre blanco y 7,9:1 sobre --acento-claro; borde de campo
+ * con error 9,2:1; bordes de «ya existe» y «nuevo» 8,2:1 y 9,9:1; foco sobre --acento-claro y sobre los avisos 5,3:1 o más.
+ * Un cambio de color debe repetir la medición.
  * Diseño de celular primero: lo que está fuera de @media sirve desde 360 px.
  */
 
@@ -579,7 +582,321 @@ main:focus {
   color: var(--suave);
 }
 
+/* --- Formularios de carga, versión nueva y restauración (issue #24) ------------------------------------- */
+
+.campo textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #7b8d99;
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--texto);
+  font: inherit;
+  resize: vertical;
+}
+
+.campo input[type='file'] {
+  padding: 0.5rem 0.6rem;
+}
+
+.campo__marca {
+  font-weight: 400;
+  color: var(--suave);
+}
+
+.campo__ayuda,
+.campo__contador {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--suave);
+}
+
+.campo__contador {
+  text-align: right;
+}
+
+.campo__contador--excedido {
+  color: var(--error-texto);
+  font-weight: 600;
+}
+
+.campo__error {
+  margin: 0;
+  color: var(--error-texto);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* El error no se marca solo con color: lleva texto y un borde más grueso. */
+.campo--con-error input,
+.campo--con-error select,
+.campo--con-error textarea {
+  border: 2px solid var(--error-texto);
+}
+
+.campo-archivo__elegido {
+  display: block;
+  margin: -0.4rem 0 1rem;
+  font-size: 0.92rem;
+  color: var(--suave);
+  overflow-wrap: anywhere;
+}
+
+.pagina-formulario .introduccion {
+  color: var(--suave);
+}
+
+.formulario {
+  max-width: 40rem;
+}
+
+.formulario__interior {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.grupo {
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+.grupo legend {
+  padding: 0 0.4rem;
+  font-weight: 600;
+}
+
+.acciones--formulario {
+  margin: 1rem 0 0;
+}
+
+.acciones--formulario .boton {
+  flex: 1 1 auto;
+}
+
+.aviso--ok {
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+  border-color: #a9d3b5;
+}
+
+.aviso--bloque {
+  display: block;
+  margin: 0 0 1rem;
+}
+
+.aviso--exacto h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.aviso:focus {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.tarjeta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.restaurar {
+  margin-top: 0.9rem;
+  padding: 1rem;
+  border: 2px solid var(--acento);
+  border-radius: var(--radio);
+  background: var(--acento-claro);
+}
+
+.restaurar__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.restaurar__campos {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.restaurar .campo input {
+  background: #fff;
+}
+
+/* --- Aviso de duplicado probable: los dos documentos y la decisión ----------------------------------------- */
+
+.duplicado h2 {
+  scroll-margin-top: 1rem;
+}
+
+.comparacion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.comparacion__lado {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-top-width: 5px;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.comparacion__lado--existe {
+  border-top-color: var(--acento);
+}
+
+.comparacion__lado--nuevo {
+  border-top-color: var(--info-texto);
+  border-top-style: dashed;
+}
+
+.comparacion__rotulo {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+.comparacion__titulo {
+  margin: 0 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.comparacion__similitud {
+  margin: 0 0 0.75rem;
+}
+
+.comparacion__umbral {
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+
+.datos--apilados {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.comparacion__enlaces {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.75rem 0 0;
+}
+
+.comparacion__enlaces a {
+  display: inline-block;
+  padding: 0.35rem 0;
+  overflow-wrap: anywhere;
+}
+
+.decision {
+  max-width: 48rem;
+}
+
+.opcion {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.85rem 0.75rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+}
+
+.opcion--activa {
+  border: 2px solid var(--acento);
+  padding: calc(0.6rem - 1px) calc(0.85rem - 1px) calc(0.75rem - 1px);
+  background: var(--acento-claro);
+}
+
+.opcion label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-height: 44px;
+  padding: 0.3rem 0;
+  cursor: pointer;
+}
+
+.opcion input[type='radio'] {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--acento);
+}
+
+.opcion__titulo {
+  font-weight: 600;
+}
+
+.opcion__efecto {
+  margin: 0 0 0.6rem 1.95rem;
+  font-size: 0.93rem;
+  color: var(--suave);
+}
+
+.opcion--activa .opcion__efecto {
+  color: var(--texto);
+}
+
+.opcion--activa .campo {
+  margin: 0.75rem 0 0 1.95rem;
+}
+
+/*
+ * Fila de la lista «Elige con cuál quieres comparar»: un recuadro en bloque por candidato, una por línea a cualquier
+ * ancho. El relleno lo lleva la etiqueta (no el recuadro) para que toda la fila sea área de clic, y el texto baja de
+ * línea en vez de cortarse. El borde mide 2 px siempre para que al elegir una fila no se mueva nada.
+ */
+.opcion--simple,
+.opcion--simple.opcion--activa {
+  padding: 0;
+  border-width: 2px;
+}
+
+.opcion--simple label {
+  min-height: 44px;
+  padding: 0.6rem 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.opcion__texto {
+  min-width: 0;
+}
+
+/* El foco del teclado se ve en la fila entera (el radio solo es pequeño); sin :has() queda el contorno del radio. */
+@supports selector(:has(*)) {
+  .opcion--simple:has(input:focus-visible) {
+    outline: 3px solid var(--foco);
+    outline-offset: 2px;
+  }
+
+  .opcion--simple input:focus-visible {
+    outline: none;
+  }
+}
+
 /* --- Pantallas más anchas ------------------------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .comparacion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
 
 @media (min-width: 40rem) {
   h1 {

@@ -96,12 +96,13 @@ describe('detalle de un documento', () => {
     expect(screen.getByRole('link', { name: 'Descargar la versión vigente (PDF)' })).toBeInTheDocument();
   });
 
-  it('«Subir una versión nueva» lleva a la pantalla marcador del #24', async () => {
+  it('«Subir una versión nueva» lleva al formulario de versión nueva del mismo documento', async () => {
     const usuario = userEvent.setup();
     montar('administrador', () => respuestaJson(documentoConVersiones(tres)));
     await usuario.click(await screen.findByRole('link', { name: 'Subir una versión nueva' }));
-    expect(await screen.findByRole('heading', { name: 'Subir una versión nueva' })).toBeInTheDocument();
-    expect(screen.getByText(/issue #24/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Subir una versión nueva' })).toBeInTheDocument();
+    expect(screen.getByTestId('ubicacion')).toHaveTextContent('/documentos/12/version');
+    expect(screen.getByLabelText(/Motivo del cambio/)).toBeInTheDocument();
   });
 
   it('un documento que no existe (404): lo dice y ofrece volver', async () => {
