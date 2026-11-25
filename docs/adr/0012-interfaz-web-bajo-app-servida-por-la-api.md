@@ -174,7 +174,7 @@ Como la sección 6, esta registra cómo #25 aplicó las decisiones de arriba y l
 
 El detalle está en el PR #62: pruebas de la web (Vitest y Testing Library), pruebas de mutación y un recorrido en Chromium real contra el servidor compilado a 1280 y 360 px, con axe y sin errores de consola. Las capturas se guardan fuera del repositorio, para el manual de usuario.
 
-## 8. Actualización del 24 de noviembre de 2026 (issue #51, pantallas de clave)
+## 8. Actualización del 24 de noviembre de 2026 (issue #51, pantallas de clave, PR #66)
 
 Como las secciones 6 y 7, esta registra cómo la interfaz aplicó el contrato de la API de #51 (ADR-0011, PR #57) y lo que decidió dentro de él. **No cambia nada de lo decidido en las secciones 1 a 5**: misma ruta `/app/`, mismo origen, misma política de contenido, sin dependencias nuevas y **sin tocar `apps/api`**: la interfaz usa solo las rutas y los códigos que #57 ya fijó. **Depende de fusionar #57 primero**: sin esa API, `POST /auth/clave` y `POST /usuarios/:id/clave` no existen.
 
