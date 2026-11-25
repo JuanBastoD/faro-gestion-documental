@@ -2,6 +2,8 @@
 
 Sistema de gestión documental para la E.I.C.E. Faro del Catatumbo S.A.S. Proyecto de clase (Proyecto Integrador AR, Universidad de Pamplona, 2026-2P). Usa únicamente **datos ficticios**. No es un SGDEA en producción.
 
+**Versión 2.0.0 (sin publicar) y manual de usuario (borrador):** [`CHANGELOG.md`](CHANGELOG.md) · [`docs/notas-de-version-v2.0.0.md`](docs/notas-de-version-v2.0.0.md) · [`docs/manual-de-usuario.md`](docs/manual-de-usuario.md)
+
 ## Estructura del monorepo
 
 | Carpeta | Contenido | Estado |
