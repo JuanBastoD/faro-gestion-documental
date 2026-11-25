@@ -13,6 +13,8 @@
  * fecha de la tarjeta (--suave) 7,8:1 sobre blanco. El contorno de foco (--foco, 3 px y 2 px de separación) queda fuera
  * del botón, sobre la tarjeta: 6,2:1 sobre blanco. El borde punteado de la tarjeta inactiva (1,5:1) solo decora: lo que
  * la distingue es el texto «Inactivo», no el borde.
+ * Pares de claves (#51): recuadro de la clave temporal, --texto 13,8:1 sobre --acento-claro y --acento 7,7:1 sobre
+ * --acento-claro; su borde de 2 px (--acento) 8,3:1 sobre --fondo; la clave va en un campo blanco con --texto (16,1:1).
  * Un cambio de color debe repetir la medición.
  * Diseño de celular primero: lo que está fuera de @media sirve desde 360 px.
  */
@@ -1061,4 +1063,60 @@ main:focus {
 .filtros--auditoria .filtros__acciones {
   grid-column: 1 / -1;
   margin-bottom: 0;
+}
+
+/* --- Claves (issue #51). Bloque propio al final, como el de arriba. --------------------------------------------------- */
+
+/* «Generar una clave» y «Mostrar la clave» bajo el campo de la clave temporal: en una fila si caben, apilados en celular. */
+.clave-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+  margin: -0.4rem 0 0.5rem;
+}
+
+.clave-acciones .campo-verclave {
+  margin: 0;
+}
+
+/* La clave temporal recién fijada: un recuadro que se nota, con la clave en letra monoespaciada y grande para leerla o dictarla. */
+.clave-temporal {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border: 2px solid var(--acento);
+  border-radius: var(--radio);
+  background: var(--acento-claro);
+}
+
+.clave-temporal h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.clave-temporal__etiqueta {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.clave-temporal__valor {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #7b8d99;
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--texto);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.clave-temporal__estado {
+  display: block;
+  min-height: 1.5rem;
+  margin: 0.5rem 0;
 }

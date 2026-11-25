@@ -1,6 +1,6 @@
 import { formatearEspera } from '../utilidades/formato';
 import { mensajeDeError } from '../utilidades/mensajes';
-import { ErrorApi } from './cliente';
+import { CODIGO_CAMBIO_DE_CLAVE_REQUERIDO, ErrorApi } from './cliente';
 import { LIMITES_DE_USUARIO } from './usuarios';
 
 /**
@@ -72,6 +72,9 @@ export function traducirProblemaDeAlta(problema: string): { campo: CampoDeAlta |
 const TEXTO_DE_ORIGEN =
   'La petición se hizo desde un sitio que el servidor no reconoce. Abre Faro desde su dirección habitual e inténtalo de nuevo.';
 
+/** El 403 `cambio_de_clave_requerido` (#57) no es de rol: la clave es temporal y la interfaz lleva a cambiarla. */
+const TEXTO_CLAVE_TEMPORAL = 'Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.';
+
 /** El texto del 409 `ultimo_administrador` (ADR-008, sección 2.2). */
 const TEXTO_ULTIMO_ADMINISTRADOR =
   'No se puede desactivar ni cambiar el rol del último administrador activo: el sistema se quedaría sin quien lo administre. ' +
@@ -132,6 +135,7 @@ export function traducirErrorDeUsuarios(
     }
     case 403:
       if (error.codigo === 'origen_no_permitido') return sinCampos(TEXTO_DE_ORIGEN);
+      if (error.codigo === CODIGO_CAMBIO_DE_CLAVE_REQUERIDO) return sinCampos(TEXTO_CLAVE_TEMPORAL);
       return sinCampos(
         'Tu usuario no tiene permiso para administrar usuarios: solo los administradores pueden. Si tu rol cambió hace poco, ingresa de nuevo.',
         true,

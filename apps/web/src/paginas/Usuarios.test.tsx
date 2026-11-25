@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Rol } from '../api/auth';
 import type { CambioDeUsuario, NuevoUsuario, UsuarioAdministrado } from '../api/usuarios';
 import {
@@ -638,5 +638,280 @@ describe('sesión que termina o rol que cambia', () => {
     await usuario.click(within(screen.getByRole('form', { name: /Desactivar/ })).getByRole('button', { name: 'Sí, desactivar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('desde un sitio que el servidor no reconoce');
     expect(api.a('GET', '/auth/yo')).toHaveLength(1);
+  });
+});
+
+describe('restablecer la clave de otra persona (#51)', () => {
+  const FORMA_GENERADA = /^[A-HJ-NP-Za-km-z2-9]{4}(-[A-HJ-NP-Za-km-z2-9]{4}){3}$/;
+  const sinContenido = () => new Response(null, { status: 204 });
+  type Usuario = ReturnType<typeof userEvent.setup>;
+
+  function panelDeClave(nombre = 'Editor Demo') {
+    return screen.getByRole('form', { name: `Restablecer la clave de ${nombre}` });
+  }
+
+  async function abrirPanel(usuario: Usuario, nombre = 'Editor Demo') {
+    await usuario.click(boton(`Restablecer clave de ${nombre}`));
+    return panelDeClave(nombre);
+  }
+
+  /** Escribe en el campo de la clave temporal pegando el texto (con `type` cada carácter es una pulsación). */
+  async function escribirClave(usuario: Usuario, panel: HTMLElement, clave: string) {
+    await usuario.click(within(panel).getByLabelText(/^Clave temporal/));
+    await usuario.paste(clave);
+  }
+
+  async function confirmar(usuario: Usuario, panel: HTMLElement) {
+    await usuario.click(within(panel).getByRole('button', { name: 'Sí, restablecer la clave' }));
+  }
+
+  it('cada persona tiene «Restablecer clave»; en la propia hay un enlace a «Cambiar mi clave» y no ese botón', async () => {
+    montar();
+    await esperarLista();
+    for (const nombre of ['Editor Demo', 'Consulta Demo', 'Persona Inactiva Demo']) {
+      expect(within(tarjeta(nombre)).getByRole('button', { name: `Restablecer clave de ${nombre}` })).toBeInTheDocument();
+    }
+    const propia = tarjeta('Admin Demo');
+    expect(within(propia).queryByRole('button', { name: /Restablecer clave/ })).not.toBeInTheDocument();
+    expect(within(propia).getByRole('link', { name: 'Cambiar mi clave' })).toHaveAttribute('href', '/clave');
+  });
+
+  it('el enlace propio lleva a la pantalla de cambio de clave', async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await esperarLista();
+    await usuario.click(within(tarjeta('Admin Demo')).getByRole('link', { name: 'Cambiar mi clave' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cambiar mi clave' })).toBeInTheDocument();
+    expect(ubicacion()).toBe('/clave');
+  });
+
+  it('abrir el panel explica las consecuencias, oculta la clave y no envía nada', async () => {
+    const usuario = userEvent.setup();
+    const api = montar();
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    expect(within(panel).getByText(/no podrá ingresar con su clave actual/)).toBeInTheDocument();
+    expect(within(panel).getByText(/sesiones abiertas se cierran/)).toBeInTheDocument();
+    expect(within(panel).getByText(/no vuelve a mostrar/)).toBeInTheDocument();
+    expect(within(panel).getByLabelText(/^Clave temporal/)).toHaveAttribute('type', 'password');
+    expect(within(panel).getByLabelText(/^Clave temporal/)).toHaveAttribute('autocomplete', 'new-password');
+    expect(screen.getByRole('heading', { level: 3, name: 'Restablecer la clave de Editor Demo' })).toHaveFocus();
+    expect(boton('Restablecer clave de Editor Demo')).toHaveAttribute('aria-expanded', 'true');
+    expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(0);
+  });
+
+  it('sin clave, o con 11 caracteres, no se envía y el error lleva el foco al campo', async () => {
+    const usuario = userEvent.setup();
+    const api = montar();
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await confirmar(usuario, panel);
+    expect(within(panel).getByText('Escribe la clave temporal o genera una.')).toBeInTheDocument();
+    expect(within(panel).getByLabelText(/^Clave temporal/)).toHaveFocus();
+    expect(within(panel).getByLabelText(/^Clave temporal/)).toHaveAttribute('aria-invalid', 'true');
+
+    await escribirClave(usuario, panel, CLAVE_DEMASIADO_CORTA);
+    await confirmar(usuario, panel);
+    expect(within(panel).getByText(/Mínimo 12 caracteres: esta tiene 11/)).toBeInTheDocument();
+    expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(0);
+  });
+
+  it('con una clave escrita: envía solo {clave}, cierra el panel y muestra la clave una vez, con el foco en su título', async () => {
+    const usuario = userEvent.setup();
+    const api = montar({ extra: { 'POST /usuarios/2/clave': sinContenido } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+
+    const titulo = await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' });
+    expect(titulo).toHaveFocus();
+    expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(1);
+    expect(api.a('POST', '/usuarios/2/clave')[0].cuerpo).toEqual({ clave: CLAVE_DEL_MINIMO });
+    expect(screen.queryByRole('form', { name: /Restablecer la clave/ })).not.toBeInTheDocument();
+    const caja = titulo.closest('section') as HTMLElement;
+    expect(within(caja).getByLabelText('Clave temporal')).toHaveValue(CLAVE_DEL_MINIMO);
+    expect(within(caja).getByLabelText('Clave temporal')).toHaveAttribute('readonly');
+    expect(within(caja).getByText(/única vez que se muestra/)).toBeInTheDocument();
+    expect(within(caja).getAllByText(/por otro medio/).length).toBeGreaterThan(0);
+    // La lista no cambia: restablecer la clave no toca el rol ni el estado.
+    expect(screen.getByText('4 usuarios · 3 activos')).toBeInTheDocument();
+    // Ninguna otra petición lleva la clave.
+    expect(api.llamadas.filter((l) => JSON.stringify(l.cuerpo ?? '').includes(CLAVE_DEL_MINIMO))).toHaveLength(1);
+  });
+
+  it('«Generar una clave» pone una clave de 16 símbolos a la vista y esa misma es la que se envía y la que se muestra', async () => {
+    const usuario = userEvent.setup();
+    const api = montar({ extra: { 'POST /usuarios/2/clave': sinContenido } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await usuario.click(within(panel).getByRole('button', { name: 'Generar una clave' }));
+    const campo = within(panel).getByLabelText(/^Clave temporal/) as HTMLInputElement;
+    expect(campo).toHaveAttribute('type', 'text');
+    const generada = campo.value;
+    expect(generada).toMatch(FORMA_GENERADA);
+    expect(within(panel).getByLabelText('Mostrar la clave mientras la escribo')).toBeChecked();
+
+    // Otra vez da una distinta.
+    await usuario.click(within(panel).getByRole('button', { name: 'Generar una clave' }));
+    expect(campo.value).not.toBe(generada);
+    const segunda = campo.value;
+
+    await confirmar(usuario, panel);
+    const caja = (await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' })).closest('section') as HTMLElement;
+    expect(api.a('POST', '/usuarios/2/clave')[0].cuerpo).toEqual({ clave: segunda });
+    expect(within(caja).getByLabelText('Clave temporal')).toHaveValue(segunda);
+  });
+
+  it('generar quita el error de validación que hubiera', async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await confirmar(usuario, panel);
+    expect(within(panel).getByText('Escribe la clave temporal o genera una.')).toBeInTheDocument();
+    await usuario.click(within(panel).getByRole('button', { name: 'Generar una clave' }));
+    expect(within(panel).queryByText('Escribe la clave temporal o genera una.')).not.toBeInTheDocument();
+  });
+
+  it('«Copiar la clave» la manda al portapapeles y lo dice; si no se puede, lo dice y deja copiarla a mano', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': sinContenido } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' });
+
+    const escribir = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: escribir }, configurable: true });
+    await usuario.click(boton('Copiar la clave'));
+    expect(escribir).toHaveBeenCalledExactlyOnceWith(CLAVE_DEL_MINIMO);
+    expect(await screen.findByText(/Clave copiada/)).toBeInTheDocument();
+
+    escribir.mockRejectedValueOnce(new Error('denegado'));
+    await usuario.click(boton('Copiar la clave'));
+    expect(await screen.findByText(/No se pudo copiar\. Selecciona la clave del campo y cópiala a mano/)).toBeInTheDocument();
+    expect(screen.queryByText(/Clave copiada/)).not.toBeInTheDocument();
+  });
+
+  it('sin portapapeles en el navegador también avisa', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': sinContenido } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' });
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    await usuario.click(boton('Copiar la clave'));
+    expect(await screen.findByText(/No se pudo copiar/)).toBeInTheDocument();
+  });
+
+  it('cerrar la caja borra la clave de la pantalla, devuelve el foco al botón y deja restablecer otra vez', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': sinContenido } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' });
+    // Mientras la caja está abierta no se abre otro restablecimiento: la caja es lo único que tiene la clave.
+    expect(boton('Restablecer clave de Consulta Demo')).toBeDisabled();
+
+    await usuario.click(boton('Ya la copié, cerrar'));
+    expect(screen.queryByRole('heading', { name: 'Clave temporal de Editor Demo' })).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain(CLAVE_DEL_MINIMO);
+    await waitFor(() => expect(boton('Restablecer clave de Editor Demo')).toHaveFocus());
+    expect(boton('Restablecer clave de Consulta Demo')).toBeEnabled();
+  });
+
+  it('cancelar el panel no envía nada y devuelve el foco al botón', async () => {
+    const usuario = userEvent.setup();
+    const api = montar();
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await usuario.click(within(panel).getByRole('button', { name: 'Cancelar' }));
+    await waitFor(() => expect(boton('Restablecer clave de Editor Demo')).toHaveFocus());
+    expect(screen.queryByRole('form', { name: /Restablecer la clave/ })).not.toBeInTheDocument();
+    expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(0);
+    expect(document.body.innerHTML).not.toContain(CLAVE_DEL_MINIMO);
+  });
+
+  it('dos envíos seguidos mandan una sola petición', async () => {
+    const usuario = userEvent.setup();
+    let liberar: (r: Response) => void = () => undefined;
+    const api = montar({ extra: { 'POST /usuarios/2/clave': () => new Promise<Response>((resolver) => (liberar = resolver)) } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    fireEvent.submit(panel);
+    fireEvent.submit(panel);
+    await waitFor(() => expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(1));
+    liberar(sinContenido());
+    await screen.findByRole('heading', { level: 2, name: 'Clave temporal de Editor Demo' });
+    expect(api.a('POST', '/usuarios/2/clave')).toHaveLength(1);
+  });
+
+  it('una persona que ya no existe (404) se explica dentro del panel, que conserva lo escrito', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': () => respuestaJson({ statusCode: 404, message: 'No existe el usuario 2' }, 404) } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Editor Demo ya no existe');
+    expect(within(panel).getByLabelText(/^Clave temporal/)).toHaveValue(CLAVE_DEL_MINIMO);
+    expect(screen.queryByRole('heading', { name: 'Clave temporal de Editor Demo' })).not.toBeInTheDocument();
+  });
+
+  it('un 429 dice cuánto esperar y no muestra ninguna clave', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': () => respuestaJson({ message: 'x' }, 429, { 'Retry-After': '30' }) } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Intenta de nuevo en 30 segundos');
+    expect(screen.queryByRole('heading', { name: 'Clave temporal de Editor Demo' })).not.toBeInTheDocument();
+  });
+
+  it('un 400 con problemas de la clave se muestra en español', async () => {
+    const usuario = userEvent.setup();
+    montar({
+      extra: {
+        'POST /usuarios/2/clave': () => respuestaJson({ message: 'Datos no válidos', problemas: ['clave: debe tener al menos 12 caracteres'] }, 400),
+      },
+    });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('La clave temporal debe tener al menos 12 caracteres.');
+  });
+
+  it('un 403 de rol vuelve a leer la sesión', async () => {
+    const usuario = userEvent.setup();
+    const api = montar({
+      extra: { 'POST /usuarios/2/clave': () => respuestaJson({ statusCode: 403, message: 'Forbidden resource', error: 'Forbidden' }, 403) },
+    });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('solo los administradores pueden');
+    await waitFor(() => expect(api.a('GET', '/auth/yo').length).toBeGreaterThan(1));
+  });
+
+  it('el servidor caído da un mensaje claro y deja volver a intentar', async () => {
+    const usuario = userEvent.setup();
+    montar({ extra: { 'POST /usuarios/2/clave': () => respuestaJson({ message: 'boom' }, 500) } });
+    await esperarLista();
+    const panel = await abrirPanel(usuario);
+    await escribirClave(usuario, panel, CLAVE_DEL_MINIMO);
+    await confirmar(usuario, panel);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('El servidor tuvo un problema');
+    expect(within(panel).getByRole('button', { name: 'Sí, restablecer la clave' })).toBeEnabled();
   });
 });

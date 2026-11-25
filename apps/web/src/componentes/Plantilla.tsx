@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useSesion } from '../sesion/contexto';
+import { RUTA_DE_CAMBIO_DE_CLAVE } from '../sesion/rutas';
 import { ETIQUETA_DE_ROL } from '../utilidades/roles';
 
 /** Marco de las pantallas con sesión: cabecera con el menú según el rol, contenido y pie. */
@@ -23,6 +24,7 @@ export function Plantilla() {
 
   const puedeCargar = usuario?.rol === 'administrador' || usuario?.rol === 'editor';
   const esAdministrador = usuario?.rol === 'administrador';
+  const debeCambiarClave = usuario?.debeCambiarClave === true;
 
   return (
     <div className="plantilla">
@@ -35,30 +37,36 @@ export function Plantilla() {
             <span className="marca__nombre">Faro</span>
             <span className="marca__lema">Gestión documental</span>
           </Link>
-          <nav aria-label="Principal" className="menu">
-            <ul>
-              <li>
-                <NavLink to="/documentos" end>
-                  Documentos
-                </NavLink>
-              </li>
-              {puedeCargar && (
+          {/* Con clave temporal solo se puede cambiarla: no hay a dónde más ir, así que no hay menú. */}
+          {!debeCambiarClave && (
+            <nav aria-label="Principal" className="menu">
+              <ul>
                 <li>
-                  <NavLink to="/documentos/nuevo">Cargar documento</NavLink>
+                  <NavLink to="/documentos" end>
+                    Documentos
+                  </NavLink>
                 </li>
-              )}
-              {esAdministrador && (
-                <>
+                {puedeCargar && (
                   <li>
-                    <NavLink to="/usuarios">Usuarios</NavLink>
+                    <NavLink to="/documentos/nuevo">Cargar documento</NavLink>
                   </li>
-                  <li>
-                    <NavLink to="/auditoria">Auditoría</NavLink>
-                  </li>
-                </>
-              )}
-            </ul>
-          </nav>
+                )}
+                {esAdministrador && (
+                  <>
+                    <li>
+                      <NavLink to="/usuarios">Usuarios</NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/auditoria">Auditoría</NavLink>
+                    </li>
+                  </>
+                )}
+                <li>
+                  <NavLink to={RUTA_DE_CAMBIO_DE_CLAVE}>Mi clave</NavLink>
+                </li>
+              </ul>
+            </nav>
+          )}
           {usuario && (
             <div className="sesion">
               <p className="sesion__persona">

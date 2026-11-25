@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { archivoPdf } from '../pruebas/ayudas';
 import {
   validarArchivo,
+  validarClaveActual,
   validarClaveInicial,
+  validarClaveNueva,
+  validarClaveTemporal,
   validarFecha,
   validarFechaDeFiltro,
   validarNombreDeUsuario,
   validarNumeroDeDocumento,
   validarOrdenDeFechas,
+  validarRepeticionDeClave,
   validarTexto,
 } from './validacion';
 
@@ -176,5 +180,41 @@ describe('filtros de fecha', () => {
     expect(validarOrdenDeFechas('', '2026-11-22')).toBeUndefined();
     expect(validarOrdenDeFechas('2026-11-22', '')).toBeUndefined();
     expect(validarOrdenDeFechas('', '')).toBeUndefined();
+  });
+});
+
+describe('claves: temporal, actual, nueva y su repetición (#51)', () => {
+  const CLAVE_ACTUAL = 'x'.repeat(14);
+  const CLAVE_OTRA = 'y'.repeat(14);
+
+  it('la clave temporal sigue las reglas de la API: 12 a 256, no solo espacios, sin recortar', () => {
+    expect(validarClaveTemporal('')).toBe('Escribe la clave temporal o genera una.');
+    expect(validarClaveTemporal(' '.repeat(20))).toMatch(/solo espacios/);
+    expect(validarClaveTemporal('x'.repeat(11))).toMatch(/Mínimo 12 caracteres: esta tiene 11/);
+    expect(validarClaveTemporal('x'.repeat(12))).toBeUndefined();
+    expect(validarClaveTemporal('x'.repeat(256))).toBeUndefined();
+    expect(validarClaveTemporal('x'.repeat(257))).toMatch(/Máximo 256 caracteres: esta tiene 257/);
+    expect(validarClaveTemporal(`  ${'x'.repeat(8)}  `)).toBeUndefined();
+  });
+
+  it('la clave actual solo se pide: no se le exige la forma de una clave nueva (la API decide si es la correcta)', () => {
+    expect(validarClaveActual('')).toBe('Escribe tu clave actual.');
+    expect(validarClaveActual('corta')).toBeUndefined();
+    expect(validarClaveActual('x'.repeat(256))).toBeUndefined();
+    expect(validarClaveActual('x'.repeat(257))).toMatch(/Máximo 256/);
+  });
+
+  it('la clave nueva cumple las reglas y es distinta de la actual', () => {
+    expect(validarClaveNueva('', CLAVE_ACTUAL)).toBe('Escribe la clave nueva.');
+    expect(validarClaveNueva('x'.repeat(11), CLAVE_ACTUAL)).toMatch(/Mínimo 12 caracteres/);
+    expect(validarClaveNueva(CLAVE_ACTUAL, CLAVE_ACTUAL)).toBe('La clave nueva debe ser distinta de la actual.');
+    expect(validarClaveNueva(CLAVE_OTRA, CLAVE_ACTUAL)).toBeUndefined();
+  });
+
+  it('la repetición debe existir y coincidir con la clave nueva', () => {
+    expect(validarRepeticionDeClave(CLAVE_OTRA, '')).toMatch(/Vuelve a escribir la clave nueva/);
+    expect(validarRepeticionDeClave(CLAVE_OTRA, CLAVE_ACTUAL)).toMatch(/No coincide/);
+    expect(validarRepeticionDeClave(CLAVE_OTRA, `${CLAVE_OTRA} `)).toMatch(/No coincide/);
+    expect(validarRepeticionDeClave(CLAVE_OTRA, CLAVE_OTRA)).toBeUndefined();
   });
 });

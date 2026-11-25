@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ingresar as ingresarEnLaApi, quienSoy, salir as salirEnLaApi } from '../api/auth';
-import { alExpirarLaSesion } from '../api/cliente';
+import { alExpirarLaSesion, alRequerirCambioDeClave } from '../api/cliente';
 import { ContextoSesion, type EstadoDeSesion, type ValorDeSesion } from './contexto';
 
 export function ProveedorSesion({ children }: { children: ReactNode }) {
@@ -24,6 +24,20 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     () =>
       alExpirarLaSesion(() =>
         setEstado((actual) => (actual.tipo === 'autenticado' ? { tipo: 'anonimo', expirada: true } : actual)),
+      ),
+    [],
+  );
+
+  // Un 403 `cambio_de_clave_requerido` en cualquier petición: la clave es temporal y la API solo deja cambiarla. Se marca en la
+  // sesión y la guarda de rutas lleva a la pantalla de cambio de clave (también cuando la interfaz lo ignoraba: recarga, otra pestaña).
+  useEffect(
+    () =>
+      alRequerirCambioDeClave(() =>
+        setEstado((actual) =>
+          actual.tipo === 'autenticado' && actual.usuario.debeCambiarClave !== true
+            ? { tipo: 'autenticado', usuario: { ...actual.usuario, debeCambiarClave: true } }
+            : actual,
+        ),
       ),
     [],
   );
@@ -55,6 +69,15 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const valor = useMemo<ValorDeSesion>(() => ({ estado, ingresar, salir, refrescar }), [estado, ingresar, salir, refrescar]);
+  const claveCambiada = useCallback(() => {
+    setEstado((actual) =>
+      actual.tipo === 'autenticado' ? { tipo: 'autenticado', usuario: { ...actual.usuario, debeCambiarClave: false } } : actual,
+    );
+  }, []);
+
+  const valor = useMemo<ValorDeSesion>(
+    () => ({ estado, ingresar, salir, refrescar, claveCambiada }),
+    [estado, ingresar, salir, refrescar, claveCambiada],
+  );
   return <ContextoSesion.Provider value={valor}>{children}</ContextoSesion.Provider>;
 }
