@@ -203,4 +203,6 @@ Como las secciones 6 y 7, esta registra cómo la interfaz aplicó el contrato de
 
 ### 8.3 Verificación
 
-Pruebas de la web (Vitest y Testing Library) y pruebas de mutación; recorrido en Chromium real contra el servidor compilado **con la API de #57 fusionada en una rama local descartable** (no empujada). El detalle está en el cuerpo del PR. Las capturas se guardan fuera del repositorio, para el manual de usuario.
+Pruebas de la web (Vitest y Testing Library), 25 pruebas de mutación (las 25 detectadas) y un recorrido en Chromium real a 1280 y 360 px contra el servidor compilado **con la API de #57 (4cbfa2b) fusionada en una rama local descartable** (no empujada): ingreso con clave temporal, bloqueo de otras pantallas, 403 `cambio_de_clave_requerido` sin que la sesión de la interfaz lo supiera, clave actual equivocada, cambio correcto con cierre de la otra sesión, 429 con `Retry-After`, cambio voluntario, restablecer con clave escrita y generada, copia al portapapeles y auditoría de los eventos. Con axe sin violaciones y sin errores de consola. El detalle está en el cuerpo del PR. Las capturas se guardan fuera del repositorio, para el manual de usuario.
+
+[POR VERIFICAR] Lector de pantalla, Firefox y Safari, y la API de #57 tal como quede tras su fusión en `main` (aquí se probó la rama del PR #57, no `main`).
