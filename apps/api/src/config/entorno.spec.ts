@@ -2,6 +2,8 @@ import { EntornoInvalidoError, validarEntorno } from './entorno.js';
 
 const URL_VALIDA = 'postgresql://faro:clave-secreta-123@localhost:5433/faro';
 
+const interfazRutaDe = (valor: string) => validarEntorno({ DATABASE_URL: URL_VALIDA, INTERFAZ_RUTA: valor }).INTERFAZ_RUTA;
+
 describe('validarEntorno', () => {
   it('acepta un entorno mínimo y aplica los valores por defecto', () => {
     const entorno = validarEntorno({ DATABASE_URL: URL_VALIDA });
@@ -47,6 +49,22 @@ describe('validarEntorno', () => {
         );
       },
     );
+  });
+
+  describe('carpeta de la interfaz web (ADR-012)', () => {
+    it('es opcional: sin ella queda indefinida (se usa apps/web/dist)', () => {
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA }).INTERFAZ_RUTA).toBeUndefined();
+    });
+
+    it('acepta una ruta y le recorta los espacios', () => {
+      expect(validarEntorno({ DATABASE_URL: URL_VALIDA, INTERFAZ_RUTA: ' /srv/faro/web ' }).INTERFAZ_RUTA).toBe(
+        '/srv/faro/web',
+      );
+    });
+
+    it.each(['', '   '])('%j cuenta como no definida: un «INTERFAZ_RUTA=» del .env no rompe el arranque', (valor) => {
+      expect(interfazRutaDe(valor)).toBeUndefined();
+    });
   });
 
   describe('umbral de similitud', () => {

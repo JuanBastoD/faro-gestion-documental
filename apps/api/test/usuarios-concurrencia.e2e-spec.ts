@@ -64,7 +64,7 @@ describe('Cambios simultáneos sobre los administradores (contra PostgreSQL real
       for (const nombre of ['admin.1', 'admin.2', 'admin.3', 'admin.4']) {
         ids.push(await crearUsuario(ctx.db, { usuario: nombre, rol: 'administrador' }));
       }
-      const actor: UsuarioSesion = { id: ids[0], usuario: 'admin.1', nombre: 'Nombre de admin.1', rol: 'administrador' };
+      const actor: UsuarioSesion = { id: ids[0], usuario: 'admin.1', nombre: 'Nombre de admin.1', rol: 'administrador', debeCambiarClave: false };
 
       const cambios: Array<[number, CambioDeUsuario]> = ids.flatMap((id) => [
         [id, { activo: false }],

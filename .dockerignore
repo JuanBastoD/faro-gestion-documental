@@ -18,12 +18,11 @@ data/
 demo-pdfs/
 iniciar-demo.bat
 
-# Lo que no hace falta para compilar la API
+# Lo que no hace falta para compilar la API ni la interfaz
 .git
 .github
 legacy
 docs
 infra
 apps/api/test
-apps/web
 **/*.md

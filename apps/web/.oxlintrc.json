@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jsx-a11y"],
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "react/exhaustive-deps": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2023": true
+  }
+}

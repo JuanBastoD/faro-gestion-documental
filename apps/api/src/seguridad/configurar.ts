@@ -8,9 +8,10 @@ import { sinCacheEnLaApi } from './sin-cache.js';
  * cuántos proxies hay delante. Lo usan `main.ts` y las pruebas, para que se pruebe lo mismo que corre.
  *
  * - `helmet()` con sus valores por defecto: `Content-Security-Policy` restrictiva, `X-Content-Type-Options: nosniff`,
- *   `Strict-Transport-Security` (los navegadores la ignoran por HTTP), sin `X-Powered-By`, etc. Hoy la API solo
- *   devuelve JSON y PDF. [PROPUESTA] Cuando la API sirva la interfaz web (V2-M4) habrá que revisar la
- *   política de contenido con la interfaz real.
+ *   `Strict-Transport-Security` (los navegadores la ignoran por HTTP), sin `X-Powered-By`, etc. La API también
+ *   sirve la interfaz web bajo `/app/`: [CONFIRMADO en #23] con la interfaz real, en Chromium, esta política no
+ *   bloquea nada (la interfaz no usa scripts ni estilos en línea ni orígenes externos), así que no se cambió.
+ *   Ver el ADR-012; `apps/web/src/indice.test.ts` protege esa compatibilidad.
  * - `trust proxy`: de cuántos saltos se fía Express para leer la IP del cliente en `X-Forwarded-For`. Con 0
  *   ignora ese encabezado. Determina la IP del límite de intentos de ingreso (ADR-009).
  * - `sinCacheEnLaApi`: `Cache-Control: no-store` en todo lo que no sea la interfaz web bajo `/app/` (H-07 de la
