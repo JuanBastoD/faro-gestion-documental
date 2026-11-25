@@ -42,6 +42,19 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     setEstado({ tipo: 'anonimo', expirada: false });
   }, []);
 
-  const valor = useMemo<ValorDeSesion>(() => ({ estado, ingresar, salir }), [estado, ingresar, salir]);
+  const refrescar = useCallback(async () => {
+    try {
+      const usuario = await quienSoy();
+      setEstado((actual) => {
+        if (usuario) return { tipo: 'autenticado', usuario };
+        // Había sesión y la API ya no la reconoce: vuelve al ingreso con el aviso, como ante un 401.
+        return actual.tipo === 'autenticado' ? { tipo: 'anonimo', expirada: true } : actual;
+      });
+    } catch {
+      // Sin red (o 5xx) no se sabe nada nuevo: se conserva lo que había; la siguiente petición dirá qué pasa.
+    }
+  }, []);
+
+  const valor = useMemo<ValorDeSesion>(() => ({ estado, ingresar, salir, refrescar }), [estado, ingresar, salir, refrescar]);
   return <ContextoSesion.Provider value={valor}>{children}</ContextoSesion.Provider>;
 }

@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { archivoPdf } from '../pruebas/ayudas';
-import { validarArchivo, validarFecha, validarTexto } from './validacion';
+import {
+  validarArchivo,
+  validarClaveInicial,
+  validarFecha,
+  validarFechaDeFiltro,
+  validarNombreDeUsuario,
+  validarNumeroDeDocumento,
+  validarOrdenDeFechas,
+  validarTexto,
+} from './validacion';
 
 describe('validarArchivo', () => {
   it('sin archivo: lo pide', () => {
@@ -75,5 +84,97 @@ describe('validarFecha', () => {
 
   it('un año de tres cifras mal tecleado se avisa', () => {
     expect(validarFecha('0202-03-15')).toMatch(/Revisa el año/);
+  });
+});
+
+describe('validarNombreDeUsuario', () => {
+  it.each(['ana', 'ana.demo', 'a1b', 'ana_perez-2', '1abc', 'a'.repeat(64)])('«%s» pasa', (valor) => {
+    expect(validarNombreDeUsuario(valor)).toBeUndefined();
+  });
+
+  it('los espacios de los extremos no cuentan, como en la API (que los recorta)', () => {
+    expect(validarNombreDeUsuario('  ana.demo  ')).toBeUndefined();
+  });
+
+  it('vacío o solo espacios: lo pide', () => {
+    expect(validarNombreDeUsuario('')).toMatch(/Escribe el nombre de usuario/);
+    expect(validarNombreDeUsuario('   ')).toMatch(/Escribe el nombre de usuario/);
+  });
+
+  it('el mínimo es 3 y el máximo 64: justo en el borde pasa, uno más allá no', () => {
+    expect(validarNombreDeUsuario('ab')).toMatch(/Mínimo 3 caracteres: este tiene 2/);
+    expect(validarNombreDeUsuario('abc')).toBeUndefined();
+    expect(validarNombreDeUsuario('a'.repeat(65))).toMatch(/Máximo 64 caracteres: este tiene 65/);
+  });
+
+  it('con mayúsculas no pasa, y propone cómo escribirlo en minúsculas', () => {
+    expect(validarNombreDeUsuario('Ana.Demo')).toMatch(/minúsculas, por ejemplo «ana\.demo»/);
+  });
+
+  it.each(['.ana', '-ana', '_ana', 'ana demo', 'ana@demo', 'añá.demo', 'ana/demo'])('«%s» no pasa', (valor) => {
+    expect(validarNombreDeUsuario(valor)).toMatch(/Usa solo letras minúsculas sin tilde/);
+  });
+});
+
+describe('validarClaveInicial', () => {
+  it('vacía: la pide', () => {
+    expect(validarClaveInicial('')).toBe('Escribe la clave inicial.');
+  });
+
+  it('solo espacios: no cuenta aunque pase del mínimo', () => {
+    expect(validarClaveInicial(' '.repeat(20))).toMatch(/no puede ser solo espacios/);
+  });
+
+  it('el mínimo es 12 y el máximo 256: justo en el borde pasa, uno más allá no', () => {
+    expect(validarClaveInicial('x'.repeat(11))).toMatch(/Mínimo 12 caracteres: esta tiene 11/);
+    expect(validarClaveInicial('x'.repeat(12))).toBeUndefined();
+    expect(validarClaveInicial('x'.repeat(256))).toBeUndefined();
+    expect(validarClaveInicial('x'.repeat(257))).toMatch(/Máximo 256 caracteres: esta tiene 257/);
+  });
+
+  it('no se recorta: los espacios de los extremos cuentan como parte de la clave (igual que en la API)', () => {
+    expect(validarClaveInicial(`  ${'x'.repeat(8)}  `)).toBeUndefined();
+    expect(validarClaveInicial(`  ${'x'.repeat(7)}  `)).toMatch(/esta tiene 11/);
+  });
+
+  it('el mensaje de error nunca repite la clave escrita', () => {
+    const escrita = 'abc';
+    expect(validarClaveInicial(escrita)).not.toContain(escrita);
+  });
+});
+
+describe('validarNumeroDeDocumento', () => {
+  it('vacío está bien (es un filtro opcional)', () => {
+    expect(validarNumeroDeDocumento('')).toBeUndefined();
+    expect(validarNumeroDeDocumento('  ')).toBeUndefined();
+  });
+
+  it('un entero positivo pasa', () => {
+    expect(validarNumeroDeDocumento('1')).toBeUndefined();
+    expect(validarNumeroDeDocumento(' 12 ')).toBeUndefined();
+  });
+
+  it.each(['0', '-3', '1.5', 'doce', '12a', '12345678901'])('«%s» no pasa', (valor) => {
+    expect(validarNumeroDeDocumento(valor)).toMatch(/Escribe solo el número del documento/);
+  });
+});
+
+describe('filtros de fecha', () => {
+  it('una fecha de filtro vacía está bien; una que no existe, no', () => {
+    expect(validarFechaDeFiltro('')).toBeUndefined();
+    expect(validarFechaDeFiltro('2026-11-22')).toBeUndefined();
+    expect(validarFechaDeFiltro('2026-02-31')).toMatch(/no existe/);
+  });
+
+  it('«desde» puede ser igual a «hasta» (un solo día), pero no posterior', () => {
+    expect(validarOrdenDeFechas('2026-11-22', '2026-11-22')).toBeUndefined();
+    expect(validarOrdenDeFechas('2026-11-21', '2026-11-22')).toBeUndefined();
+    expect(validarOrdenDeFechas('2026-11-23', '2026-11-22')).toMatch(/«desde» no puede ser posterior a «hasta»/);
+  });
+
+  it('con una de las dos vacía no hay nada que comparar', () => {
+    expect(validarOrdenDeFechas('', '2026-11-22')).toBeUndefined();
+    expect(validarOrdenDeFechas('2026-11-22', '')).toBeUndefined();
+    expect(validarOrdenDeFechas('', '')).toBeUndefined();
   });
 });

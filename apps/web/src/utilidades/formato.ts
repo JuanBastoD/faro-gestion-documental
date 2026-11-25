@@ -6,6 +6,12 @@ const formatoFechaHora = new Intl.DateTimeFormat('es-CO', {
   timeZone: ZONA_HORARIA,
 });
 
+const formatoMomento = new Intl.DateTimeFormat('es-CO', {
+  dateStyle: 'medium',
+  timeStyle: 'medium',
+  timeZone: ZONA_HORARIA,
+});
+
 const formatoFecha = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeZone: 'UTC' });
 
 const formatoDecimal = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -14,6 +20,12 @@ const formatoDecimal = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1
 export function formatearFechaHora(iso: string): string {
   const fecha = new Date(iso);
   return Number.isNaN(fecha.getTime()) ? iso : formatoFechaHora.format(fecha);
+}
+
+/** Como `formatearFechaHora` pero con segundos: en la auditoría importa el orden de lo que pasó dentro de un mismo minuto. */
+export function formatearMomento(iso: string): string {
+  const fecha = new Date(iso);
+  return Number.isNaN(fecha.getTime()) ? iso : formatoMomento.format(fecha);
 }
 
 /** Fecha de calendario `AAAA-MM-DD` (`fechaDocumento`). Se lee como UTC para que la zona horaria no corra el día. */

@@ -126,14 +126,18 @@ describe('guarda de rutas', () => {
       expect(await screen.findByRole('heading', { name: /No tienes permiso/ })).toBeInTheDocument();
     });
 
-    it('el administrador llega a usuarios y a auditoría (pantallas marcador del #25)', async () => {
-      apiConSesion('administrador');
+    it('el administrador llega a usuarios y a auditoría, con sus datos', async () => {
+      apiConSesion('administrador', {
+        'GET /usuarios': () => respuestaJson([]),
+        'GET /auditoria': () => respuestaJson({ items: [], total: 0, pagina: 1, tamano: 20 }),
+      });
       const primera = renderizarApp('/usuarios');
-      expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument();
-      expect(screen.getByText(/issue #25/)).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Usuarios' })).toBeInTheDocument();
+      expect(await screen.findByText('Todavía no hay usuarios.')).toBeInTheDocument();
       primera.unmount();
       renderizarApp('/auditoria');
-      expect(await screen.findByRole('heading', { name: 'Auditoría' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { level: 1, name: 'Auditoría' })).toBeInTheDocument();
+      expect(await screen.findByText('Todavía no hay eventos registrados.')).toBeInTheDocument();
     });
   });
 

@@ -1,13 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import type { Rol } from '../api/auth';
 import { useSesion } from '../sesion/contexto';
-
-const ETIQUETA_DE_ROL: Record<Rol, string> = {
-  administrador: 'Administrador',
-  editor: 'Editor',
-  consulta: 'Consulta',
-};
+import { ETIQUETA_DE_ROL } from '../utilidades/roles';
 
 /** Marco de las pantallas con sesión: cabecera con el menú según el rol, contenido y pie. */
 export function Plantilla() {

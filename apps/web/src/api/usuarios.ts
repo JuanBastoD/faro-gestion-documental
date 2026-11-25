@@ -30,12 +30,28 @@ export function listarUsuarios(senal?: AbortSignal): Promise<UsuarioAdministrado
   return pedir<UsuarioAdministrado[]>('/usuarios', { senal });
 }
 
-/** `POST /usuarios` (administrador). 409 si el nombre ya existe. */
-export function crearUsuario(datos: NuevoUsuario): Promise<UsuarioAdministrado> {
-  return pedir<UsuarioAdministrado>('/usuarios', { metodo: 'POST', cuerpo: datos });
+/**
+ * Los límites de `apps/api/src/usuarios/datos-usuario.ts`. El navegador los repite para avisar antes de enviar; la API
+ * vuelve a validar y es la que decide. El nombre de usuario se mide ya sin espacios en los extremos (la API los quita).
+ */
+export const LIMITES_DE_USUARIO = {
+  usuarioMinimo: 3,
+  usuarioMaximo: 64,
+  nombre: 120,
+  claveMinima: 12,
+  claveMaxima: 256,
+} as const;
+
+/** `POST /usuarios` (administrador). 201 con el usuario creado (sin la clave). 409 `usuario_existente` si el nombre ya existe. */
+export function crearUsuario(datos: NuevoUsuario, senal?: AbortSignal): Promise<UsuarioAdministrado> {
+  return pedir<UsuarioAdministrado>('/usuarios', { metodo: 'POST', cuerpo: datos, senal });
 }
 
-/** `PATCH /usuarios/:id` (administrador). 409 `ultimo_administrador` si dejaría al sistema sin administradores. */
-export function cambiarUsuario(id: number, cambio: CambioDeUsuario): Promise<UsuarioAdministrado> {
-  return pedir<UsuarioAdministrado>(`/usuarios/${id}`, { metodo: 'PATCH', cuerpo: cambio });
+/**
+ * `PATCH /usuarios/:id` (administrador). Responde 200 con el usuario ya cambiado; si no cambia nada, 200 igual y sin evento en
+ * la auditoría. 409 `ultimo_administrador` si dejaría al sistema sin administradores. Desactivar cierra las sesiones de
+ * esa persona al instante (ADR-008).
+ */
+export function cambiarUsuario(id: number, cambio: CambioDeUsuario, senal?: AbortSignal): Promise<UsuarioAdministrado> {
+  return pedir<UsuarioAdministrado>(`/usuarios/${id}`, { metodo: 'PATCH', cuerpo: cambio, senal });
 }
