@@ -149,7 +149,25 @@ Si existe `apps/web/dist`, la API la sirve en `/app/` con respaldo a `index.html
 | `npm run dev -w apps/web` | Servidor de desarrollo con recarga |
 | `npm test -w apps/web` | Pruebas de la interfaz (Vitest, Testing Library y jsdom; la API se simula a nivel de `fetch`) |
 | `npm run typecheck -w apps/web` | Comprobación de tipos |
-| `npm run lint -w apps/web` | Oxlint con tipos y reglas de accesibilidad |
+| `npm run lint -w apps/web` | Oxlint con tipos y reglas de accesibilidad (incluye las pruebas de navegador) |
+| `npm run test:navegador -w apps/web` | Prueba de punta a punta en Chromium real (ver abajo) |
+| `npm run typecheck:e2e -w apps/web` | Comprobación de tipos de las pruebas de navegador |
+
+### Pruebas de navegador (`apps/web/e2e`, issue #26)
+
+Una prueba de punta a punta, con [Playwright](https://playwright.dev) y Chromium real, del flujo de la demostración: **ingreso** (con una clave incorrecta y con la correcta), **carga** de un PDF, **duplicado probable** (un reescaneo con el 1 % de las palabras mal reconocidas, que la API reconoce como parecido), decisión **«es una versión nueva»**, historial con la **versión 2** vigente, **descarga** de esa versión (los bytes coinciden con los subidos) y **auditoría** consultada por el administrador, que encuentra la carga, la versión nueva, la decisión y la descarga con la huella del archivo. Además comprueba que las opciones de «Elige con cuál quieres comparar» no se montan unas sobre otras (con 2 y con 3 candidatos, a 1280 y a 360 px), que ninguna página tiene errores de consola ni respuestas de error que la prueba no provocó, y que la guarda de origen rechaza con 403 una petición de otro origen. Los pasos están numerados (`01 ·` a `12 ·`) y forman una serie: si uno falla, los siguientes no corren.
+
+Corre contra la **API compilada que sirve la interfaz en `/app/`** (el mismo camino que usa producción), con PostgreSQL real y los usuarios `*.demo` de la siembra. Los PDF son ficticios, se generan en memoria con el generador de `apps/api/test/pdfs.ts` y no se guardan en el repositorio. Cada corrida usa otra semilla (se imprime al empezar; `FARO_E2E_SEMILLA=<n>` repite el mismo texto), así que los documentos que dejan las corridas anteriores no se confunden con los de esta.
+
+```
+npm run build                              # compila la API y la interfaz
+npm run db:migrate -w apps/api             # migra y siembra la base de DATABASE_URL (una base de desarrollo desechable:
+npm run db:seed -w apps/api                #   la prueba deja los documentos que crea)
+npx playwright install chromium            # una vez: descarga el Chromium que espera esta versión de Playwright
+npm run test:navegador -w apps/web         # necesita SEMILLA_CLAVE y DATABASE_URL en el entorno (ver .env.example)
+```
+
+La prueba arranca sola la API (`node apps/api/dist/main.js`) en el puerto 3000, o en `FARO_E2E_PUERTO`; si el puerto está ocupado, Playwright lo dice y no sigue. `SEMILLA_CLAVE` es la clave con que se sembraron los usuarios (no hay ninguna escrita en el código). Con `FARO_CHROMIUM_RUTA` se usa un Chromium que ya esté instalado en lugar de descargar otro. Si un paso falla, la traza (`npx playwright show-trace <traza.zip>`), una captura de cada página y el informe quedan en `apps/web/test-results/` y `apps/web/playwright-report/` (ambas carpetas fuera de git). Las decisiones de diseño están en [ADR-012 §8](docs/adr/0012-interfaz-web-bajo-app-servida-por-la-api.md).
 
 ## Integración continua
 
@@ -164,6 +182,8 @@ Si existe `apps/web/dist`, la API la sirve en `/app/` con respaldo a `index.html
 | `secretos` | gitleaks sobre **todo el historial** (el repositorio es público); lo permitido está en `.gitleaks.toml`, cada excepción con su justificación |
 
 Si un paso falla, el PR queda en rojo. `main` exige que pasen `api`, `legacy` e `infra` antes de fusionar; `imagen` y `secretos` también corren en cada PR, pero la protección de la rama aún no los exige (es un ajuste del repositorio, no de este código). Las acciones de GitHub se fijan por commit (SHA), no por etiqueta.
+
+El trabajo **`web-e2e`** (issue #26) corre la prueba de navegador de [Pruebas de navegador](#pruebas-de-navegador-appswebe2e-issue-26) con su propio PostgreSQL y un Chromium de Playwright, y sube la traza y las capturas como artefacto solo si falla. **No es obligatorio**: la protección de `main` no lo exige, así que un fallo suyo se ve en el PR sin bloquear la fusión.
 
 ## Despliegue en la nube y contenedor
 

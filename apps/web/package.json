@@ -12,9 +12,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint --type-aware src/ vite.config.ts",
+    "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json",
+    "lint": "oxlint --type-aware src/ e2e/ vite.config.ts playwright.config.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:navegador": "playwright test"
   },
   "dependencies": {
     "react": "19.3.1",
@@ -22,6 +24,7 @@
     "react-router": "8.5.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@testing-library/jest-dom": "8.0.0",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.13",

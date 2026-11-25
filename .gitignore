@@ -10,3 +10,6 @@ coverage/
 iniciar-demo.bat
 *.tsbuildinfo
 almacen-local/
+# Salidas de las pruebas de navegador (Playwright): trazas, capturas e informe, con datos ficticios.
+test-results/
+playwright-report/

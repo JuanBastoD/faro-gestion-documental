@@ -130,3 +130,63 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             git /repo --config /repo/.gitleaks.toml --redact --no-banner
+
+  # Prueba de punta a punta en un Chromium real (issue #26, ADR-012 §8): ingreso, carga, duplicado probable, nueva versión
+  # y auditoría contra la API compilada (que sirve la interfaz en /app/) y PostgreSQL real, con los usuarios de
+  # demostración sembrados y PDF ficticios generados en la propia prueba. NO es un trabajo obligatorio: no está entre los
+  # que exige la protección de `main`, así que un fallo suyo se ve en el PR pero no lo bloquea; el usuario decide si lo
+  # exige cuando lo haya visto estable.
+  web-e2e:
+    name: web-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: faro
+          POSTGRES_PASSWORD: faro-ci-no-es-secreto
+          POSTGRES_DB: faro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U faro -d faro"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      # Base efímera del propio trabajo: no contiene datos ni credenciales reales.
+      DATABASE_URL: postgresql://faro:faro-ci-no-es-secreto@localhost:5432/faro
+      # La clave ficticia con que se siembran los usuarios de demostración; la prueba la usa para ingresar.
+      SEMILLA_CLAVE: clave-ci-sin-valor-real
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Tipos de las pruebas de navegador
+        run: npm run typecheck:e2e -w apps/web
+      - name: Build (API y web)
+        run: npm run build
+      - name: Migraciones
+        run: npm run db:migrate -w apps/api
+      - name: Siembra de usuarios y cuadro de clasificación de demostración
+        run: npm run db:seed -w apps/api
+      - name: Instalar el Chromium que espera esta versión de Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: Prueba de punta a punta en Chromium
+        run: npm run test:navegador -w apps/web
+      # Solo si falla: la traza (se abre con `npx playwright show-trace`), las capturas y el informe. Todo es ficticio.
+      - name: Subir la traza y las capturas del fallo
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-e2e-fallo
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 3
+          if-no-files-found: ignore

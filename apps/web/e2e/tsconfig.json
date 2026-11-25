@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": [".", "../playwright.config.ts", "../../api/test/pdfs.ts"]
+}
