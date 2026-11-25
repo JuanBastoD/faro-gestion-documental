@@ -57,6 +57,13 @@
       "when": 1795384788438,
       "tag": "0007_intentos_ingreso",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795408871722,
+      "tag": "0008_cambio_de_clave",
+      "breakpoints": true
     }
   ]
 }

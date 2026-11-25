@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { leerClaveTemporal } from '../auth/datos-clave.js';
 import { Roles, UsuarioActual } from '../auth/decoradores.js';
 import type { UsuarioSesion } from '../auth/roles.js';
 import { IdentificadorPipe } from '../documentos/paginacion.js';
@@ -45,6 +46,20 @@ export class UsuariosController {
     @UsuarioActual() actor: UsuarioSesion | undefined,
   ): Promise<UsuarioAdministrado> {
     return this.usuarios.cambiar(id, leerCambioDeUsuario(cuerpo), this.exigir(actor));
+  }
+
+  /**
+   * Clave temporal para otro usuario: cierra sus sesiones y le exige cambiarla al ingresar (ADR-011).
+   * Responde 204 sin cuerpo: la clave nunca vuelve a salir por la API.
+   */
+  @Post(':id/clave')
+  @HttpCode(204)
+  async restablecerClave(
+    @Param('id', IdentificadorPipe) id: number,
+    @Body() cuerpo: unknown,
+    @UsuarioActual() actor: UsuarioSesion | undefined,
+  ): Promise<void> {
+    await this.usuarios.restablecerClave(id, leerClaveTemporal(cuerpo), this.exigir(actor));
   }
 
   private exigir(actor: UsuarioSesion | undefined): UsuarioSesion {

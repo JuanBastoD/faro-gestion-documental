@@ -1,0 +1,10 @@
+# Huellas de hallazgos de gitleaks que son falsos positivos. Una por línea, con su motivo; las excepciones por
+# regla o por ruta, en cambio, van en .gitleaks.toml. Aquí solo caben hallazgos de commits que ya están
+# publicados y no se pueden reescribir.
+
+# Commit 9a54b88 (#51): la prueba unitaria auth.service.spec.ts llamaba a `cambiarClave(sesion, 'token-actual',
+# 'incorrecta-123456', ...)`. Son constantes de prueba (el nombre de una sesión de mentira y una clave inventada
+# para comprobar que el cambio de clave falla), no credenciales; la regla generic-api-key las leyó por la palabra
+# «token» del primer argumento. Los literales se quitaron en el commit siguiente.
+9a54b8857c79ee660c4dfc65ded3cc650ae51013:apps/api/src/auth/auth.service.spec.ts:generic-api-key:286
+9a54b8857c79ee660c4dfc65ded3cc650ae51013:apps/api/src/auth/auth.service.spec.ts:generic-api-key:304
