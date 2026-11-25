@@ -386,6 +386,33 @@ describe('cambiar el rol', () => {
     expect(api.a('PATCH', '/usuarios/2')).toHaveLength(0);
   });
 
+  it('el aviso «ya tiene el rol» se va en cuanto se elige otro rol, sin esperar a confirmar', async () => {
+    const usuario = userEvent.setup();
+    const api = montar();
+    await esperarLista();
+    await usuario.click(boton('Cambiar rol de Editor Demo'));
+    const panel = screen.getByRole('form', { name: 'Cambiar el rol de Editor Demo' });
+    await usuario.click(within(panel).getByRole('button', { name: 'Sí, cambiar el rol' }));
+    expect(within(panel).getByText(/ya tiene el rol Editor/)).toBeInTheDocument();
+    const grupo = within(panel).getByRole('group', { name: 'Rol nuevo de Editor Demo' });
+    expect(grupo).toHaveAttribute('aria-describedby');
+
+    await usuario.click(within(panel).getByRole('radio', { name: /^Consulta/ }));
+    expect(within(panel).queryByText(/ya tiene el rol/)).not.toBeInTheDocument();
+    // Lo que acompañaba al aviso también se va: el grupo ya no lo referencia y ninguna opción queda marcada con error.
+    expect(grupo).not.toHaveAttribute('aria-describedby');
+    expect(within(panel).getByRole('radio', { name: /^Consulta/ })).not.toHaveAttribute('data-error');
+    // El foco se queda en la opción que se acaba de elegir.
+    expect(within(panel).getByRole('radio', { name: /^Consulta/ })).toHaveFocus();
+    expect(api.a('PATCH', '/usuarios/2')).toHaveLength(0);
+
+    // Volver al rol actual no lo trae de vuelta hasta que se intente confirmar de nuevo.
+    await usuario.click(within(panel).getByRole('radio', { name: /^Editor/ }));
+    expect(within(panel).queryByText(/ya tiene el rol/)).not.toBeInTheDocument();
+    await usuario.click(within(panel).getByRole('button', { name: 'Sí, cambiar el rol' }));
+    expect(within(panel).getByText(/ya tiene el rol Editor/)).toBeInTheDocument();
+  });
+
   it('cambia el rol: envía solo el rol, actualiza la tarjeta, avisa y cierra el panel', async () => {
     const usuario = userEvent.setup();
     const api = montar();
