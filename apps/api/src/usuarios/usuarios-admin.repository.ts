@@ -110,6 +110,11 @@ export class UsuariosAdminRepository {
     return fila;
   }
 
+  /** Guarda una clave temporal y marca que la persona debe cambiarla (ADR-011). */
+  async fijarClaveTemporal(tx: Transaccion, id: number, claveHash: string): Promise<void> {
+    await tx.update(usuarios).set({ claveHash, debeCambiarClave: true }).where(eq(usuarios.id, id));
+  }
+
   /** Borra las sesiones del usuario y dice cuántas había. */
   async borrarSesiones(tx: Transaccion, usuarioId: number): Promise<number> {
     const borradas = await tx

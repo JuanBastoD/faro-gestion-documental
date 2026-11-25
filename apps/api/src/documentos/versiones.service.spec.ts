@@ -14,7 +14,13 @@ import { DatosInvalidosError } from './datos-carga.js';
 import type { DocumentosRepository, Transaccion, VersionDetalle } from './documentos.repository.js';
 import { VersionesService } from './versiones.service.js';
 
-const USUARIO: UsuarioSesion = { id: 5, usuario: 'editor.demo', nombre: 'Editor Demo', rol: 'editor' };
+const USUARIO: UsuarioSesion = {
+  id: 5,
+  usuario: 'editor.demo',
+  nombre: 'Editor Demo',
+  rol: 'editor',
+  debeCambiarClave: false,
+};
 const TX = { esTransaccion: true } as unknown as Transaccion;
 const PDF = Buffer.from('%PDF-1.4\nContenido ficticio de una prueba\n%%EOF');
 const ARCHIVO = { nombre: 'informe.pdf', datos: PDF };

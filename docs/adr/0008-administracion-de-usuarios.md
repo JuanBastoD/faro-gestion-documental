@@ -40,6 +40,7 @@ Cuatro acciones nuevas: `usuario_creado`, `usuario_rol_cambiado` (con el rol ant
 ## 4. Consecuencias y límites
 
 - **Nadie puede cambiar su clave, y un administrador tampoco puede restablecer la de otro.** Hoy la clave la fija el administrador al crear la cuenta y queda así. Es un hueco real que este issue no pedía cerrar (sus criterios son crear, desactivar y cambiar el rol): [PROPUESTA] un `PATCH /usuarios/:id` con `clave` (restablecer, cierra las sesiones del usuario) y un cambio de clave propio con la clave actual. Mientras no exista, una clave comprometida se resuelve desactivando la cuenta y creando otra con otro nombre.
+  - *Nota (23 de noviembre de 2026): lo propuesto en este punto se construyó en #51 y se decidió en [ADR-011](0011-cambio-y-restablecimiento-de-clave.md), con otras rutas (`POST /auth/clave` y `POST /usuarios/:id/clave`, no un `PATCH` con `clave`). Lo decidido aquí no cambia; el texto de arriba queda como estaba al aceptarse este ADR.*
 - **No se puede editar el nombre ni el nombre de usuario** después de crear (el `PATCH` rechaza esos campos con 400).
 - **El listado no se pagina:** son unas decenas de usuarios. Si crecen, se agrega paginación sin cambiar la forma de cada elemento.
 - **Sin límite de intentos de ingreso todavía:** llega con #18.

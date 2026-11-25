@@ -37,6 +37,7 @@ erDiagram
         rol_usuario rol
         text clave_hash
         boolean activo
+        boolean debe_cambiar_clave
         timestamptz creado_en
     }
     series_ccd {
@@ -123,6 +124,7 @@ Quienes pueden ingresar. Se desactivan, no se borran, para conservar la autoría
 | `rol` | rol_usuario | No | — | `administrador`, `editor` o `consulta` (ADR-003). |
 | `clave_hash` | text | No | — | Hash argon2id de la clave. Nunca sale por la API ni se escribe en la auditoría. |
 | `activo` | boolean | No | — | Por defecto `true`. Un usuario inactivo no ingresa y sus sesiones se cierran al desactivarlo (ADR-008). Nunca se borra a nadie. |
+| `debe_cambiar_clave` | boolean | No | — | Por defecto `false`. Pasa a `true` cuando un administrador restablece la clave (la clave guardada es entonces una clave temporal) y vuelve a `false` cuando la persona la cambia por una propia. Mientras es `true`, la API solo deja ver quién es, cerrar sesión y cambiar la clave (403 `cambio_de_clave_requerido`; ADR-011). |
 | `creado_en` | timestamptz | No | — | Por defecto `now()`. |
 
 ### `series_ccd`
@@ -252,11 +254,11 @@ El catálogo está en `apps/api/src/auditoria/acciones.ts`. La columna es `text`
 
 | Valor | Cuándo se registra |
 |---|---|
-| `ingreso` | Un usuario ingresa. |
-| `ingreso_fallido` | Intento de ingreso con usuario inexistente, usuario inactivo o clave incorrecta. El detalle dice cuál (`usuario inexistente`, `usuario inactivo` o `clave incorrecta`), sin lo que se escribió. |
+| `ingreso` | Un usuario ingresa. Sin detalle, salvo cuando la cuenta tiene una clave temporal pendiente de cambio (ADR-011): entonces el detalle es `con clave temporal`, para que quien audita distinga ese ingreso (quien fijó la clave temporal la conoce) de uno normal. |
+| `ingreso_fallido` | Intento de ingreso con usuario inexistente, usuario inactivo o clave incorrecta. El detalle dice cuál (`usuario inexistente`, `usuario inactivo` o `clave incorrecta`), sin lo que se escribió. También lo deja quien, con sesión, escribe mal su clave actual al cambiarla (`cambio de clave: clave actual incorrecta`): ese fallo cuenta en el mismo límite de intentos (ADR-011). |
 | `ingreso_bloqueado` | Un intento de ingreso fallido agota el límite de intentos del usuario o de la IP (ADR-009): el siguiente intento ya recibirá 429. Se registra **una sola vez**, en ese intento; los rechazados después no se auditan para que insistir no llene la tabla. El detalle dice qué límite se alcanzó (`usuario`, `ip` o `usuario e ip`). |
 | `cierre_sesion` | Un usuario cierra sesión. |
-| `acceso_denegado` | Alguien con sesión intenta algo que su rol no permite. |
+| `acceso_denegado` | Alguien con sesión intenta algo que su rol no permite, o algo que no puede hacer mientras tiene una clave temporal sin cambiar (el detalle dice `cambio de clave requerido`; ADR-011). |
 | `carga` | Se carga un documento nuevo (versión 1). |
 | `descarga` | Se descarga el archivo de una versión. |
 | `version` | Se agrega una versión con contenido nuevo. |
@@ -267,6 +269,8 @@ El catálogo está en `apps/api/src/auditoria/acciones.ts`. La columna es `text`
 | `usuario_desactivado` | Un administrador desactiva a un usuario; se cierran sus sesiones y el detalle dice cuántas. |
 | `usuario_reactivado` | Un administrador reactiva a un usuario inactivo. |
 | `ccd_importado` | Se importa el cuadro de clasificación desde un CSV con `npm run ccd:importar` (ADR-010). **Sin usuario** (`usuario_id` vacío): es un comando que corre con acceso a la base, no una petición con sesión. El detalle trae el nombre del archivo y su SHA-256, cuántas series se crearon, renombraron, movieron y eliminaron (con los códigos de las movidas y las eliminadas) y cuántas ausentes se conservaron. Solo se registra si hubo algún cambio: repetir el mismo archivo no deja evento. |
+| `clave_cambiada` | Una persona con sesión cambia su propia clave dando la actual (`POST /auth/clave`, ADR-011). Quien actúa es esa misma persona; el detalle dice cuántas otras sesiones suyas se cerraron (`otras sesiones cerradas: 2`) y, si el cambio se hizo desde una clave temporal, empieza por `desde clave temporal; ` (`desde clave temporal; otras sesiones cerradas: 0`). Nunca trae claves, hashes ni sus longitudes. |
+| `clave_restablecida` | Un administrador fija una clave temporal a otro usuario (`POST /usuarios/:id/clave`, ADR-011). El detalle dice a quién (`usuario <id> (<nombre de usuario>)`) y cuántas sesiones suyas se cerraron; nunca trae la clave. |
 
 ## 9. Historial de migraciones
 
@@ -282,6 +286,7 @@ Están en `apps/api/drizzle/`, se versionan en git y no se editan una vez fusion
 | `0005_versiones_texto_y_firma` | `versiones.texto_estado`, `texto_normalizado` y `firma`, con sus `CHECK`. |
 | `0006_busqueda_texto_completo` | `documentos.busqueda`, su índice GIN y el relleno de los documentos que ya existían. |
 | `0007_intentos_ingreso` | `intentos_ingreso` y sus dos índices. |
+| `0008_cambio_de_clave` | `usuarios.debe_cambiar_clave` (`boolean`, por defecto `false`): marca las claves temporales que fija un administrador (ADR-011). |
 
 ## 10. Lo que el modelo todavía no tiene
 
