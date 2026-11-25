@@ -2,10 +2,10 @@
 
 > **BORRADOR. No es la versión final.** Lo revisan **César** (parte académica) y **Juan** (parte técnica). [POR VERIFICAR] quién redacta la versión final: este texto es un punto de partida, no un documento aprobado.
 >
-> - **Estado:** borrador del issue #27, 23 de noviembre de 2026; secciones 10 y 11 actualizadas el 24 y el 25 de noviembre. Describe **solo lo que existe en el código**, leído de las ramas de los PR abiertos. Lo que no se pudo confirmar va marcado.
+> - **Estado:** borrador del issue #27, 23 de noviembre de 2026; secciones 10 y 11 actualizadas el 24 y el 25 de noviembre, y puesto al día el 25 de noviembre con todos los PR ya fusionados en `main` (`4cd67ad`). Describe **solo lo que existe en el código** de `main`: el de la interfaz de los PR #54, #58, #62 y #66 y el de la API de las claves del PR #57. Lo que no se pudo confirmar va marcado.
 > - **Etiquetas de certeza:** [CONFIRMADO] comprobado con una captura, un PR o un documento del repositorio; [POR VERIFICAR] falta comprobarlo con la pantalla real o con una persona; [SUPUESTO] razonable pero sin medir; [PROPUESTA] sugerencia de uso, no una regla del sistema; [PENDIENTE] falta algo por hacer (por ejemplo, una captura que aún no existe).
 > - **Datos de demostración:** todo lo que se ve en las capturas es **ficticio** (usuarios `*.demo`, documentos inventados). El sistema es un prototipo de clase: **no cargues documentos reales de la entidad** hasta que la entidad lo autorice por escrito.
-> - **Qué pantallas están listas hoy.** La interfaz está en construcción y vive en PR que aún no se fusionan en `main`: ingreso, listado y detalle (PR #54, con capturas); carga, versión nueva, comparación de duplicado y restaurar (PR #58, *en revisión*, con capturas de datos ficticios); y administración de usuarios y auditoría (PR #62, *en revisión*, con capturas de datos ficticios). Las pantallas de cambio y restablecimiento de clave son el PR #66, **en borrador** porque depende del PR #57 (la API de las claves, *en revisión*); sus capturas son de datos ficticios, tomadas en una rama local descartable que junta ambos PR [CONFIRMADO]. Cada sección dice en cuál de estos casos está.
+> - **Qué pantallas están listas hoy.** Toda la interfaz está ya en `main` (los cuatro PR se fusionaron el 25 de noviembre de 2026): ingreso, listado y detalle (PR #54); carga, versión nueva, comparación de duplicado y restaurar (PR #58); administración de usuarios y auditoría (PR #62); y cambio y restablecimiento de clave (PR #66, sobre la API del PR #57). Todas las capturas son de datos ficticios. Las de clave (45 a 51) y las rehechas 39 y 43 se tomaron **antes de fusionar**, en una rama local descartable que juntaba esos PR; el código de la interfaz (`apps/web/src`) de `main` es idéntico al de la punta `5a6bffa` del #66 con la que se tomaron [CONFIRMADO: `git diff 5a6bffa origin/main -- apps/web/src` sin diferencias]. Cada sección dice qué captura la respalda.
 > - Para quien instala o prueba el sistema, no para quien lo usa: [`README.md`](../README.md).
 
 ## 1. Qué es Faro
@@ -66,7 +66,7 @@ Lo que **no** es: no reemplaza al archivo de la entidad, no trae las tablas de r
 
   ![Pantalla de ingreso con el aviso «Tu sesión terminó. Ingresa de nuevo para continuar.» sobre los campos Usuario y Clave](manual/capturas/04-sesion-terminada.png)
 
-  *Captura 4. Aviso de sesión terminada (rama del PR #62, 1280 px). El aviso se ve entero gracias al arreglo `87ba312`, que está en esa rama y en la de `feat/51-web-clave`, pero no en `main` ni en las ramas de los PR #54 y #58: sin el arreglo, el aviso se partía por renglones y se salía de la tarjeta de ingreso (mensaje del commit). [CONFIRMADO]*
+  *Captura 4. Aviso de sesión terminada (PR #62, 1280 px). El aviso se ve entero gracias al arreglo `87ba312`, que llegó a `main` con el PR #62: sin el arreglo, el aviso se partía por renglones y se salía de la tarjeta de ingreso (mensaje del commit). [CONFIRMADO: `87ba312` es ancestro de `main`]*
 
 Para **salir**, pulsa **Cerrar sesión**, arriba a la derecha. Hazlo siempre que uses un computador compartido.
 
@@ -74,7 +74,7 @@ Para **salir**, pulsa **Cerrar sesión**, arriba a la derecha. Hazlo siempre que
 
 ### Si te dieron una clave temporal
 
-Cuando un administrador restablece tu clave, la clave que te da es **temporal** y tendrás que cambiarla (ADR-0011, PR #57, en revisión). Según la interfaz del PR #66 (en borrador), al ingresar con la clave temporal el sistema te lleva a «Cambiar mi clave» y **no te deja abrir nada más** hasta que elijas una propia (captura 46). Los pasos están en la sección 11 [CONFIRMADO en una rama local descartable que junta #66 y #57; los textos pueden cambiar antes de fusionarse].
+Cuando un administrador restablece tu clave, la clave que te da es **temporal** y tendrás que cambiarla (ADR-0011, PR #57). Según la interfaz (PR #66), al ingresar con la clave temporal el sistema te lleva a «Cambiar mi clave» y **no te deja abrir nada más** hasta que elijas una propia (captura 46). Los pasos están en la sección 11 [CONFIRMADO en una rama local descartable que juntaba #66 y #57 antes de fusionar; el código de la interfaz de `main` es el mismo].
 
 ## 3. Los tres roles: quién puede hacer qué
 
@@ -87,10 +87,10 @@ Tu **rol** lo ves arriba a la derecha, debajo de tu nombre. El menú de la parte
 | Cargar un documento nuevo | No | Sí | Sí |
 | Subir una versión nueva | No | Sí | Sí |
 | Restaurar una versión anterior | No | Sí | Sí |
-| Cambiar tu propia clave (API en el PR #57, en revisión; pantalla en la rama `feat/51-web-clave`, sección 11) | Sí | Sí | Sí |
+| Cambiar tu propia clave (API del PR #57, pantalla del PR #66, sección 11) | Sí | Sí | Sí |
 | Ver la auditoría (pantalla Auditoría, PR #62, sección 10.2) | No | No | Sí |
 | Crear usuarios, cambiar roles, desactivar y reactivar (pantalla Usuarios, PR #62, sección 10.1) | No | No | Sí |
-| Restablecer la clave de otra persona (API en el PR #57, en revisión; pantalla en la rama `feat/51-web-clave`, sección 11) | No | No | Sí |
+| Restablecer la clave de otra persona (API del PR #57, pantalla del PR #66, sección 11) | No | No | Sí |
 
 **Menú que ves:**
 
@@ -184,7 +184,7 @@ Todos los roles pueden descargar. **Cada descarga queda registrada en la auditor
 
 ## 7. Cargar un documento nuevo
 
-> **Estado:** pantalla del PR #58 (issue #24), *en revisión, todavía no fusionado en `main`*. Las capturas de esta sección y de las dos siguientes son de esa rama (commit `a6d6eb1`; las capturas 19 a 21, tomadas tras el arreglo de diseño `cac8cfe`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
+> **Estado:** pantalla del PR #58 (issue #24), fusionada en `main` el 25 de noviembre de 2026. Las capturas de esta sección y de las dos siguientes son de la rama de ese PR antes de fusionarla (commit `a6d6eb1`; las capturas 19 a 21, tomadas tras el arreglo de diseño `cac8cfe`), con datos ficticios [CONFIRMADO]. Lo que no tiene captura va marcado.
 
 **Quién:** editor y administrador. **Dónde:** menú **Cargar documento** (también el enlace «Cargar el primer documento» cuando el sistema no tiene ningún documento).
 
@@ -231,7 +231,7 @@ Antes de enviar, el navegador revisa lo que puede. Cada campo con problema se ma
 
   *Captura 16. El servidor rechaza un archivo que no es un PDF.*
 
-Otros mensajes que puedes encontrar **no tienen captura** en este borrador: salen del código de la interfaz de esa rama (`apps/web/src/api/errores.ts` y `apps/web/src/utilidades/validacion.ts`) [POR VERIFICAR: verlos en pantalla antes de la versión final].
+Otros mensajes que puedes encontrar **no tienen captura** en este borrador: salen del código de la interfaz (`apps/web/src/api/errores.ts` y `apps/web/src/utilidades/validacion.ts`) [POR VERIFICAR: verlos en pantalla antes de la versión final].
 
 | Si ves... | Qué pasó y qué hacer |
 |---|---|
@@ -328,7 +328,7 @@ El resultado de «Es otro documento» es un documento nuevo, con el mismo aspect
 
 ## 8. Subir una versión nueva
 
-**Quién:** editor y administrador. **Dónde:** en el detalle de un documento, botón **Subir una versión nueva** (también se llega a una versión nueva desde la comparación de un duplicado, sección 7). Estado: PR #58 (issue #24), *en revisión*.
+**Quién:** editor y administrador. **Dónde:** en el detalle de un documento, botón **Subir una versión nueva** (también se llega a una versión nueva desde la comparación de un duplicado, sección 7). Estado: PR #58 (issue #24), fusionado.
 
 La pantalla muestra el enlace «← título del documento» para volver y recuerda el documento, su expediente y su versión vigente, y avisa: «No se borra nada: la versión actual queda en el historial y la que subas pasa a ser la vigente.» Pide:
 
@@ -361,7 +361,7 @@ Si dos personas suben una versión del mismo documento a la vez, cada una recibe
 
 ## 9. Restaurar una versión anterior
 
-**Quién:** editor y administrador. **Dónde:** en el historial del detalle, botón **Restaurar** de cada versión que no sea la vigente. Estado: PR #58 (issue #24), *en revisión*.
+**Quién:** editor y administrador. **Dónde:** en el historial del detalle, botón **Restaurar** de cada versión que no sea la vigente. Estado: PR #58 (issue #24), fusionado.
 
 Restaurar **no borra ni edita nada**. Al pulsar **Restaurar** se abre, bajo esa versión, un panel «**¿Restaurar la versión n?**» que lo explica: «Se creará una **versión nueva** (la siguiente) con el mismo contenido que la versión n, y pasará a ser la vigente. **No se borra nada**: las versiones que ya existen, incluida la vigente, siguen en el historial.» Puedes escribir un **motivo** (opcional, hasta 300 caracteres; si lo dejas vacío se guarda como «Restaura la versión n»). Confirma con **Sí, restaurar la versión n** (mientras trabaja dice «Restaurando…») o con **Cancelar**.
 
@@ -391,11 +391,11 @@ El rol de consulta **no ve** los botones «Subir una versión nueva» ni «Resta
 
 ## 10. Administración de usuarios y auditoría (administrador)
 
-> **Estado:** pantallas del PR #62 (issue #25), *en revisión, todavía no fusionado en `main`*, apilado sobre el PR #58. Las capturas de esta sección son de esa rama (las tomó el carril W el 23 de noviembre sobre la punta `f999713`; las 39 y 43 se rehicieron el 25 de noviembre con la punta `8acb53f`, que corrige dos defectos que ellas mostraban), con datos ficticios [CONFIRMADO]. Solo las ve el rol **administrador**: aparecen en el menú como **Usuarios** y **Auditoría** (direcciones `/app/usuarios` y `/app/auditoria`). Lo que no tiene captura va marcado. Si el PR cambia en la revisión, los textos pueden cambiar.
+> **Estado:** pantallas del PR #62 (issue #25), fusionadas en `main` el 25 de noviembre de 2026, sobre las del PR #58. Las capturas de esta sección son de la rama de ese PR antes de fusionarla (las tomó el carril W el 23 de noviembre sobre la punta `f999713`; las 39 y 43 se rehicieron el 25 de noviembre con la punta `8acb53f`, que corrige dos defectos que ellas mostraban), con datos ficticios [CONFIRMADO]. Solo las ve el rol **administrador**: aparecen en el menú como **Usuarios** y **Auditoría** (direcciones `/app/usuarios` y `/app/auditoria`). Lo que no tiene captura va marcado.
 
 ### 10.1 Usuarios
 
-La pantalla **Usuarios** dice «Quién puede ingresar y con qué rol. Los usuarios no se borran: desactivar a alguien cierra sus sesiones y conserva el registro de lo que hizo.» Muestra el resumen («6 usuarios · 4 activos») y una tarjeta por persona con su nombre, su usuario, su **rol**, su **estado** («Activo» o «Inactivo: no puede ingresar») y cuándo se creó. Tu propia tarjeta lleva la etiqueta **Tú**; las de personas desactivadas, la etiqueta **Inactivo** y un borde punteado. Cada tarjeta tiene los botones **Cambiar rol** y **Desactivar** (o **Reactivar**, si la persona está inactiva); con el PR #66 (en borrador, sección 11) suma **Restablecer clave** o, en tu propia tarjeta, **Cambiar mi clave**. Debajo de la lista, «**Actualizar la lista** por si otro administrador hizo cambios».
+La pantalla **Usuarios** dice «Quién puede ingresar y con qué rol. Los usuarios no se borran: desactivar a alguien cierra sus sesiones y conserva el registro de lo que hizo.» Muestra el resumen («6 usuarios · 4 activos») y una tarjeta por persona con su nombre, su usuario, su **rol**, su **estado** («Activo» o «Inactivo: no puede ingresar») y cuándo se creó. Tu propia tarjeta lleva la etiqueta **Tú**; las de personas desactivadas, la etiqueta **Inactivo** y un borde punteado. Cada tarjeta tiene los botones **Cambiar rol** y **Desactivar** (o **Reactivar**, si la persona está inactiva); con el PR #66 (sección 11) suma **Restablecer clave** o, en tu propia tarjeta, **Cambiar mi clave**. Debajo de la lista, «**Actualizar la lista** por si otro administrador hizo cambios».
 
 ![Pantalla Usuarios con el botón «Crear usuario» y seis tarjetas: tres activas y tres inactivas, una de ellas con la etiqueta «Tú»](manual/capturas/35-usuarios-lista.png)
 
@@ -420,7 +420,7 @@ Si algo falta o está mal, cada campo lo dice en rojo y el cursor va al primero 
 
 *Captura 37. Se pulsó **Crear usuario** con todo vacío. [CONFIRMADO]*
 
-Otros mensajes del formulario salen del código de la rama y no tienen captura en este manual [POR VERIFICAR: verlos en pantalla]: «Escríbelo todo en minúsculas, por ejemplo «…»: el sistema no cambia las mayúsculas por ti.» (el sistema **no** convierte las mayúsculas por la persona); «Mínimo 12 caracteres: esta tiene 11.»; «La clave no puede ser solo espacios.»; y, si el nombre de usuario ya existe, «Ya existe un usuario llamado «…». Elige otro nombre de usuario.»
+Otros mensajes del formulario salen del código de la interfaz y no tienen captura en este manual [POR VERIFICAR: verlos en pantalla]: «Escríbelo todo en minúsculas, por ejemplo «…»: el sistema no cambia las mayúsculas por ti.» (el sistema **no** convierte las mayúsculas por la persona); «Mínimo 12 caracteres: esta tiene 11.»; «La clave no puede ser solo espacios.»; y, si el nombre de usuario ya existe, «Ya existe un usuario llamado «…». Elige otro nombre de usuario.»
 
 Al crearlo, la pantalla avisa en verde y la persona aparece en la lista:
 
@@ -460,7 +460,7 @@ Para devolverle el acceso a alguien, pulsa **Reactivar** en su tarjeta; no pide 
 
 **Otras reglas:** no se puede cambiar el nombre ni el nombre de usuario después de crear la cuenta; nadie se borra; y cualquier cambio queda en la auditoría (sección 10.2). Si otro administrador hizo cambios mientras tenías la pantalla abierta, pulsa **Actualizar la lista**. Una persona con rol de editor o de consulta que abra `/app/usuarios` ve «No tienes permiso para ver esta pantalla» (captura 34) y la API también responde 403.
 
-Otros mensajes de error (sin conexión, sesión vencida, demasiadas peticiones) salen del código de la rama (`apps/web/src/api/errores-administracion.ts`); los de cambios dicen, por ejemplo, «No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo. Antes de repetirlo, actualiza la lista: puede que el cambio sí se haya hecho.» [POR VERIFICAR: verlos en pantalla].
+Otros mensajes de error (sin conexión, sesión vencida, demasiadas peticiones) salen del código de la interfaz (`apps/web/src/api/errores-administracion.ts`); los de cambios dicen, por ejemplo, «No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo. Antes de repetirlo, actualiza la lista: puede que el cambio sí se haya hecho.» [POR VERIFICAR: verlos en pantalla].
 
 ### 10.2 Auditoría
 
@@ -471,13 +471,13 @@ Cada evento sale en una tarjeta con:
 - **El nombre de la acción** («Ingreso», «Rol de usuario cambiado», «Acceso denegado»…) y, a la derecha, el **día y la hora de Colombia** (por ejemplo, 23/11/2026, 3:09:24 p. m.).
 - **Quién**: el usuario que la hizo, o «Sin identificar» (un ingreso fallido de alguien que no existe no tiene usuario).
 - **Documento**: un enlace «Documento 12» que lleva al detalle, o «—» si el evento no es de un documento.
-- **Detalle**: un texto breve (por ejemplo, «usuario 11 (anaa47851.demo); rol administrador → consulta» o «desde clave temporal; otras sesiones cerradas: 1»), o «—». Para un **«Acceso denegado»** el detalle dice, con palabras, «Intentó hacer algo que su rol no permite; no se le concedió el acceso.» (la API sigue guardando el texto técnico completo, con método, ruta y roles; la pantalla solo lo traduce; punta `8acb53f` del PR #62, antes mostraba «GET /auditoria; requiere administrador; tiene consulta») [CONFIRMADO]. **Excepción** [CONFIRMADO en la rama local descartable que junta #62, #57 y #66]: el acceso denegado porque la clave es temporal (sección 11.2) sigue mostrando el texto técnico («GET /documentos; cambio de clave requerido»), porque la traducción solo reconoce el formato del rol (captura 43).
+- **Detalle**: un texto breve (por ejemplo, «usuario 11 (anaa47851.demo); rol administrador → consulta» o «desde clave temporal; otras sesiones cerradas: 1»), o «—». Para un **«Acceso denegado»** el detalle dice, con palabras, «Intentó hacer algo que su rol no permite; no se le concedió el acceso.» (la API sigue guardando el texto técnico completo, con método, ruta y roles; la pantalla solo lo traduce; punta `8acb53f` del PR #62, antes mostraba «GET /auditoria; requiere administrador; tiene consulta») [CONFIRMADO]. **Excepción** [CONFIRMADO en la rama local descartable que juntaba #62, #57 y #66; el código de `main` es el mismo]: el acceso denegado porque la clave es temporal (sección 11.2) sigue mostrando el texto técnico («GET /documentos; cambio de clave requerido»), porque la traducción solo reconoce el formato del rol (captura 43).
 
 Salen **20 eventos por página**; abajo están **Anterior**, «Página 1 de 2» y **Siguiente**. Arriba de la lista, «24 eventos» y el enlace **Actualizar**.
 
 ![Pantalla Auditoría con los filtros arriba, 24 eventos, tarjetas de eventos con tres «Acceso denegado» que dicen «Intentó hacer algo que su rol no permite; no se le concedió el acceso.» y uno con el texto técnico «GET /documentos; cambio de clave requerido», y la paginación «Página 1 de 2»](manual/capturas/43-auditoria-lista.png)
 
-*Captura 43. Lista de auditoría sin filtros (rol de administrador, 1280 px), rehecha el 25 de noviembre con la interfaz de `8acb53f` (PR #62) en una rama local descartable que junta #62, #57 y #66: por eso aparecen también «Clave cambiada» y «Rol de usuario cambiado» y un acceso denegado por clave temporal. Los eventos son de pruebas con usuarios ficticios. [CONFIRMADO]*
+*Captura 43. Lista de auditoría sin filtros (rol de administrador, 1280 px), rehecha el 25 de noviembre con la interfaz de `8acb53f` (PR #62) en una rama local descartable que juntaba #62, #57 y #66: por eso aparecen también «Clave cambiada» y «Rol de usuario cambiado» y un acceso denegado por clave temporal. Los eventos son de pruebas con usuarios ficticios. [CONFIRMADO]*
 
 **Filtros.** Se combinan, y se aplican al pulsar **Filtrar**:
 
@@ -494,7 +494,7 @@ Con algún filtro puesto, el total dice «3 eventos con estos filtros» y aparec
 
 *Captura 44. Filtro por acción «Usuario creado»: tres eventos. [CONFIRMADO]*
 
-El filtro de **Acción** ofrece: Ingreso, Ingreso fallido, Ingreso bloqueado, Cierre de sesión, Acceso denegado, Carga de documento, Descarga de documento, Versión nueva, Restauración de versión, Decisión ante un duplicado, Usuario creado, Rol de usuario cambiado, Usuario desactivado y Usuario reactivado (las 14 del catálogo de esta rama). **Todavía no ofrece** «Cuadro de clasificación importado» (PR #55), «Clave cambiada» y «Clave restablecida» (PR #57): se agregarán cuando esos PR se fusionen [PENDIENTE] (ADR-0012, sección 7). Mientras tanto esos eventos se ven en la lista general con su nombre.
+El filtro de **Acción** ofrece: Ingreso, Ingreso fallido, Ingreso bloqueado, Cierre de sesión, Acceso denegado, Carga de documento, Descarga de documento, Versión nueva, Restauración de versión, Decisión ante un duplicado, Usuario creado, Rol de usuario cambiado, Usuario desactivado y Usuario reactivado (las 14 de `ACCIONES_FILTRABLES`). **Todavía no ofrece** «Cuadro de clasificación importado» (PR #55), «Clave cambiada» y «Clave restablecida» (PR #57), aunque esos PR ya están en `main` [PENDIENTE: agregarlas al filtro] (ADR-0012, sección 7). Mientras tanto esos eventos se ven en la lista general con su nombre.
 
 Solo el administrador la consulta. Registra, entre otras cosas:
 
@@ -502,18 +502,18 @@ Solo el administrador la consulta. Registra, entre otras cosas:
 |---|---|
 | Ingreso, cierre de sesión | Al ingresar y al salir |
 | Ingreso fallido (sin guardar lo que se escribió) y bloqueo por demasiados intentos | Al fallar o agotar el límite |
-| Acceso denegado | Cuando alguien intenta algo que su rol no permite (o, con el PR #57, abre algo mientras su clave es temporal) |
+| Acceso denegado | Cuando alguien intenta algo que su rol no permite (o abre algo mientras su clave es temporal) |
 | Carga | Al cargar un documento |
 | Versión y restauración | Al subir una versión nueva o restaurar una |
 | Descarga | Al descargar una versión |
 | Decisión ante un duplicado | Cuando alguien decide qué hacer ante el aviso (con su justificación o motivo) |
 | Usuario creado, rol cambiado, usuario desactivado o reactivado | Al administrar usuarios |
-| Clave cambiada y clave restablecida | Al cambiar o restablecer una clave (nunca se guarda la clave ni su huella) *(en revisión, PR #57; se vieron en la lista de la captura 43 y en la sección 11)* |
-| Cuadro de clasificación importado | Al importar el cuadro desde un CSV *(en revisión, PR #55)* |
+| Clave cambiada y clave restablecida | Al cambiar o restablecer una clave (nunca se guarda la clave ni su huella) *(PR #57; se vieron en la lista de la captura 43 y en la sección 11)* |
+| Cuadro de clasificación importado | Al importar el cuadro desde un CSV *(PR #55)* |
 
 ## 11. Cambiar la clave y restablecer la de otra persona
 
-> **Estado:** pantallas del PR #66 (issue #51), **en borrador porque depende del PR #57**, que trae la API de las claves (ADR-0011) y sigue *en revisión*. El #66 está apilado sobre el PR #62 (rama `feat/51-web-clave`, punta `5a6bffa`). Las capturas de esta sección son de datos ficticios (usuarios `*.demo` y claves inventadas), tomadas el 25 de noviembre en una **rama local descartable** que junta `feat/51-web-clave` y `feat/51-cambio-clave` (el PR #57), compilada y probada con una base de datos propia que se borró al terminar; esa rama no se subió a ningún repositorio [CONFIRMADO]. Sin el PR #57 estas pantallas no funcionan, porque la API no tiene las rutas de clave. Si cualquiera de los dos PR cambia en la revisión, los textos pueden cambiar [POR VERIFICAR hasta que se fusionen].
+> **Estado:** pantallas del PR #66 (issue #51), fusionadas en `main` el 25 de noviembre de 2026 sobre la API de las claves del PR #57 (ADR-0011), que se fusionó antes. Las capturas de esta sección son de datos ficticios (usuarios `*.demo` y claves inventadas), tomadas el 25 de noviembre, **antes de fusionar**, en una **rama local descartable** que juntaba las ramas de los PR #66 (punta `5a6bffa`) y #57 (punta `4cbfa2b`), compilada y probada con una base de datos propia que se borró al terminar; esa rama no se subió a ningún repositorio [CONFIRMADO]. El código de la interfaz de `main` es idéntico al de la punta `5a6bffa` [CONFIRMADO: `git diff 5a6bffa origin/main -- apps/web/src` sin diferencias], así que lo que muestran las capturas es lo que hay en `main`. Lo que no tiene captura va marcado.
 
 ### 11.1 Cambiar tu propia clave
 
@@ -578,7 +578,7 @@ Al confirmar, la pantalla muestra **una sola vez** la clave temporal, en el recu
 
 *Captura 51. La clave temporal, mostrada una sola vez. [CONFIRMADO]*
 
-Entrégala **en persona o por una llamada** [PROPUESTA]. La clave temporal solo vive en la pantalla: no va a la dirección del navegador ni a su almacenamiento (según el comentario del código de la rama). Quedan en la auditoría «Clave restablecida» (con la persona y cuántas sesiones se cerraron, nunca la clave: «usuario 4 (clara.demo); sesiones cerradas: 0») y, cuando ella la cambia, «Clave cambiada» [CONFIRMADO en la rama descartable]. La persona restablecida **no puede ingresar con su clave anterior**; con la temporal, sí, y le sale la pantalla de la sección 11.2.
+Entrégala **en persona o por una llamada** [PROPUESTA]. La clave temporal solo vive en la pantalla: no va a la dirección del navegador ni a su almacenamiento (según el comentario del código de la interfaz). Quedan en la auditoría «Clave restablecida» (con la persona y cuántas sesiones se cerraron, nunca la clave: «usuario 4 (clara.demo); sesiones cerradas: 0») y, cuando ella la cambia, «Clave cambiada» [CONFIRMADO en la rama descartable]. La persona restablecida **no puede ingresar con su clave anterior**; con la temporal, sí, y le sale la pantalla de la sección 11.2.
 
 ## 12. Preguntas frecuentes
 
@@ -592,11 +592,11 @@ Entrégala **en persona o por una llamada** [PROPUESTA]. La clave temporal solo 
 
 **¿Mis acciones quedan registradas?** Sí: ingreso, cargas, versiones, restauraciones, descargas, decisiones ante duplicados, accesos denegados y los cambios de usuarios. Solo el administrador ve la auditoría (sección 10.2).
 
-**¿Por qué mi sesión se cerró?** Vence a las 8 horas sin usarla, o a los 7 días aunque la uses; también se cierra si un administrador te desactiva (o, con el PR #57, restablece tu clave) y las demás sesiones se cierran cuando cambias tu clave (sección 11, [CONFIRMADO] en la rama local descartable con #57 y #66).
+**¿Por qué mi sesión se cerró?** Vence a las 8 horas sin usarla, o a los 7 días aunque la uses; también se cierra si un administrador te desactiva (o restablece tu clave) y las demás sesiones se cierran cuando cambias tu clave (sección 11, [CONFIRMADO] en la rama local descartable que juntaba #57 y #66).
 
 **¿Cómo le doy acceso a una persona nueva?** Un administrador la crea en **Usuarios** (sección 10.1), elige su rol y le entrega la clave inicial por otro medio.
 
-**Olvidé mi clave. ¿Qué hago?** La pantalla de ingreso no tiene un enlace de «Olvidé mi clave» (captura 1). Pídele a un administrador que te restablezca la clave: te entrega una clave temporal y el sistema te pide elegir una propia (sección 11) [POR VERIFICAR: la pantalla es el PR #66, en borrador, y depende del PR #57; aún no está fusionada].
+**Olvidé mi clave. ¿Qué hago?** La pantalla de ingreso no tiene un enlace de «Olvidé mi clave» (captura 1). Pídele a un administrador que te restablezca la clave: te entrega una clave temporal y el sistema te pide elegir una propia (sección 11) [CONFIRMADO: la pantalla es la del PR #66 y la API, la del PR #57; los dos están en `main` desde el 25 de noviembre de 2026]. Si quien olvida la clave es el **único administrador**, no hay salida por la pantalla ni por la API [POR VERIFICAR: un comando de emergencia con acceso a la base, ADR-0011].
 
 **¿Qué pasa si dos personas suben una versión del mismo documento a la vez?** Cada una recibe un número distinto y consecutivo; no se pierde ninguna (ADR-0005).
 
@@ -622,7 +622,7 @@ Entrégala **en persona o por una llamada** [PROPUESTA]. La clave temporal solo 
 | «Ningún documento coincide con lo que buscaste…» | La búsqueda o el filtro no tiene resultados | Prueba con otras palabras o pulsa **Quitar filtros** |
 | «Ya existe un usuario llamado «…». Elige otro nombre de usuario.» | Al crear un usuario, ese nombre de usuario ya está tomado | Elige otro (sección 10.1) [POR VERIFICAR: sin captura en este manual] |
 | «No se puede desactivar ni cambiar el rol del último administrador activo…» | Siempre tiene que haber un administrador activo | Crea o reactiva a otro administrador y repite (captura 42) |
-| «Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.» | Entraste con una clave temporal (PR #57, en revisión) | Elige una clave propia en «Cambiar mi clave» (sección 11.2) [POR VERIFICAR: texto del código del PR #66; el aviso de la pantalla, «Tu clave es temporal.», sí tiene captura, la 46] |
+| «Tu clave es temporal: antes de hacer cualquier otra cosa tienes que cambiarla.» | Entraste con una clave temporal (PR #57) | Elige una clave propia en «Cambiar mi clave» (sección 11.2) [POR VERIFICAR: texto del código de la interfaz; el aviso de la pantalla, «Tu clave es temporal.», sí tiene captura, la 46] |
 | «La clave actual no es correcta. Revísala e inténtalo de nuevo.» | Al cambiar tu clave, la «Clave actual» está mal escrita | Escríbela de nuevo; tras varios fallos hay que esperar (sección 11.1) [CONFIRMADO: captura 47; la espera sale del código] |
 
 Los mensajes de la carga, la versión nueva y la restauración están en las secciones 7, 8 y 9; los de usuarios y auditoría, en la 10; los de clave, en la 11. Los que no tienen captura salen del código de la interfaz y están marcados [POR VERIFICAR].
@@ -631,17 +631,19 @@ Los mensajes de la carga, la versión nueva y la restauración están en las sec
 
 Lo que falta antes de convertirlo en la versión final:
 
-1. **Capturas que faltan** [PENDIENTE]: en la sección 11 (clave), los mensajes de validación («Mínimo 12 caracteres…»), el botón «Volver» de quien cambia la clave por gusto, el 429 «Demasiados intentos con la clave actual», el 409 de la clave propia, «Copiar la clave» y las pantallas de clave a 360 px (las capturas 45 a 51 son de 1280 px); el mensaje de restaurar una versión que ya es la vigente (sección 9), el resultado de «Es otro documento» y, en usuarios (sección 10.1), desactivar la propia cuenta, reactivar, el nombre de usuario repetido y el error de fechas de la auditoría (existen capturas de trabajo del carril W, no incluidas aquí por peso). Las de carga, duplicado (incluida la lista de varios candidatos, capturas 19 a 21, tomadas tras el arreglo `cac8cfe`), versión nueva y restaurar existen (capturas 12 a 34); las de usuarios y auditoría, también (capturas 4 y 35 a 44; la 39 y la 43 se rehicieron con la punta `8acb53f`); y las de clave (capturas 45 a 51). Todas se rehacen si los PR #58, #62, #66 o #57 cambian la interfaz o la API en la revisión.
-2. **Confirmar los textos** sin captura de las secciones 7 a 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de las ramas de los PR #58 (commits `a6d6eb1` y `cac8cfe`) y #62 (puntas `f999713` y `8acb53f`); los dos PR siguen en revisión y pueden cambiar.
-3. **La sección 11 (clave)** se escribió con las pantallas reales (capturas 45 a 51), tomadas en una rama local descartable que junta el PR #66 (punta `5a6bffa`) y el PR #57 (punta `4cbfa2b`); los textos entre « » se comprobaron con `git grep -F` contra esas ramas. El #66 es **borrador porque depende del #57**: hay que repasar la sección y rehacer las capturas si cualquiera de los dos cambia, y no fusionar el #66 antes que el #57.
+1. **Capturas que faltan** [PENDIENTE]: en la sección 11 (clave), los mensajes de validación («Mínimo 12 caracteres…»), el botón «Volver» de quien cambia la clave por gusto, el 429 «Demasiados intentos con la clave actual», el 409 de la clave propia, «Copiar la clave» y las pantallas de clave a 360 px (las capturas 45 a 51 son de 1280 px); el mensaje de restaurar una versión que ya es la vigente (sección 9), el resultado de «Es otro documento» y, en usuarios (sección 10.1), desactivar la propia cuenta, reactivar, el nombre de usuario repetido y el error de fechas de la auditoría (existen capturas de trabajo del carril W, no incluidas aquí por peso). Las de carga, duplicado (incluida la lista de varios candidatos, capturas 19 a 21, tomadas tras el arreglo `cac8cfe`), versión nueva y restaurar existen (capturas 12 a 34); las de usuarios y auditoría, también (capturas 4 y 35 a 44; la 39 y la 43 se rehicieron con la punta `8acb53f`); y las de clave (capturas 45 a 51). Todas se rehacen si cambian la interfaz o la API.
+2. **Confirmar los textos** sin captura de las secciones 7 a 10 contra las pantallas reales. Los textos con captura se leyeron de la pantalla y del código de los PR #58 (commits `a6d6eb1` y `cac8cfe`) y #62 (puntas `f999713` y `8acb53f`), que ya están en `main`; si cambia la interfaz hay que repasarlos y rehacer las capturas.
+3. **La sección 11 (clave)** se escribió con las pantallas reales (capturas 45 a 51), tomadas en una rama local descartable que juntaba el PR #66 (punta `5a6bffa`) y el PR #57 (punta `4cbfa2b`) antes de fusionar; los textos entre « » se comprobaron con `git grep -F` contra esas ramas y, al poner el manual al día el 25 de noviembre, contra `main`. Los dos PR ya están en `main` y el código de la interfaz es el mismo: hay que repasar la sección y rehacer las capturas solo si cambian la interfaz o la API.
 4. **Quién redacta la versión final** [POR VERIFICAR]: César (parte académica) o Juan (parte técnica). Los dos revisan.
 5. **Revisión con personas que usen el sistema** (ingeniería, jurídica, contabilidad, gerencia): este texto no se ha probado con nadie [SUPUESTO] que sea claro.
-6. **Hallazgos de interfaz del PR #62** [CONFIRMADO: corregidos en 8acb53f]: (a) en el panel de cambiar el rol, el aviso «ya tiene el rol …» se quedaba a la vista aunque se eligiera otro rol; ahora desaparece al elegir otro (captura 39, rehecha); (b) el detalle de un «Acceso denegado» era texto técnico («GET /auditoria; requiere administrador; tiene consulta»); ahora dice «Intentó hacer algo que su rol no permite; no se le concedió el acceso.» (captura 43, rehecha). **Hallazgo nuevo** [CONFIRMADO en la rama local descartable que junta #62, #57 y #66]: el «Acceso denegado» por clave temporal se sigue mostrando con el texto técnico («GET /documentos; cambio de clave requerido»), porque la traducción de `8acb53f` solo reconoce el formato de la guarda de roles (`detalleVisible`, `apps/web/src/utilidades/auditoria.ts`); conviene decidir, antes de fusionar el #66, si también se traduce [PROPUESTA].
+6. **Hallazgos de interfaz del PR #62** [CONFIRMADO: corregidos en 8acb53f]: (a) en el panel de cambiar el rol, el aviso «ya tiene el rol …» se quedaba a la vista aunque se eligiera otro rol; ahora desaparece al elegir otro (captura 39, rehecha); (b) el detalle de un «Acceso denegado» era texto técnico («GET /auditoria; requiere administrador; tiene consulta»); ahora dice «Intentó hacer algo que su rol no permite; no se le concedió el acceso.» (captura 43, rehecha). **Hallazgo nuevo** [CONFIRMADO en la rama local descartable que juntaba #62, #57 y #66; el código de `main` es el mismo]: el «Acceso denegado» por clave temporal se sigue mostrando con el texto técnico («GET /documentos; cambio de clave requerido»), porque la traducción de `8acb53f` solo reconoce el formato de la guarda de roles (`detalleVisible`, `apps/web/src/utilidades/auditoria.ts`); el #66 se fusionó con ese texto; conviene decidir si también se traduce [PROPUESTA].
 7. **Capturas descartadas:** la del formulario de alta «lleno» del carril W (c25-04) se dejó fuera porque era incoherente (mostraba el aviso de las minúsculas con el nombre de usuario ya en minúsculas y otro de la clave que no correspondía a lo escrito; [SUPUESTO] son errores que quedaron de un intento anterior). Las demás capturas de trabajo del PR #62 no incluidas (por peso o por repetir otra) son: nombre de usuario repetido, usuario desactivado, desactivarse a sí mismo, sin permiso de un usuario de consulta (equivale a la captura 34), filtros por usuario y fechas, error de fechas, segunda página, ingresos fallidos, y las versiones a 360 px.
+8. **Filtro de acciones de la auditoría** [PENDIENTE]: ofrece 14 acciones y le faltan `ccd_importado` («Cuadro de clasificación importado»), `clave_cambiada` y `clave_restablecida`, aunque esos eventos ya existen en `main` (`apps/web/src/utilidades/auditoria.ts`, constante `ACCIONES_FILTRABLES`). Se ven en la lista general con su nombre.
+9. **Salida de emergencia para el único administrador** [POR VERIFICAR]: si quien olvida su clave es el único administrador no hay cómo restablecerla por la API ni por la pantalla; el ADR-0011 propone un comando `restablecer-clave` con acceso a la base de datos, que no se construyó.
 
 ## 15. Fuentes
 
 - Capturas: `docs/manual/capturas/` (datos ficticios; 51 en total: 1 a 3 y 5 a 11 de la interfaz del PR #54, 12 a 34 de la del PR #58, 4 y 35 a 44 de la del PR #62, y 45 a 51 de la del PR #66 con la API del PR #57; casi todas a 1280 px y algunas a 360 px). Cada archivo empieza por el número de su captura. Las capturas 45 a 51 (y las rehechas 39 y 43) salen de una rama local descartable, nunca subida, con base de datos propia y claves inventadas.
-- Código de la interfaz leído en las ramas `feat/23-web-listado` (PR #54), `feat/24-web-carga` (PR #58), `feat/25-web-admin` (PR #62) y `feat/51-web-clave` (PR #66, borrador; solo la sección 11), y el de la API de las claves en `feat/51-cambio-clave` (PR #57).
-- [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) y, en revisión, ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54; la sección 6 de ese ADR, del PR #58, explica las decisiones de la carga).
+- Código de la interfaz leído en las ramas de los PR #54 (`feat/23-web-listado`), #58 (`feat/24-web-carga`), #62 (`feat/25-web-admin`) y #66 (`feat/51-web-clave`; solo la sección 11), y el de la API de las claves en la del PR #57 (`feat/51-cambio-clave`). Esas ramas se borraron al fusionar los PR [CONFIRMADO: `git ls-remote --heads origin`]; hoy el código está en `main` (`4cd67ad`).
+- [`docs/matriz-de-roles.md`](matriz-de-roles.md) (roles), [ADR-0003](adr/0003-autenticacion-y-sesiones.md) (sesiones), [ADR-0005](adr/0005-versionado-y-restauracion.md) (versiones y restauración), [ADR-0006](adr/0006-verificacion-doble-de-duplicados.md) (duplicados), [ADR-0007](adr/0007-busqueda-por-texto-completo.md) (búsqueda), [ADR-0008](adr/0008-administracion-de-usuarios.md) (usuarios), [ADR-0009](adr/0009-seguridad-minima-para-exponer-la-api.md) (límite de intentos) ADR-0011 (claves, PR #57) y ADR-0012 (interfaz, PR #54; la sección 6 de ese ADR, del PR #58, explica las decisiones de la carga; la 7, del PR #62, las de usuarios y auditoría, y la 8, del PR #66, las de las pantallas de clave).
 - [`README.md`](../README.md) y [`CHANGELOG.md`](../CHANGELOG.md).
