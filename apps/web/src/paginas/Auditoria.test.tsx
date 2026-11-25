@@ -86,6 +86,33 @@ describe('lista de eventos', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'accion_futura' })).toBeInTheDocument();
   });
 
+  it('un acceso denegado dice con palabras qué pasó, sin la ruta de la API ni el rol interno', async () => {
+    montar({
+      extra: {
+        'GET /auditoria': () =>
+          respuestaJson(
+            paginaDeEventos([
+              eventoDePrueba(1, {
+                accion: 'acceso_denegado',
+                usuarioId: 3,
+                usuario: 'consulta.demo',
+                documentoId: null,
+                detalle: 'GET /auditoria; requiere administrador; tiene consulta',
+              }),
+            ]),
+          ),
+      },
+    });
+    const tarjeta = (await screen.findByRole('heading', { level: 2, name: 'Acceso denegado' })).closest('li');
+    if (!tarjeta) throw new Error('sin tarjeta');
+    expect(within(tarjeta).getByText('consulta.demo')).toBeInTheDocument();
+    expect(within(tarjeta).getByText('Intentó hacer algo que su rol no permite; no se le concedió el acceso.')).toBeInTheDocument();
+    expect(tarjeta).not.toHaveTextContent('/auditoria');
+    expect(tarjeta).not.toHaveTextContent('requiere');
+    expect(tarjeta).not.toHaveTextContent('tiene consulta');
+    expect(tarjeta).not.toHaveTextContent('GET');
+  });
+
   it('el detalle se muestra como texto: una etiqueta HTML no se interpreta', async () => {
     montar({ extra: { 'GET /auditoria': () => respuestaJson(paginaDeEventos([eventoDePrueba(1, { detalle: '<b>negrita</b> <img src=x>' })])) } });
     expect(await screen.findByText('<b>negrita</b> <img src=x>')).toBeInTheDocument();

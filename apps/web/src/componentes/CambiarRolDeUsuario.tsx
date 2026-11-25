@@ -28,6 +28,16 @@ export function CambiarRolDeUsuario({ usuario, esYo, alCambiar, alCancelar, alFa
   const contenedor = useRef<HTMLDivElement>(null);
   useEnfocarPrimerError(contenedor, intento);
 
+  /**
+   * Elegir otro rol borra el aviso «ya tiene el rol …»: era sobre la elección anterior y, si se queda, contradice lo que se ve
+   * marcado. El foco no se toca (se queda en la opción que la persona acaba de elegir); `intento` tampoco, así que no se vuelve
+   * a enfocar nada. El aviso reaparece solo si se intenta confirmar de nuevo con el rol actual.
+   */
+  function elegirRol(nuevo: Rol) {
+    setRol(nuevo);
+    setError(undefined);
+  }
+
   function validar(): boolean {
     if (rol !== usuario.rol) {
       setError(undefined);
@@ -58,7 +68,7 @@ export function CambiarRolDeUsuario({ usuario, esYo, alCambiar, alCancelar, alFa
         </p>
       )}
       <div ref={contenedor}>
-        <ElegirRol valor={rol} alCambiar={setRol} actual={usuario.rol} error={error} leyenda={`Rol nuevo de ${usuario.nombre}`} />
+        <ElegirRol valor={rol} alCambiar={elegirRol} actual={usuario.rol} error={error} leyenda={`Rol nuevo de ${usuario.nombre}`} />
       </div>
     </PanelDeConfirmacion>
   );
