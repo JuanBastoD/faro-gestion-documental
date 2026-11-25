@@ -71,8 +71,8 @@ export class UsuariosService {
 
   async cambiar(id: number, cambio: CambioDeUsuario, actor: UsuarioSesion): Promise<UsuarioAdministrado> {
     return this.repositorio.enTransaccion(async (tx) => {
-      // Siempre en este orden (primero los administradores, luego el usuario): así dos cambios
-      // simultáneos nunca se bloquean entre sí.
+      // Siempre en este orden (primero los administradores, que además toma el candado que pone en fila
+      // los cambios, luego el usuario). No lo cambies sin leer la nota de 23-nov-2026 del ADR-008.
       const administradores = await this.repositorio.bloquearAdministradoresActivos(tx);
       const actual = await this.repositorio.buscarBloqueando(tx, id);
       if (!actual) throw new NotFoundException(`No existe el usuario ${id}`);
